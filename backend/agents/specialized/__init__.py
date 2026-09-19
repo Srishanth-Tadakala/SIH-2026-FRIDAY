@@ -7,12 +7,14 @@ Exports:
 - SituationAwarenessAgent (Sub-Phase 3.1)
 - DiagnosticAgent (Sub-Phase 3.2)
 - PredictionAgent (Sub-Phase 3.3)
+- RiskImpactAgent (Sub-Phase 3.4)
 """
 
 from __future__ import annotations
 
 from .diagnostic import DiagnosisResult, DiagnosticAgent
 from .prediction import PredictionAgent, PredictionProjection
+from .risk_impact import ImpactAssessment, RiskImpactAgent
 from .situation_awareness import AnomalyRecord, SituationAwarenessAgent
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "DiagnosisResult",
     "PredictionAgent",
     "PredictionProjection",
+    "RiskImpactAgent",
+    "ImpactAssessment",
 ]

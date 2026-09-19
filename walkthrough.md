@@ -1,4 +1,4 @@
-# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.3 Implementation
+# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.4 Implementation
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
@@ -8,7 +8,8 @@
 - **Sub-Phase 3.1**: Situation Awareness Agent (Completed & Verified)  
 - **Sub-Phase 3.2**: Diagnostic / Root-Cause Agent (Completed & Verified)  
 - **Sub-Phase 3.3**: Prediction Agent (Completed & Verified)  
-**Total Test Results**: **192 passed in 3.71s (0 failures, 0 errors, 100% green)**.
+- **Sub-Phase 3.4**: Risk & Impact Agent (Completed & Verified)  
+**Total Test Results**: **199 passed in 4.23s (0 failures, 0 errors, 100% green)**.
 
 ---
 
@@ -26,8 +27,8 @@
 │  ├── [COMPLETED] Sub-Phase 3.1: Situation Awareness Agent ("What is happening now?")      │
 │  ├── [COMPLETED] Sub-Phase 3.2: Diagnostic / Root-Cause Agent ("Why is it happening?")    │
 │  ├── [COMPLETED] Sub-Phase 3.3: Prediction Agent ("What is likely to happen next?")       │
-│  ├── [PENDING APPROVAL] Sub-Phase 3.4: Risk & Impact Agent ("What could this affect?")    │
-│  ├── [PENDING] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions to consider?")│
+│  ├── [COMPLETED] Sub-Phase 3.4: Risk & Impact Agent ("What could this affect?")           │
+│  ├── [PENDING APPROVAL] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions?")  │
 │  ├── [PENDING] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change something?") │
 │  ├── [PENDING] Sub-Phase 3.7: Mission Operations Agent ("Can missions proceed safely?")  │
 │  ├── [PENDING] Sub-Phase 3.8: Maintenance Agent ("What assets need spares / attention?")  │
@@ -48,28 +49,30 @@
 
 ---
 
-## 2. Sub-Phase 3.3: Prediction Agent
+## 2. Sub-Phase 3.4: Risk & Impact Agent
 
 ### Files Created / Modified:
-1. `backend/agents/specialized/prediction.py` (`PredictionAgent`, `PredictionProjection`, `HorizonState`)
+1. `backend/agents/specialized/risk_impact.py` (`RiskImpactAgent`, `ImpactAssessment`)
 2. `backend/agents/specialized/__init__.py` (Package exports)
-3. `tests/agents/test_agent_prediction.py` (7 specialized unit tests)
+3. `tests/agents/test_agent_risk_impact.py` (7 specialized unit tests)
 
 ### Key Capabilities Implemented:
-1. **Accelerated Multi-Horizon Lookahead (`project_forward`)**:
-   - Clones live state into an isolated `TwinSandbox` and fast-forwards physical dynamics across 15-minute, 1-hour, and 4-hour horizons.
-   - Computes state projections for fuel reserves, indoor temperature, electrical demand, and composite risk score at each milestone without contaminating live station state.
-2. **Time-to-Failure (TtF) & Time-to-Violation (TtV) Estimation**:
-   - **Thermal Life-Support Floor**: Predicts exact seconds until living quarters temperature drops below $16.0^\circ\text{C}$ life-support floor under blizzard or heating outage.
-   - **Day Tank Fuel Exhaustion**: Calculates depletion hours based on fuel level and active electrical kilowatt load.
-   - **Utilidor Pipe Freezing**: Predicts freeze time before fresh water line reaches $0.0^\circ\text{C}$.
-   - **Battery Exhaustion**: Projects UPS battery reserve depletion below 20% SOC.
-3. **Deliberation Session Blackboard Recording**:
-   - Listens to incoming `MessageType.DIAGNOSIS` events from Diagnostic Agent.
-   - Automatically appends structured lookahead projections to `session.predictions` on the shared `DeliberationSession` blackboard.
-   - Dispatches `MessageType.PREDICTION_PROJECTION` to both `AgentRole.RISK_IMPACT` (for blast radius calculations) and `AgentRole.PLANNING` (for candidate action drafting).
-4. **Interactive Predictive Queries**:
-   - Responds to `MessageType.QUERY` requests from human operators or F.R.I.D.A.Y. Chief AI with time-series trajectory vectors and forecasting summaries.
+1. **Downstream Blast Radius Quantification**:
+   - Traverses outgoing dependencies from root-cause nodes on `TwinCausalGraph` to determine the complete cascade of impacted physical assets.
+   - Evaluates affected node distributions across criticality tiers 1 through 5.
+2. **Life-Support & Crew Safety Threat Matrix**:
+   - Assesses critical habitat life-support systems: Living Zone thermal envelope ($\ge 16.0^\circ\text{C}$ floor), Potable Water minimum reserve (1,500 L floor), Medical Ward electrical feeds, and Emergency Refuge readiness.
+   - Assigns qualitative human safety categories: `NEGLIGIBLE`, `MODERATE`, `SEVERE`, `LIFE_THREATENING`.
+3. **Mission Operations Capability Impact**:
+   - Evaluates operational disruptions to the Bharati Helipad deck, ground perimeter ring routes, fast ice traverses, and cold chain provision storage (Reefer-01).
+4. **Time-to-Violation Urgency Multiplier**:
+   - Incorporates `time_to_critical_seconds` from Prediction Agent: short time-to-breach ($< 30\,\text{mins}$) multiplies the composite severity score by up to $1.35\times$.
+5. **Deliberation Session Blackboard & Downstream Pub/Sub Dispatch**:
+   - Subscribes to `MessageType.PREDICTION_PROJECTION` and `MessageType.DIAGNOSIS`.
+   - Automatically populates `session.risk_assessment` on the shared `DeliberationSession` blackboard.
+   - Dispatches `MessageType.IMPACT_ASSESSMENT` to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
+6. **Interactive Risk Queries**:
+   - Responds to `MessageType.QUERY` requests with asset blast radius breakdowns and containment priority checklists.
 
 ---
 
@@ -84,7 +87,7 @@ python -m pytest tests/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-collected 192 items
+collected 199 items
 
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_engine_initialization PASSED
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_clock_synchronization PASSED
@@ -132,15 +135,22 @@ tests/agents/test_agent_prediction.py::TestPredictionAgent::test_day_tank_fuel_e
 tests/agents/test_agent_prediction.py::TestPredictionAgent::test_utilidor_pipe_freeze_time_to_failure PASSED
 tests/agents/test_agent_prediction.py::TestPredictionAgent::test_deliberation_session_integration_and_bus_dispatch PASSED
 tests/agents/test_agent_prediction.py::TestPredictionAgent::test_interactive_query_response PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_initialization_and_clean_state PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_generator_trip_blast_radius_assessment PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_katabatic_blizzard_mission_impact PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_utilidor_pipe_freeze_water_cycle_threat PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_urgency_multiplier_short_time_to_violation PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_deliberation_session_blackboard_and_bus_dispatch PASSED
+tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_interactive_query_response PASSED
 ... [146 original sensor tests across Energy, Infrastructure, Environment, Logistics] ...
 
-============================= 192 passed in 3.71s =============================
+============================= 199 passed in 4.23s =============================
 ```
 
 ---
 
-## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.4
+## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.5
 
 In accordance with strict pairing instructions:
-- **Sub-Phase 3.3 is 100% complete and tested.**
-- **Awaiting Operator Approval before starting Sub-Phase 3.4 (Risk & Impact Agent: `risk_impact.py`).**
+- **Sub-Phase 3.4 is 100% complete and tested.**
+- **Awaiting Operator Approval before starting Sub-Phase 3.5 (Planning / Recommendation Agent: `planning.py`).**
