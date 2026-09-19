@@ -1,13 +1,16 @@
-"""F.R.I.D.A.Y. Multi-Agent Cognitive Platform Package.
+"""F.R.I.D.A.Y. Master Orchestration Package.
 
 Part of SIH 2026 Project SIH26060: F.R.I.D.A.Y.
 Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations.
-Target: Bharati Research Station, Larsemann Hills, East Antarctica.
+
+Exports:
+- FridayMasterOrchestrator (Sub-Phase 3.10 Capstone)
+- CommanderBriefingCard
 """
 
 from __future__ import annotations
 
-from .orchestrator.friday_core import CommanderBriefingCard, FridayMasterOrchestrator
+from .friday_core import CommanderBriefingCard, FridayMasterOrchestrator
 
 __all__ = [
     "FridayMasterOrchestrator",
