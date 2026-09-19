@@ -16,6 +16,12 @@ Exports:
 from __future__ import annotations
 
 from .diagnostic import DiagnosisResult, DiagnosticAgent
+from .maintenance import (
+    AssetMaintenanceProfile,
+    MaintenanceHealthReport,
+    MaintenanceUrgency,
+    MaintenanceAgent,
+)
 from .mission_ops import (
     FieldPartyStatus,
     MissionFeasibilityAssessment,
@@ -44,4 +50,8 @@ __all__ = [
     "MissionOperationalStatus",
     "FieldPartyStatus",
     "MissionFeasibilityAssessment",
+    "MaintenanceAgent",
+    "MaintenanceUrgency",
+    "AssetMaintenanceProfile",
+    "MaintenanceHealthReport",
 ]

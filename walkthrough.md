@@ -1,4 +1,4 @@
-# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.7 Implementation
+# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.8 Implementation
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
@@ -12,7 +12,8 @@
 - **Sub-Phase 3.5**: Planning / Recommendation Agent (Completed & Verified)  
 - **Sub-Phase 3.6**: What-If / Simulation Agent (Completed & Verified)  
 - **Sub-Phase 3.7**: Mission Operations Agent (Completed & Verified)  
-**Total Test Results**: **220 passed in 5.35s (0 failures, 0 errors, 100% green)**.
+- **Sub-Phase 3.8**: Maintenance Agent (Completed & Verified)  
+**Total Test Results**: **227 passed in 5.44s (0 failures, 0 errors, 100% green)**.
 
 ---
 
@@ -34,8 +35,8 @@
 │  ├── [COMPLETED] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions to take?") │
 │  ├── [COMPLETED] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change it?")      │
 │  ├── [COMPLETED] Sub-Phase 3.7: Mission Operations Agent ("Can missions proceed safely?") │
-│  ├── [PENDING APPROVAL] Sub-Phase 3.8: Maintenance Agent ("What assets need spares?")    │
-│  ├── [PENDING] Sub-Phase 3.9: Resource Optimization Agent ("How to allocate fuel/water?") │
+│  ├── [COMPLETED] Sub-Phase 3.8: Maintenance Agent ("What assets need spares / attention?")│
+│  ├── [PENDING APPROVAL] Sub-Phase 3.9: Resource Optimization Agent ("Allocate fuel/water")│
 │  └── [PENDING] Sub-Phase 3.10: F.R.I.D.A.Y. Master Orchestrator ("Supervisory Control")   │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │  [PHASE 2 COMPLETED] MULTI-AGENT MESSAGE BUS & SAFETY INTERLOCKS                          │
@@ -52,28 +53,30 @@
 
 ---
 
-## 2. Sub-Phase 3.7: Mission Operations Agent
+## 2. Sub-Phase 3.8: Maintenance Agent
 
 ### Files Created / Modified:
-1. `backend/agents/specialized/mission_ops.py` (`MissionOpsAgent`, `MissionFeasibilityAssessment`, `FieldPartyStatus`, `MissionOperationalStatus`)
+1. `backend/agents/specialized/maintenance.py` (`MaintenanceAgent`, `MaintenanceHealthReport`, `AssetMaintenanceProfile`, `MaintenanceUrgency`)
 2. `backend/agents/specialized/__init__.py` (Package exports)
-3. `tests/agents/test_agent_mission_ops.py` (7 specialized unit tests)
+3. `tests/agents/test_agent_maintenance.py` (7 specialized unit tests)
 
 ### Key Capabilities Implemented:
-1. **Field Expedition Safety Envelope Tracking**:
-   - Tracks active field party telemetry (Team 01, Team 02): distance from Bharati base, return margin minutes, and radio check status (zero PII, anonymous group IDs).
-   - Detects overdue return cutoffs and missed radio check cycles, triggering immediate search party standby actions.
-2. **Polar Environmental Limits & Wind Chill Calculation**:
-   - Implements standardized Antarctic wind chill index ($T_{wc}$).
-   - Evaluates severe weather thresholds:
-     - Aviation flight window grounding ($\text{Wind} \ge 18\,\text{m/s}$ or $\text{Visibility} < 800\,\text{m}$).
-     - Ground traverse closure and mandatory whiteout recall ($\text{Wind} \ge 25\,\text{m/s}$, $\text{Visibility} < 300\,\text{m}$, or $T_{wc} < -50^\circ\text{C}$).
-3. **Cyclic Deliberation Constraint & Comms Defense Loop**:
-   - **Communications Defense**: When the Planning Agent or Orchestrator proposes electrical load shedding, Mission Ops intercepts the proposal. If outdoor field teams are deployed, it **vetoes** attempts to de-energize radio repeaters, satcom uplinks, or telemetry antennas (`MISSION_COMMS_PRESERVATION`).
-   - **Outdoor Blizzard Exposure Veto**: Rejects proposals scheduling manual outdoor physical tasks or snowcat yard transfers during blizzard strikes ($>25\,\text{m/s}$).
-   - Publishes `MessageType.CRITIQUE` to `AgentRole.PLANNING` and logs critique payloads onto `session.critiques` on the shared blackboard.
-4. **Interactive Mission Queries & Weather Alerts**:
-   - Answers `MessageType.QUERY` requests from human operators or orchestrators with comprehensive operational status packages (`MissionFeasibilityAssessment`).
+1. **Equipment Wear & MTBF Margin Tracking**:
+   - Monitors rotating machinery runtime hours against factory service intervals:
+     - Cummins QSK19 CHP generators ($2,000\,\text{h}$ interval)
+     - PistenBully 300 polar tracked snowcats ($500\,\text{h}$ track/hydraulic interval)
+     - Polar helicopter airframe cumulative flight hours ($100\,\text{h}$ inspection interval)
+   - Computes exact hours until service and physical wear degradation percentage ($0\%$ to $100\%$).
+2. **Spares Inventory Defense (Madrid Protocol Alignment)**:
+   - Tracks generator, vehicle, and water treatment spare part stock levels from `InventoryState`.
+   - Flags stockout hazards under Antarctic winter logistics isolation ($9$ months without resupply).
+3. **Cyclic Deliberation Critique & Overdue Machinery Start Veto**:
+   - **Overdue Machinery Veto**: When the Planning Agent proposes activating a generator (e.g. CHP-03 with $2,190\,\text{h}$ runtime on a $2,000\,\text{h}$ interval), Maintenance **vetoes** the startup command (`OVERDUE_MACHINERY_START_RESTRICTION`).
+   - Prevents catastrophic fuel injector seizure or turbocharger breakdown during sub-zero operations.
+   - **Alternative Machine Recommendation**: Automatically identifies and recommends the healthiest alternative unit (e.g. *"Switch to Combined Heat & Power Unit 1 with 1,480.0h service margin remaining"*).
+   - Publishes `MessageType.CRITIQUE` back to `AgentRole.PLANNING` and registers the critique on `session.critiques` on the shared blackboard.
+4. **Interactive Equipment Health Queries**:
+   - Responds to `MessageType.QUERY` requests with comprehensive station equipment status reports (`MaintenanceHealthReport`).
 
 ---
 
@@ -88,23 +91,23 @@ python -m pytest tests/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-collected 220 items
+collected 227 items
 
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_engine_initialization PASSED
 ...
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_zero_mutation_contamination PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_initialization_and_clean_state PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_nominal_mission_envelope_assessment PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_blizzard_severe_weather_mandatory_recall PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_field_team_overdue_and_radio_loss_detection PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_cyclic_critique_defense_of_mission_comms PASSED
-tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_cyclic_critique_outdoor_blizzard_exposure_veto PASSED
 tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_pubsub_deliberation_session_critique_dispatch PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_initialization_and_clean_state PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_generate_maintenance_report_chp_and_fleet PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_overdue_asset_flagging PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_cyclic_critique_overdue_generator_start_veto PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_safe_generator_proposal_no_critique PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_pubsub_deliberation_session_critique_recording PASSED
+tests/agents/test_agent_maintenance.py::TestMaintenanceAgent::test_interactive_query_response PASSED
 
-============================= 220 passed in 5.35s =============================
+============================= 227 passed in 5.44s =============================
 ```
 
 ---
 
-## 4. Next Step: Sub-Phase 3.8
-Awaiting user explicit approval before beginning **Sub-Phase 3.8: Maintenance Agent (`backend/agents/specialized/maintenance.py`)**.
+## 4. Next Step: Sub-Phase 3.9
+Awaiting user explicit approval before beginning **Sub-Phase 3.9: Resource Optimization Agent (`backend/agents/specialized/resource_optimizer.py`)**.
