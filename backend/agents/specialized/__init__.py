@@ -9,6 +9,7 @@ Exports:
 - PredictionAgent (Sub-Phase 3.3)
 - RiskImpactAgent (Sub-Phase 3.4)
 - PlanningAgent (Sub-Phase 3.5)
+- WhatIfSimulationAgent (Sub-Phase 3.6)
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from .planning import PlanningAgent
 from .prediction import PredictionAgent, PredictionProjection
 from .risk_impact import ImpactAssessment, RiskImpactAgent
 from .situation_awareness import AnomalyRecord, SituationAwarenessAgent
+from .what_if import PlanSimulationVerdict, WhatIfSimulationAgent
 
 __all__ = [
     "SituationAwarenessAgent",
@@ -29,4 +31,6 @@ __all__ = [
     "RiskImpactAgent",
     "ImpactAssessment",
     "PlanningAgent",
+    "WhatIfSimulationAgent",
+    "PlanSimulationVerdict",
 ]
