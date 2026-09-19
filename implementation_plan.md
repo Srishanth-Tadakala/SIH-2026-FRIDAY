@@ -1,314 +1,358 @@
-# Detailed Industrial-Grade Implementation Plan: Phase 1 & Phase 2 Backend Core
+# Master Implementation Plan: Phase 3 — Multi-Agent Cognitive Platform (10 Sub-Phases)
 
 **Project**: SIH 2026 Problem Statement SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
-**Target Stations**: Bharati Research Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
-**Scope**: **Phase 1 (Digital Twin Core & Causal Engine)** and **Phase 2 (Multi-Agent Framework & Safety Interlocks)**  
-**Foundation**: 413 physical/virtual sensors across 4 pillars (Energy, Infrastructure, Environment, Logistics), 146 unit tests 100% green.  
-**Objective**: Build an enterprise-grade, deterministic, low-latency, and safety-critical backend foundation that bridges raw sensor telemetry to autonomous multi-agent cognition.
+**Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
+**Scope**: **Phase 3 (The 9 Specialized Cognitive Agents & F.R.I.D.A.Y. Core Orchestrator)**  
+**Foundation Complete**:
+- **Sensor Observation Layer**: 505 sensors across 4 pillars (Energy, Infra, Environment, Logistics).
+- **Phase 1: Digital Twin Core**: `BharatiMasterTwinEngine`, `TwinCausalGraph`, `TwinSandbox`.
+- **Phase 2: Agent Framework**: `AgentMessageBus`, `SafetyInterlockManager`, `BaseSpecializedAgent`, `models.py`.
+- **Regression Test Baseline**: 171 automated unit tests passing 100% green in 4.03s.
 
 ---
 
-## 1. Architectural Philosophy & Design Principles
+## 1. Multi-Agent Cognitive Architecture (The OODA Deliberation Loop)
 
-To ensure this backend meets industry-grade mission-critical standards for Antarctic life-support infrastructure:
-
-1. **Zero External Heavy Dependencies for Core Logic**:
-   - The entire Digital Twin Core and Agent Framework will use Python 3.12+ standard library (`dataclasses`, `enum`, `typing`, `copy`, `time`, `collections`, `heapq`, `math`).
-   - Ensures instantaneous startup, zero version rot, and guaranteed operation on air-gapped Antarctic edge servers.
-2. **Deterministic Physics Coupling**:
-   - No floating-point drift or asynchronous race conditions in physical simulation.
-   - All 4 pillars advance along a single synchronized clock tick ($T_{\text{tick}}$).
-3. **Strict Causal Discipline**:
-   - Physical relationships between assets are modeled as an explicit directed graph with typed edges (e.g. thermal, electrical, hydraulic, environmental).
-   - Upstream causes and downstream impact radiuses are computed via graph traversal algorithms ($O(V+E)$), eliminating brittle heuristic spaghetti.
-4. **Isolated Fast-Forward Sandboxing**:
-   - State-forking mechanism clones complete station memory in $< 5\,\text{ms}$, allowing accelerated forward simulation ($1000\times$ speed) of operational interventions without contaminating live station state.
-5. **Fail-Safe Tiered Autonomy**:
-   - Hardware-in-the-loop safety interlock strictly enforces Antarctic treaty (Madrid Protocol) and life-support guardrails before any action reaches execution.
-
----
-
-## 2. Phase 1: Digital Twin Core & Causal Graph Engine
+Rather than building all agents in a single monolithic step, Phase 3 is broken down into **10 discrete, self-contained sub-phases**. Each sub-phase implements **exactly one agent** with its own internal reasoning engine, typed bus contracts, and dedicated unit test suite.
 
 ```
-                                  MASTER TWIN ENGINE
-                             (backend/core/engine.py)
-                                        │
-           ┌────────────────────────────┼────────────────────────────┐
-           ▼                            ▼                            ▼
-   ENVIRONMENT PILLAR         INFRASTRUCTURE PILLAR            ENERGY PILLAR
-  (87 sensors / 9 domains)    (180 sensors / 11 domains)   (48 sensors / 6 domains)
-           │                            │                            │
-           └──────────────┬─────────────┴─────────────┬──────────────┘
-                          ▼                           ▼
-                   LOGISTICS PILLAR           CAUSAL GRAPH
-               (98 sensors / 11 domains)  (backend/core/causal_graph.py)
-                          │                           │
-                          └─────────────┬─────────────┘
-                                        ▼
-                                  TWIN SANDBOX
-                            (backend/core/sandbox.py)
-```
-
-### Component 1.1: `backend/core/engine.py` (`BharatiMasterTwinEngine`)
-
-The central simulation orchestrator that owns all four sensor pillar registries and their underlying physics models.
-
-#### Key Responsibilities:
-- **Synchronized Multi-Pillar Clock**: Drives a single master simulation clock advancing all pillars in deterministic physical sequence.
-- **Physical Boundary Propagation**:
-  1. $\text{Environment.step}(dt)$: Generates ambient temperature, katabatic wind velocity, barometric pressure, solar irradiance, and sea ice drift.
-  2. $\text{Infrastructure.update\_from\_environment}(\text{env\_data})$: Applies ambient conditions to building thermal envelope, utilidor heat loss, and structural wind drag.
-  3. $\text{Infrastructure.step}(dt)$: Computes zone temperatures, indoor air quality, water production, and derives:
-     - Total Auxiliary Electrical Demand ($\text{kW}_{\text{aux}}$: HVAC fans, RO pumps, MBR blowers, trace heating).
-     - Station Heating Demand ($\text{kW}_{\text{th}}$: AHU heating coils, domestic hot water, pipe freeze protection).
-  4. $\text{Energy.update\_demands}(\text{load\_kw}, \text{heat\_kwth})$: Injects infrastructure load into the MLVD bus and hydronic loop.
-  5. $\text{Energy.step}(dt)$: Dispatches active CHP generators (100 kVA Scania units), modulates waste-heat heat exchangers, regulates UPS battery floating, and drains the fuel day-tank with automated bulk-farm refill.
-  6. $\text{Logistics.update\_cross\_pillar}(\text{env\_data}, \text{energy\_data})$: Feeds wind/visibility to helipad and vehicle routes; feeds grid status to reefer cold containers.
-  7. $\text{Logistics.step}(dt)$: Updates vehicle telemetry, fuel levels, cargo integrity, route accessibility, and mission status.
-- **Scenario Injection Framework**:
-  - `inject_scenario(name: MasterScenario, **params)`: Clean deterministic API to inject station-wide crises:
-    - `BLIZZARD_STRIKE`: Wind surges to 35 m/s, temp drops to $-35^\circ\text{C}$, helipad closes, thermal heat demand surges to 150 kWth.
-    - `GENERATOR_TRIP`: Lead CHP-1 trips on overcurrent; grid droops, UPS-1 takes critical loads, standby CHP-2 auto-cranks.
-    - `WATER_LINE_FREEZE`: Utilidor trace heating circuit trips; pipe temp drops below $0^\circ\text{C}$; RO production halts.
-    - `COLD_CHAIN_EXCURSION`: Reefer compressor failure; vaccine/food core temperature rises above $-18^\circ\text{C}$.
-    - `FUEL_TRANSFER_LEAK`: Bulk fuel transfer line valve fault; day-tank stops refilling.
-- **Unified Query & Telemetry Export**:
-  - `get_sensor_reading(sensor_id: str) -> SensorReading` (O(1) lookup across all 413 points).
-  - `get_snapshot() -> MasterTwinSnapshot`: Comprehensive serializable telemetry snapshot.
-  - `get_active_alerts() -> list[ActiveAlert]`: Scans all derived risk indices and threshold breaches.
-
----
-
-### Component 1.2: `backend/core/causal_graph.py` (`TwinCausalGraph`)
-
-A high-performance in-memory directed graph representing the physical topology, equipment dependencies, and sensor instrumentation of Bharati Station.
-
-#### Data Models:
-- `NodeType`: `ENVIRONMENT_SOURCE`, `EQUIPMENT_ASSET`, `DISTRIBUTION_BUS`, `ZONE_ENCLOSURE`, `STORAGE_RESERVOIR`, `PHYSICAL_SENSOR`, `MISSION_ENTITY`.
-- `EdgeType`:
-  - `THERMAL_TRANSFER` (e.g., CHP exhaust $\to$ Heat Exchanger $\to$ Glycol Loop $\to$ AHU Heating Coil).
-  - `ELECTRICAL_FEED` (e.g., CHP-1 $\to$ MLVD Bus $\to$ UPS-1 $\to$ Critical Lab Bus $\to$ Medical Freezer).
-  - `HYDRAULIC_FLOW` (e.g., Seawater Intake $\to$ RO Plant $\to$ Potable Water Reservoir $\to$ Galley).
-  - `FUEL_SUPPLY` (e.g., Bulk Fuel Farm $\to$ Transfer Pump $\to$ Day Tank $\to$ CHP Fuel Injectors).
-  - `ATMOSPHERIC_EXPOSURE` (e.g., Ambient Wind $\to$ Building Envelope $\to$ Helipad Status).
-  - `SENSOR_OBSERVATION` (e.g., CHP-1 $\to$ `BH-ENG-CHP1-001` Active Power Sensor).
-  - `LOGICAL_INTERLOCK` (e.g., Fire Damper Zone 1 $\to$ AHU-01 Fan Shutdown).
-- `CausalNode`: `node_id`, `name`, `node_type`, `subsystem`, `criticality` (1 to 5), `metadata`.
-- `CausalEdge`: `source_id`, `target_id`, `edge_type`, `weight`, `latency_seconds` (time delay for physical propagation).
-
-#### Core Algorithms:
-- `get_upstream_causes(node_id: str, max_depth: int = 5) -> list[CausalPath]`:
-  - Reverse BFS/DFS traversal following incoming physical edges.
-  - Returns ordered candidate root causes with cumulative physical latency.
-  - *Used by*: **Diagnostic / Root-Cause Agent**.
-- `get_downstream_impacts(node_id: str, max_depth: int = 5) -> list[ImpactPath]`:
-  - Forward BFS/DFS traversal following outgoing physical edges.
-  - Traverses to all downstream equipment, zones, and life-support systems.
-  - *Used by*: **Risk & Impact Agent**.
-- `calculate_blast_radius(node_id: str) -> BlastRadius`:
-  - Aggregates affected assets by criticality, life-support impact, and mission readiness impact.
-- `export_react_flow_topology() -> dict[str, Any]`:
-  - Serializes nodes, coordinates, node categories, and edge styles formatted specifically for React Flow canvas.
-
----
-
-### Component 1.3: `backend/core/sandbox.py` (`TwinSandbox`)
-
-An ultra-fast in-memory state-forking and simulation engine that enables predictive what-if scenario exploration without corrupting active station telemetry.
-
-#### Key Mechanics:
-- `fork(engine: BharatiMasterTwinEngine) -> TwinSandbox`:
-  - Clones the complete master twin state in memory ($< 5\,\text{ms}$).
-  - Decoupled from live wall-clock timers.
-- `apply_action_override(subsystem: str, parameter: str, value: Any)`:
-  - Injects candidate operational changes into the sandbox state (e.g. `chps[1].operating_state = "RUNNING"`, `hvac.ahu01_fresh_air_damper_pct = 15.0`).
-- `run_fast_forward(duration_seconds: float, dt: float = 1.0) -> TrajectoryResult`:
-  - Executes accelerated forward simulation (e.g., 4 hours of physical time / 14,400 ticks computed in $< 25\,\text{ms}$).
-  - Records continuous time-series metrics:
-    - Fuel consumption rate and day-tank exhaustion runway.
-    - Indoor zone temperatures (thermal decay or stabilization).
-    - UPS battery SOC trajectory.
-    - Water production balance.
-    - Composite station risk index.
-- `evaluate_plan_delta(baseline: TrajectoryResult, candidate: TrajectoryResult) -> PlanEvaluationDelta`:
-  - Generates clear KPI comparison: $\Delta\text{Fuel}$, $\Delta\text{Temp}$, $\Delta\text{Autonomy}$, $\Delta\text{RiskScore}$.
-  - *Used by*: **What-If Simulation Agent** and **Planning Agent**.
-
----
-
-## 3. Phase 2: Multi-Agent Framework & Safety Interlock Layer
-
-```
-                        AGENT MESSAGE BUS (backend/agents/framework/bus.py)
-                          [Pub/Sub Broker | Priority Queues | Audit Trail]
-                                        │
-           ┌────────────────────────────┼────────────────────────────┐
-           ▼                            ▼                            ▼
-  DELIBERATION SESSION          SAFETY INTERLOCK               BASE AGENT
- (Blackboard & Context)      (Tier 1 / 2 / 3 Guardrails)    (Standard ABC Interface)
-```
-
-### Component 2.1: `backend/agents/framework/models.py`
-
-Strictly typed dataclasses and enums governing all inter-agent messages, operational plans, and safety tiers.
-
-#### Enums:
-- `AgentRole`: `SITUATION_AWARENESS`, `DIAGNOSTIC`, `PREDICTION`, `RISK_IMPACT`, `PLANNING`, `WHAT_IF`, `MISSION_OPS`, `MAINTENANCE`, `RESOURCE_OPTIMIZER`, `FRIDAY_ORCHESTRATOR`.
-- `MessageType`: `ALERT`, `QUERY`, `DIAGNOSIS`, `PREDICTION_PROJECTION`, `IMPACT_ASSESSMENT`, `PROPOSAL`, `CRITIQUE`, `SIM_REQUEST`, `SIM_RESULT`, `CONSENSUS_PLAN`, `OPERATOR_COMMAND`.
-- `SeverityLevel`: `INFO`, `ADVISORY`, `WARNING`, `CRITICAL`, `EMERGENCY`.
-- `AutonomyTier`:
-  - `TIER_1_AUTONOMOUS`: Safe, non-destructive, reversible micro-actions (e.g., damper micro-trim, automated logging, sensor self-test).
-  - `TIER_2_SUPERVISED`: Operational load adjustments with a 60-second veto countdown (e.g., HVAC setpoint adjustment $\pm 1.5^\circ\text{C}$, non-critical pump switchover).
-  - `TIER_3_COMMANDER_CONFIRMATION`: Life-safety or mission-critical actions requiring explicit human Commander sign-off (e.g., generator shutdown, power load shedding to living modules, field team recall).
-- `ProposalStatus`: `DRAFT`, `SIMULATING`, `SIMULATED`, `APPROVED_PENDING_CONFIRMATION`, `EXECUTED`, `VETOED`, `REJECTED`.
-
-#### Dataclasses:
-- `AgentMessage`:
-  - `message_id: str`, `session_id: str`, `sender: AgentRole`, `recipient: AgentRole | Literal["BROADCAST"]`, `message_type: MessageType`, `severity: SeverityLevel`, `payload: dict[str, Any]`, `confidence: float` (0.0 to 1.0), `timestamp: float`.
-- `ActionProposal`:
-  - `proposal_id: str`, `title: str`, `target_subsystem: str`, `parameter_overrides: dict[str, Any]`, `tier: AutonomyTier`, `rationale: str`, `projected_impact: dict[str, Any]`, `simulation_delta: dict[str, Any] | None`, `status: ProposalStatus`.
-- `DeliberationSession`:
-  - Blackboard shared among agents during an incident.
-  - Contains `session_id`, `trigger_alert`, `root_causes`, `predictions`, `risk_assessment`, `candidate_proposals`, `critiques`, and chronological message transcript.
-
----
-
-### Component 2.2: `backend/agents/framework/bus.py` (`AgentMessageBus`)
-
-The high-performance in-memory pub/sub message broker connecting all agents.
-
-#### Key Mechanics:
-- **Role-Based & Topic Subscriptions**:
-  - Agents subscribe to specific message types (e.g. `DiagnosticAgent` subscribes to `ALERT`, `WhatIfAgent` subscribes to `SIM_REQUEST`).
-  - Broadcast support for station-wide situational updates.
-- **Priority Queueing**:
-  - `EMERGENCY` and `CRITICAL` messages jump the queue, ensuring instant response during life-support failures.
-- **Dialogue Transcript & Audit Trail**:
-  - Automatically records every message sent during a deliberation session.
-  - Provides queryable history (`get_session_transcript(session_id)`) for UI streaming and post-incident investigation.
-- **Synchronous & Asynchronous Dispatch**:
-  - Supports deterministic sequential dispatch in test harnesses and non-blocking asynchronous dispatch for FastAPI WebSocket streaming.
-
----
-
-### Component 2.3: `backend/agents/framework/safety_interlock.py` (`SafetyInterlockManager`)
-
-The mission-critical gatekeeper enforcing physical station constraints and preventing hazardous autonomous operations.
-
-#### Antarctic Life-Support Safety Guardrails:
-1. **Thermal Guardrail**:
-   - Living and sleeping zone temperature cannot be commanded below $16.0^\circ\text{C}$.
-   - Emergency shelter minimum temperature must remain $\ge 12.0^\circ\text{C}$.
-2. **Electrical Power Guardrail**:
-   - Generator electrical loading must never exceed $95\%$ of continuous rating (80 kW on a 100 kVA Scania unit).
-   - UPS battery state-of-charge must never be intentionally drained below $50\%$ unless total station blackout occurs.
-3. **Potable Water & Hygiene Guardrail**:
-   - Station potable storage must not be depleted below 3 days of autonomy (minimum 1,500 L).
-4. **Fire & Smoke Containment Guardrail**:
-   - Fire dampers cannot be overridden open when smoke obscuration is detected in the zone ($> 1.5\%$).
-5. **Field Traverse & Aviation Guardrail**:
-   - No outdoor traverse or helicopter departure can be cleared if wind speed $> 20\,\text{m/s}$ or visibility $< 800\,\text{m}$.
-6. **Madrid Protocol Environmental Compliance Guardrail**:
-   - Wastewater effluent COD must be $< 100\,\text{mg/L}$ and BOD $< 25\,\text{mg/L}$ before environmental discharge valve is permitted to open.
-
-#### Execution Policy:
-- `validate_proposal(proposal: ActionProposal, current_state: MasterTwinSnapshot) -> SafetyValidationResult`:
-  - Evaluates proposal against all guardrails.
-  - If violated: rejects proposal with explicit safety violation code and explanation.
-  - If compliant: assigns required `AutonomyTier`.
-- `execute_action(proposal: ActionProposal, engine: BharatiMasterTwinEngine, commander_auth: bool = False) -> ExecutionResult`:
-  - Tier 1: Executes immediately on engine.
-  - Tier 2: Queues action with 60-second timeout.
-  - Tier 3: Requires `commander_auth == True`; otherwise rejects with `CONFIRMATION_REQUIRED`.
-
----
-
-### Component 2.4: `backend/agents/framework/base_agent.py` (`BaseSpecializedAgent`)
-
-The foundational abstract base class for all 9 cognitive agents and the Friday Orchestrator.
-
-#### Core Interface:
-```python
-class BaseSpecializedAgent(ABC):
-    def __init__(self, role: AgentRole, bus: AgentMessageBus, engine: BharatiMasterTwinEngine, graph: TwinCausalGraph):
-        ...
-
-    @abstractmethod
-    def handle_message(self, message: AgentMessage, session: DeliberationSession) -> None:
-        """Process incoming bus message and update the deliberation session."""
-        pass
-
-    def publish_message(self, session_id: str, recipient: AgentRole | str, msg_type: MessageType, severity: SeverityLevel, payload: dict[str, Any], confidence: float = 1.0) -> None:
-        """Helper to construct and publish a typed message to the bus."""
-        ...
+                                      CRISIS TRIGGER
+                          (e.g., Katabatic Blizzard / CHP Overheat)
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   1. PERCEPTION    │ Sub-Phase 3.1: SITUATION AWARENESS AGENT      │
+                    │ ("What is happening right now?")              │
+                    └───────────────────────┬───────────────────────┘
+                                            │ ALERT
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   2. DIAGNOSTICS   │ Sub-Phase 3.2: DIAGNOSTIC / ROOT-CAUSE AGENT  │
+                    │ ("Why is it happening?" - Causal Traversal)   │
+                    └───────────────────────┬───────────────────────┘
+                                            │ DIAGNOSIS
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   3. PROJECTION    │ Sub-Phase 3.3: PREDICTION AGENT               │
+                    │ ("What will happen next?" - Time-to-Critical) │
+                    └───────────────────────┬───────────────────────┘
+                                            │ PREDICTION_PROJECTION
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   4. RISK BLAST    │ Sub-Phase 3.4: RISK & IMPACT AGENT            │
+                    │ ("What could this affect?" - Blast Radius)    │
+                    └───────────────────────┬───────────────────────┘
+                                            │ IMPACT_ASSESSMENT
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   5. STRATEGY      │ Sub-Phase 3.5: PLANNING & RECOMMENDATION AGENT│
+                    │ ("What actions can solve this? - 2-3 Plans)   │
+                    └───────┬───────────────────────────────┬───────┘
+                            │ SIM_REQUEST                   │ PROPOSAL
+                            ▼                               ▼
+  ┌───────────────────────────────────┐   ┌───────────────────────────────────┐
+  │ Sub-Phase 3.6: WHAT-IF AGENT      │   │ Sub-Phase 3.9: RESOURCE OPTIMIZER │
+  │ ("What if we change something?")  │   │ ("How to balance fuel vs thermal")│
+  │ [Fast-forward 4h in TwinSandbox]  │   └─────────────────┬─────────────────┘
+  └─────────────────┬─────────────────┘                     │
+                    │ SIM_RESULT                            │ CRITIQUE
+                    └───────────────────────┬───────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   6. VALIDATION    │ Sub-Phase 3.7: MISSION OPERATIONS AGENT       │
+   & DOMAIN CHECKS  │ ("Can missions / flights proceed? - Go/No-Go")│
+                    ├───────────────────────────────────────────────┤
+                    │ Sub-Phase 3.8: MAINTENANCE AGENT              │
+                    │ ("What assets need spares / Madrid Protocol?")│
+                    └───────────────────────┬───────────────────────┘
+                                            │ DOMAIN_ADVISORIES
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+   7. SYNTHESIS     │ Sub-Phase 3.10: F.R.I.D.A.Y. CHIEF AI         │
+   & COMMAND        │ (Executive Action Card + Safety Interlock PIN)│
+                    └───────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Implementation Steps & File Structure
+## 2. Detailed 10 Sub-Phase Implementation Breakdown
 
 ```
-backend/
-  core/
-    __init__.py
-    engine.py             # BharatiMasterTwinEngine (Unified multi-pillar simulation)
-    causal_graph.py       # TwinCausalGraph (Topological causal dependencies)
-    sandbox.py            # TwinSandbox (In-memory state forking & fast-forward)
-  agents/
-    __init__.py
-    framework/
-      __init__.py
-      models.py           # Typed dataclasses, enums, message contracts
-      bus.py              # AgentMessageBus (Pub/sub broker & audit trail)
-      safety_interlock.py # SafetyInterlockManager (Tiered autonomy & safety bounds)
-      base_agent.py       # BaseSpecializedAgent (Abstract base class)
-tests/
-  core/
-    __init__.py
-    test_twin_core.py     # Unified tick, causality, and sandbox tests
-  agents/
-    __init__.py
-    test_framework.py     # Bus, safety interlock, and blackboard tests
+Target Directory: backend/agents/specialized/
+Test Directory:   tests/agents/
 ```
+
+### Sub-Phase 3.1: Situation Awareness Agent (`situation_awareness.py`)
+- **Cognitive Question**: *"What is happening right now?"*
+- **Role**: Continuous anomaly detector scanning all 505 sensors across Energy, Infrastructure, Environment, and Logistics.
+- **Inputs**:
+  - `engine.get_snapshot()` on each tick (`on_tick`).
+  - Threshold envelopes (high/low limits, maximum rates of change $\Delta X / \Delta t$).
+- **Internal Reasoning Engine**:
+  - Multi-sensor correlation detector (e.g. ambient wind surge correlated with utilidor thermal drop).
+  - Rate-of-change (RoC) tracker across sliding 5-minute windows.
+  - Severity level evaluator (`INFO`, `WARNING`, `CRITICAL`, `EMERGENCY`).
+- **Outputs**:
+  - Creates a new `DeliberationSession` when an anomaly exceeds critical thresholds.
+  - Broadcasts `MessageType.ALERT` to the bus with anomaly details, affected sensor IDs, observed values, and baseline limits.
+- **Unit Test File**: `tests/agents/test_agent_situation_awareness.py`
+  - Nominal steady-state scan (zero false alarms).
+  - High-wind katabatic surge detection.
+  - CHP power droop & over-temperature detection.
+  - Session creation & broadcast verification.
 
 ---
 
-## 5. Verification & Testing Plan
-
-### Automated Test Suites:
-
-1. **`tests/core/test_twin_core.py`**:
-   - `test_master_engine_initialization()`: Verifies all 413 sensors registered and all 4 physics states initialized.
-   - `test_master_clock_synchronization()`: Verifies stepping master engine advances time synchronously across all 4 pillars.
-   - `test_cross_pillar_physical_ripple()`: Injects blizzard $\to$ verifies envelope heat loss $\to$ verifies HVAC valve opens $\to$ verifies CHP load increases $\to$ verifies fuel consumption accelerates.
-   - `test_causal_graph_structure()`: Verifies node count, edge count, and presence of all 4 pillars in the graph.
-   - `test_causal_graph_upstream_root_cause()`: Tests fault in `CHP-1` $\to$ verifies upstream trace locates fuel delivery / electrical governor.
-   - `test_causal_graph_downstream_blast_radius()`: Tests loss of MLVD bus $\to$ verifies downstream impact on UPS, AHUs, RO plant, and Reefers.
-   - `test_causal_graph_react_flow_export()`: Verifies export format contains valid nodes, coordinates, and edges.
-   - `test_sandbox_state_isolation()`: Verifies mutating sandbox state does NOT alter the active master twin state.
-   - `test_sandbox_fast_forward_performance()`: Benchmarks 4-hour forward simulation to ensure completion in $< 50\,\text{ms}$.
-
-2. **`tests/agents/test_framework.py`**:
-   - `test_bus_publish_and_subscribe()`: Verifies targeted message delivery and broadcast.
-   - `test_bus_priority_queueing()`: Verifies `EMERGENCY` messages are delivered before `INFO` messages.
-   - `test_deliberation_session_blackboard()`: Verifies multiple agents can read and append to a shared session.
-   - `test_safety_interlock_tier_1_execution()`: Verifies safe minor adjustment executes autonomously.
-   - `test_safety_interlock_tier_3_guardrail_rejection()`: Verifies attempt to shed medical zone or trip main breaker is blocked without Commander PIN.
-   - `test_safety_interlock_thermal_minimum_enforcement()`: Verifies attempt to set indoor temp to $10^\circ\text{C}$ is rejected by life-support safety rule.
-
-3. **Full Project Regression Run**:
-   - `python -m pytest tests/` must execute all 146 existing sensor tests + all new core/framework tests, achieving 100% pass rate with 0 errors and 0 failures.
+### Sub-Phase 3.2: Diagnostic / Root-Cause Agent (`diagnostic.py`)
+- **Cognitive Question**: *"Why is it happening?"*
+- **Role**: Root-cause isolator that prevents alarm floods by distinguishing between primary faults and secondary symptom cascades.
+- **Inputs**:
+  - Subscribes to `MessageType.ALERT` on the message bus.
+  - Queries `graph.get_upstream_causes(node_id, max_depth=5)` on `TwinCausalGraph`.
+- **Internal Reasoning Engine**:
+  - Upstream graph traversal isolating root physical assets.
+  - Cross-references upstream equipment telemetry to eliminate healthy nodes.
+  - Identifies single root cause (e.g. trace heating breaker trip vs freeze symptom).
+- **Outputs**:
+  - Publishes `MessageType.DIAGNOSIS` targeted to `AgentRole.PREDICTION` and `AgentRole.PLANNING`.
+  - Payload contains `root_cause_asset`, `root_cause_name`, `confidence`, `causal_chain` (list of node IDs), and `explanation`.
+- **Unit Test File**: `tests/agents/test_agent_diagnostic.py`
+  - Isolates fuel delivery fault from day-tank low level.
+  - Isolates utilidor freeze from RO plant failure.
+  - Validates causal path length and attribution confidence.
 
 ---
 
-## 6. User Review & Approval Gateway
+### Sub-Phase 3.3: Prediction Agent (`prediction.py`)
+- **Cognitive Question**: *"What will happen next if unmitigated?"*
+- **Role**: Forward extrapolator computing physical time-to-critical countdowns.
+- **Inputs**:
+  - Subscribes to `MessageType.DIAGNOSIS`.
+  - Queries active twin telemetry (current temperatures, tank levels, battery SOC).
+- **Internal Reasoning Engine**:
+  - First-order thermal decay equation:
+    $$T(t) = T_{\text{ambient}} + (T_0 - T_{\text{ambient}}) \cdot e^{-t / \tau}$$
+  - Fuel exhaustion runway:
+    $$t_{\text{exhaustion}} = \frac{V_{\text{day\_tank}} + V_{\text{bulk}}}{\dot{V}_{\text{fuel\_burn}}}$$
+  - Battery depletion countdown:
+    $$t_{\text{battery}} = \frac{\text{Capacity}_{\text{Ah}} \times \text{SOC}}{I_{\text{critical\_discharge}}}$$
+- **Outputs**:
+  - Publishes `MessageType.PREDICTION_PROJECTION` targeted to `AgentRole.RISK_IMPACT` and `AgentRole.PLANNING`.
+  - Payload contains `time_to_freeze_minutes`, `hours_to_blackout`, `hours_to_fuel_starvation`, and `projected_trajectory`.
+- **Unit Test File**: `tests/agents/test_agent_prediction.py`
+  - Predicts time until living module drops below $16^\circ\text{C}$ during heating loss.
+  - Predicts fuel runway during high-demand blizzard run.
+  - Verifies countdown bounds and mathematical stability.
+
+---
+
+### Sub-Phase 3.4: Risk & Impact Agent (`risk_impact.py`)
+- **Cognitive Question**: *"What could this affect across the station?"*
+- **Role**: Blast-radius evaluator calculating cascading failure spread across the 4 pillars.
+- **Inputs**:
+  - Subscribes to `MessageType.DIAGNOSIS` and `MessageType.PREDICTION_PROJECTION`.
+  - Calls `graph.calculate_blast_radius(root_node_id)` on `TwinCausalGraph`.
+- **Internal Reasoning Engine**:
+  - Traverses downstream dependencies across 4 impact categories:
+    1. **Life Support** (Human thermal comfort, breathable air, potable water, medical facility).
+    2. **Grid Power** (MLVD 400V bus stability, UPS battery reserves, critical IT servers).
+    3. **Structural Health** (Foundation stilt strain, utilidor pipe containment).
+    4. **Mission Readiness** (Aviation helipad, field expedition teams, cargo integrity).
+  - Computes weighted severity score ($0.0$ to $100.0$).
+- **Outputs**:
+  - Publishes `MessageType.IMPACT_ASSESSMENT` targeted to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
+  - Payload contains `severity_score`, `life_support_threat` (boolean), `affected_subsystems`, and `criticality_breakdown`.
+- **Unit Test File**: `tests/agents/test_agent_risk_impact.py`
+  - Evaluates blast radius of MLVD bus failure (threatens all life support).
+  - Evaluates blast radius of localized Reefer compressor failure (logistics only).
+  - Verifies severity scoring accuracy.
+
+---
+
+### Sub-Phase 3.5: Planning / Recommendation Agent (`planning.py`)
+- **Cognitive Question**: *"What operational actions could solve this?"*
+- **Role**: Strategy formulator synthesizing 2 to 3 distinct operational mitigation options.
+- **Inputs**:
+  - Subscribes to `MessageType.IMPACT_ASSESSMENT` and `MessageType.DIAGNOSIS`.
+  - Reads station operating procedures and equipment configuration rules.
+- **Internal Reasoning Engine**:
+  - Formulates competing candidate plans:
+    - **Plan A (Conservative / Resource Preserving)**: E.g., Trim fresh air ventilation by 15%, shed non-essential lab heating, keep single CHP online.
+    - **Plan B (Aggressive / High Reliability)**: E.g., Crank standby CHP-2 immediately, bring hydronic flow to 100%, maintain all heating loops.
+  - Assigns parameter overrides and provisional `AutonomyTier` to each plan.
+- **Outputs**:
+  - Publishes `MessageType.SIM_REQUEST` to `AgentRole.WHAT_IF` to test the candidate plans in the sandbox.
+  - Publishes `MessageType.PROPOSAL` to `AgentRole.RESOURCE_OPTIMIZER` for efficiency critique.
+- **Unit Test File**: `tests/agents/test_agent_planning.py`
+  - Generates valid candidate proposals for a generator trip scenario.
+  - Generates valid candidate proposals for a severe cold blizzard scenario.
+  - Verifies parameter override structure and syntax.
+
+---
+
+### Sub-Phase 3.6: What-If / Simulation Agent (`what_if.py`)
+- **Cognitive Question**: *"What happens if we execute this plan?"*
+- **Role**: Predictive validator executing candidate action plans in `TwinSandbox`.
+- **Inputs**:
+  - Subscribes to `MessageType.SIM_REQUEST` containing candidate action proposals.
+- **Internal Reasoning Engine**:
+  - Forks `TwinSandbox.fork(engine)` into isolated memory.
+  - Injects candidate parameter overrides into the sandbox state.
+  - Executes accelerated forward simulation (4 hours physical time in $< 25\,\text{ms}$).
+  - Compares candidate trajectory against unmitigated baseline:
+    $$\Delta\text{Fuel} = \text{Fuel}_{\text{baseline}} - \text{Fuel}_{\text{candidate}}$$
+    $$\Delta\text{Temp} = T_{\text{candidate\_min}} - T_{\text{baseline\_min}}$$
+  - Checks for safety violations (e.g. indoor temp $< 16^\circ\text{C}$ or load $> 95\%$).
+- **Outputs**:
+  - Publishes `MessageType.SIM_RESULT` targeted to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
+  - Payload contains `simulation_delta`, `fuel_saved_l`, `temp_margin_c`, `is_safe`, and `safety_assessment`.
+- **Unit Test File**: `tests/agents/test_agent_what_if.py`
+  - Fast-forward simulation of Plan A vs Plan B.
+  - Correctly detects safety violation if a plan causes indoor freezing.
+  - Benchmarks execution time ($< 100\,\text{ms}$).
+
+---
+
+### Sub-Phase 3.7: Mission Operations Agent (`mission_ops.py`)
+- **Cognitive Question**: *"Can outdoor missions, helicopter flights, or cargo operations proceed?"*
+- **Role**: Field safety and logistics operational evaluator.
+- **Inputs**:
+  - Subscribes to environmental weather and logistics telemetry.
+  - Tracks status of:
+    - PistenBully PB-01 to PB-06 convoys.
+    - Helicopter flight operations from helipad.
+    - Quilty Bay ship offloading and barge operations.
+    - Fast ice traverse routes.
+- **Internal Reasoning Engine**:
+  - Evaluates weather envelopes:
+    - Helipad: Wind $\le 20\,\text{m/s}$, Visibility $\ge 800\,\text{m}$, Blizzard risk $< 0.6 \implies \text{GO}$.
+    - Fast Ice Route: Ice thickness $\ge 1.5\,\text{m}$, Surface traction $\ge 60\% \implies \text{PASSABLE}$.
+  - Computes operational decision: `GO`, `CAUTION`, `NO_GO`.
+- **Outputs**:
+  - Publishes `MessageType.ADVISORY` or `MessageType.ALERT` on mission safety.
+  - Submits emergency traverse halt or recall proposals if weather deteriorates.
+- **Unit Test File**: `tests/agents/test_agent_mission_ops.py`
+  - Generates `NO_GO` when wind exceeds 25 m/s or whiteout conditions occur.
+  - Generates `GO` under mild summer weather.
+  - Verifies traction and sea-ice safety calculations.
+
+---
+
+### Sub-Phase 3.8: Maintenance Agent (`maintenance.py`)
+- **Cognitive Question**: *"What assets need inspection, maintenance, or spare parts?"*
+- **Role**: Equipment health monitor and Antarctic environmental treaty compliance officer.
+- **Inputs**:
+  - Tracks cumulative running hours across CHPs, vehicles, RO pumps, MBR blowers.
+  - Reads warehouse stores inventory and spares stock levels.
+  - Observes Madrid Protocol waste staging and wastewater discharge quality.
+- **Internal Reasoning Engine**:
+  - Maintenance interval tracking (e.g. Scania CHP 250h oil change, 1000h major overhaul; PB-01 track tension inspection).
+  - Spares stockout risk evaluation.
+  - Environmental discharge compliance verification (MBR effluent COD $< 100\,\text{mg/L}$, BOD $< 25\,\text{mg/L}$).
+- **Outputs**:
+  - Publishes `MessageType.ADVISORY` with maintenance schedules and spares warnings.
+  - Critiques planning proposals that would push an asset past its critical maintenance window.
+- **Unit Test File**: `tests/agents/test_agent_maintenance.py`
+  - Flags overdue maintenance when CHP hours exceed service interval.
+  - Verifies Madrid Protocol waste staging alerts.
+  - Verifies warehouse inventory stockout alerts.
+
+---
+
+### Sub-Phase 3.9: Resource Optimization Agent (`resource_optimizer.py`)
+- **Cognitive Question**: *"How should constrained station resources be balanced globally?"*
+- **Role**: Multi-objective Pareto optimizer balancing competing station priorities:
+  $$\min (\text{Fuel Burn Rate}) \quad \text{subject to} \quad T_{\text{indoor}} \ge 18^\circ\text{C}, \quad P_{\text{grid}} \le 95\%, \quad \text{Water} \ge 3\,\text{days}$$
+- **Inputs**:
+  - Subscribes to `MessageType.PROPOSAL` from Planning Agent.
+  - Observes fuel reserve trajectories, electrical loads, and thermal recovery loops.
+- **Internal Reasoning Engine**:
+  - Evaluates global trade-offs (e.g., shifting RO desalination batch run to daytime when solar is high; peak-shaving battery duty cycles; night setback heating).
+  - Critiques candidate plans that save fuel at the expense of life-support stability.
+- **Outputs**:
+  - Publishes `MessageType.CRITIQUE` on candidate proposals with recommended parameter tweaks.
+  - Publishes `MessageType.CONSENSUS_PLAN` endorsing the optimal trade-off.
+- **Unit Test File**: `tests/agents/test_agent_resource_optimizer.py`
+  - Critiques plan with excessive fuel burn.
+  - Recommends electrical load shifting for RO plant.
+  - Verifies Pareto trade-off scoring.
+
+---
+
+### Sub-Phase 3.10: F.R.I.D.A.Y. Chief AI Orchestrator (`friday_orchestrator.py`)
+- **Cognitive Question**: *"What is the final decision and operational plan for the station commander?"*
+- **Role**: Executive Commander, dialogue manager, and multi-agent coordinator.
+- **Inputs**:
+  - Observes entire `DeliberationSession` blackboard across all agents.
+  - Handles operator queries and commands (terminal or chat interface).
+- **Internal Reasoning Engine**:
+  - Initiates and manages multi-agent deliberation rounds during anomalies.
+  - Synthesizes agent diagnoses, predictions, simulation results, and critiques into a unified **Executive Action Card**:
+    ```
+    ┌─────────────────────────────────────────────────────────────────┐
+    │ F.R.I.D.A.Y. EXECUTIVE ACTION CARD: INCIDENT SES-91A04          │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ Anomaly: Severe Katabatic Blizzard & Heating Demand Surge       │
+    │ Root Cause: Ambient temp plunged to -32.5°C; wind gust 45 m/s   │
+    │ Prediction: Indoor temp will drop to 15.2°C in 48 min           │
+    │ Risk Score: 88.5 / 100 (CRITICAL: Life Support Threat)          │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ Recommended Action: PLAN B (Dual CHP Dispatch & Damper Trim)    │
+    │ • Start Standby CHP-2 to support 155 kWth heating surge         │
+    │ • Trim AHU-01 fresh air damper to 15% to limit thermal loss     │
+    │ • Halts Quilty Bay marine offload and closes helipad            │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ Simulation Validation:                                          │
+    │ • Indoor temp stabilizes at 20.4°C (Safe)                       │
+    │ • Fuel burn increases by +12.4 L/h (Autonomy: 242 days)         │
+    │ Autonomy Tier: TIER 3 (MANDATORY COMMANDER AUTHORIZATION)       │
+    │ PIN Required: [ BHARATI-CMD-2026 ]                              │
+    └─────────────────────────────────────────────────────────────────┘
+    ```
+  - Dispatches validated proposals through `SafetyInterlockManager`.
+- **Outputs**:
+  - Publishes `MessageType.CONSENSUS_PLAN` and dispatches execution.
+  - Provides natural-language reasoning summary for operator explanation.
+- **Unit Test File**: `tests/agents/test_friday_orchestrator.py`
+  - Full end-to-end deliberation round on blizzard incident.
+  - Executive Action Card generation.
+  - Tier 3 Commander confirmation execution.
+
+---
+
+## 3. End-to-End Deliberation Integration Test (`tests/agents/test_deliberation_loop.py`)
+
+Following the completion of sub-phases 3.1 through 3.10, an end-to-end multi-agent integration test will verify the complete cognitive chain:
+1. Master engine injects `BLIZZARD_STRIKE`.
+2. `SituationAwarenessAgent` fires `ALERT` and spawns session.
+3. `DiagnosticRootCauseAgent` attributes root cause to katabatic weather surge.
+4. `PredictionAgent` calculates thermal decay countdown.
+5. `RiskImpactAgent` computes life-support blast radius (88/100).
+6. `PlanningRecommendationAgent` formulates Plan A and Plan B.
+7. `WhatIfSimulationAgent` forks sandbox, validates Plan B, and rejects Plan A for indoor freezing.
+8. `MissionOperationsAgent` issues Helipad and Traverse `NO_GO`.
+9. `ResourceOptimizationAgent` approves Plan B fuel-to-warmth ratio.
+10. `FridayOrchestrator` compiles Executive Action Card, verifies Commander PIN, and executes on the live digital twin.
+
+---
+
+## 4. Verification Plan
+
+### Test Strategy:
+- Each of the 10 agents has its own dedicated test file (`test_agent_<name>.py`).
+- 10 new test files + 1 end-to-end integration test file.
+- Strict regression baseline: all 171 existing unit tests must remain 100% green after each sub-phase.
+
+### Execution Plan:
+- We will execute Sub-Phase 3.1 first, verify its unit tests, and then proceed sequentially through Sub-Phase 3.10.
+
+---
+
+## 5. User Review & Approval Gateway
 
 > [!IMPORTANT]
-> **Next Action**:
-> This implementation plan focuses **exclusively on Phase 1 and Phase 2**.
-> Once approved, we will build:
-> 1. `backend/core/` (`engine.py`, `causal_graph.py`, `sandbox.py`) and verify with `tests/core/test_twin_core.py`.
-> 2. `backend/agents/framework/` (`models.py`, `bus.py`, `safety_interlock.py`, `base_agent.py`) and verify with `tests/agents/test_framework.py`.
+> **Sub-Phase 3.1 Initiation**:
+> We are ready to begin **Sub-Phase 3.1: Situation Awareness Agent** (`backend/agents/specialized/situation_awareness.py` and `tests/agents/test_agent_situation_awareness.py`).
 >
-> Please confirm if you approve starting implementation of **Phase 1**!
+> Please confirm if you approve proceeding with **Sub-Phase 3.1**!

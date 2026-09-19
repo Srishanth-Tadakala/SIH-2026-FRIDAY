@@ -42,6 +42,8 @@ class MessageType(str, Enum):
     """Semantic intent of an inter-agent message."""
     ALERT = "ALERT"
     QUERY = "QUERY"
+    RESPONSE = "RESPONSE"
+    ADVISORY = "ADVISORY"
     DIAGNOSIS = "DIAGNOSIS"
     PREDICTION_PROJECTION = "PREDICTION_PROJECTION"
     IMPACT_ASSESSMENT = "IMPACT_ASSESSMENT"
