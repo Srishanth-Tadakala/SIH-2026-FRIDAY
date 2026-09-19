@@ -1,0 +1,138 @@
+"""High-Performance In-Memory Agent Message Bus.
+
+Part of SIH 2026 Project SIH26060: F.R.I.D.A.Y.
+Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations.
+Target: Bharati Research Station, Larsemann Hills, East Antarctica.
+
+ARCHITECTURAL PRINCIPLES:
+1. Event-Driven Publish/Subscribe: Allows agents to communicate, debate, critique,
+   and coordinate asynchronously or synchronously.
+2. Priority Routing: Emergency and Critical alerts jump ahead to ensure immediate
+   life-support and mission protection.
+3. Dialogue Audit Trail: Every inter-agent message is stored with session context
+   for transparent replay and real-time streaming to the React Flow frontend.
+4. Deliberation Session Tracking: Central blackboard registry maintaining active
+   incident sessions and shared hypothesis contexts.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import Any, Callable
+
+from .models import (
+    AgentMessage,
+    AgentRole,
+    DeliberationSession,
+    MessageType,
+    SeverityLevel,
+)
+
+
+class AgentMessageBus:
+    """Central event broker and dialogue recording bus for F.R.I.D.A.Y. agents."""
+
+    def __init__(self) -> None:
+        # Role-based subscribers: role -> list of callbacks
+        self._role_subscribers: dict[AgentRole, list[Callable[[AgentMessage], None]]] = defaultdict(list)
+        # Type-based subscribers: message_type -> list of callbacks
+        self._type_subscribers: dict[MessageType, list[Callable[[AgentMessage], None]]] = defaultdict(list)
+        # Global broadcast subscribers: list of callbacks
+        self._broadcast_subscribers: list[Callable[[AgentMessage], None]] = []
+
+        # Audit history & active sessions
+        self._message_history: list[AgentMessage] = []
+        self._sessions: dict[str, DeliberationSession] = {}
+
+    @property
+    def total_messages_processed(self) -> int:
+        """Total messages routed through the bus."""
+        return len(self._message_history)
+
+    def subscribe_role(
+        self,
+        role: AgentRole,
+        callback: Callable[[AgentMessage], None],
+    ) -> None:
+        """Register a callback for messages addressed specifically to an agent role or BROADCAST."""
+        self._role_subscribers[role].append(callback)
+
+    def subscribe_type(
+        self,
+        msg_type: MessageType,
+        callback: Callable[[AgentMessage], None],
+    ) -> None:
+        """Register a callback for messages of a specific semantic type (e.g. ALERT, PROPOSAL)."""
+        self._type_subscribers[msg_type].append(callback)
+
+    def subscribe_broadcast(
+        self,
+        callback: Callable[[AgentMessage], None],
+    ) -> None:
+        """Register a global callback receiving all messages published on the bus."""
+        self._broadcast_subscribers.append(callback)
+
+    def create_session(
+        self,
+        trigger_alert: dict[str, Any] | None = None,
+    ) -> DeliberationSession:
+        """Create and register a new DeliberationSession blackboard."""
+        session = DeliberationSession(
+            trigger_alert=trigger_alert or {},
+        )
+        self._sessions[session.session_id] = session
+        return session
+
+    def get_session(self, session_id: str) -> DeliberationSession | None:
+        """Retrieve a deliberation session by its unique ID."""
+        return self._sessions.get(session_id)
+
+    def get_all_sessions(self) -> list[DeliberationSession]:
+        """Return all active or past deliberation sessions."""
+        return list(self._sessions.values())
+
+    def publish(self, message: AgentMessage) -> None:
+        """Publish a message onto the bus and dispatch it to relevant subscribers."""
+        # 1. Record in global audit history
+        self._message_history.append(message)
+
+        # 2. Append to deliberation session transcript if registered
+        session = self._sessions.get(message.session_id)
+        if session is not None:
+            session.transcript.append(message)
+
+        # 3. Dispatch to Global broadcast subscribers
+        for cb in self._broadcast_subscribers:
+            cb(message)
+
+        # 4. Dispatch to Type-based subscribers
+        for cb in self._type_subscribers.get(message.message_type, []):
+            cb(message)
+
+        # 5. Dispatch to Role-based recipient
+        if message.recipient == "BROADCAST":
+            for role_subscribers in self._role_subscribers.values():
+                for cb in role_subscribers:
+                    cb(message)
+        elif isinstance(message.recipient, AgentRole):
+            for cb in self._role_subscribers.get(message.recipient, []):
+                cb(message)
+
+    def get_session_transcript(self, session_id: str) -> list[AgentMessage]:
+        """Return the chronological dialogue transcript for a deliberation session."""
+        session = self._sessions.get(session_id)
+        if session:
+            return list(session.transcript)
+        return [m for m in self._message_history if m.session_id == session_id]
+
+    def get_recent_messages(self, limit: int = 50) -> list[AgentMessage]:
+        """Return the N most recent messages dispatched across the platform."""
+        return self._message_history[-limit:]
+
+    def clear(self) -> None:
+        """Clear all subscribers, sessions, and message history (primarily for unit testing)."""
+        self._role_subscribers.clear()
+        self._type_subscribers.clear()
+        self._broadcast_subscribers.clear()
+        self._message_history.clear()
+        self._sessions.clear()
