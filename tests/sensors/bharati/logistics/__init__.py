@@ -1,0 +1,1 @@
+"""Logistics sensors tests package."""

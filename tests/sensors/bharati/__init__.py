@@ -1,0 +1,1 @@
+"""Tests bharati sensors package."""
