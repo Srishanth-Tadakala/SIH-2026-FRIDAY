@@ -1,4 +1,4 @@
-# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.4 Implementation
+# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.5 Implementation
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
@@ -9,7 +9,8 @@
 - **Sub-Phase 3.2**: Diagnostic / Root-Cause Agent (Completed & Verified)  
 - **Sub-Phase 3.3**: Prediction Agent (Completed & Verified)  
 - **Sub-Phase 3.4**: Risk & Impact Agent (Completed & Verified)  
-**Total Test Results**: **199 passed in 4.23s (0 failures, 0 errors, 100% green)**.
+- **Sub-Phase 3.5**: Planning / Recommendation Agent (Completed & Verified)  
+**Total Test Results**: **206 passed in 4.12s (0 failures, 0 errors, 100% green)**.
 
 ---
 
@@ -28,8 +29,8 @@
 │  ├── [COMPLETED] Sub-Phase 3.2: Diagnostic / Root-Cause Agent ("Why is it happening?")    │
 │  ├── [COMPLETED] Sub-Phase 3.3: Prediction Agent ("What is likely to happen next?")       │
 │  ├── [COMPLETED] Sub-Phase 3.4: Risk & Impact Agent ("What could this affect?")           │
-│  ├── [PENDING APPROVAL] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions?")  │
-│  ├── [PENDING] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change something?") │
+│  ├── [COMPLETED] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions to take?") │
+│  ├── [PENDING APPROVAL] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change it?")│
 │  ├── [PENDING] Sub-Phase 3.7: Mission Operations Agent ("Can missions proceed safely?")  │
 │  ├── [PENDING] Sub-Phase 3.8: Maintenance Agent ("What assets need spares / attention?")  │
 │  ├── [PENDING] Sub-Phase 3.9: Resource Optimization Agent ("How to allocate fuel/water?") │
@@ -49,30 +50,37 @@
 
 ---
 
-## 2. Sub-Phase 3.4: Risk & Impact Agent
+## 2. Sub-Phase 3.5: Planning / Recommendation Agent
 
 ### Files Created / Modified:
-1. `backend/agents/specialized/risk_impact.py` (`RiskImpactAgent`, `ImpactAssessment`)
+1. `backend/agents/specialized/planning.py` (`PlanningAgent`)
 2. `backend/agents/specialized/__init__.py` (Package exports)
-3. `tests/agents/test_agent_risk_impact.py` (7 specialized unit tests)
+3. `backend/agents/framework/models.py` (Added `to_dict()` serialization to `ActionProposal`)
+4. `tests/agents/test_agent_planning.py` (7 specialized unit tests)
 
 ### Key Capabilities Implemented:
-1. **Downstream Blast Radius Quantification**:
-   - Traverses outgoing dependencies from root-cause nodes on `TwinCausalGraph` to determine the complete cascade of impacted physical assets.
-   - Evaluates affected node distributions across criticality tiers 1 through 5.
-2. **Life-Support & Crew Safety Threat Matrix**:
-   - Assesses critical habitat life-support systems: Living Zone thermal envelope ($\ge 16.0^\circ\text{C}$ floor), Potable Water minimum reserve (1,500 L floor), Medical Ward electrical feeds, and Emergency Refuge readiness.
-   - Assigns qualitative human safety categories: `NEGLIGIBLE`, `MODERATE`, `SEVERE`, `LIFE_THREATENING`.
-3. **Mission Operations Capability Impact**:
-   - Evaluates operational disruptions to the Bharati Helipad deck, ground perimeter ring routes, fast ice traverses, and cold chain provision storage (Reefer-01).
-4. **Time-to-Violation Urgency Multiplier**:
-   - Incorporates `time_to_critical_seconds` from Prediction Agent: short time-to-breach ($< 30\,\text{mins}$) multiplies the composite severity score by up to $1.35\times$.
-5. **Deliberation Session Blackboard & Downstream Pub/Sub Dispatch**:
-   - Subscribes to `MessageType.PREDICTION_PROJECTION` and `MessageType.DIAGNOSIS`.
-   - Automatically populates `session.risk_assessment` on the shared `DeliberationSession` blackboard.
-   - Dispatches `MessageType.IMPACT_ASSESSMENT` to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
-6. **Interactive Risk Queries**:
-   - Responds to `MessageType.QUERY` requests with asset blast radius breakdowns and containment priority checklists.
+1. **Antarctic Operational SOP Playbook Formulation**:
+   - Synthesizes incident diagnoses, lookahead trends, and blast radius constraints to formulate prioritized `ActionProposal`s:
+     - **Generator Trip**: Automatically drafts proposals to sequence standby generator CHP-02 to active running status ($65\,\text{kW}$) and load-shed non-critical scientific research lab heating.
+     - **Utilidor Freeze**: Drafts proposals to engage secondary electric trace heating tape and initiate warm thermal recirculation flush.
+     - **Katabatic Blizzard**: Transitions HVAC AHU-01 and AHU-02 to 90% recirculation mode (sealing fresh air intake against snow ingress) and grounds outdoor field traverses.
+     - **Cold Chain Excursion**: Re-routes Reefer-01 auxiliary electrical feed and cycles backup compressor.
+     - **Day Tank Fuel Depletion**: Activates fuel transfer pump skid from Bulk Fuel Tank 01.
+2. **Tiered Autonomy Pre-Screening**:
+   - Categorizes each candidate proposal into:
+     - `TIER_1_AUTONOMOUS`: Reversible, low-risk micro-adjustments and standby starts.
+     - `TIER_2_SUPERVISED`: 60-second engineer countdown veto window.
+     - `TIER_3_COMMANDER_CONFIRMATION`: High-consequence life-safety, bus de-energization, or shelter evacuation.
+3. **Safety Interlock Guardrail Verification**:
+   - Pre-screens every proposal against `SafetyInterlockManager`:
+     - Blocks attempts to command living habitat below $16.0^\circ\text{C}$ (`ERR_THERMAL_LIFE_SUPPORT`).
+     - Blocks attempts to deplete potable water below $1,500\,\text{L}$ (`ERR_POTABLE_WATER_MINIMUM`).
+     - Rejects violating proposals with `ProposalStatus.REJECTED` and detailed rejection rationale.
+4. **Deliberation Session Blackboard & Downstream Pub/Sub Dispatch**:
+   - Automatically populates `session.candidate_proposals` on the shared `DeliberationSession` blackboard.
+   - Dispatches `MessageType.PROPOSAL` messages to `AgentRole.WHAT_IF` (for accelerated forward sandbox verification) and `AgentRole.FRIDAY_ORCHESTRATOR`.
+5. **Interactive Operational Planning Queries**:
+   - Responds to `MessageType.QUERY` requests with formulated candidate proposal packages for any specified station asset.
 
 ---
 
@@ -87,7 +95,7 @@ python -m pytest tests/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-collected 199 items
+collected 206 items
 
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_engine_initialization PASSED
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_clock_synchronization PASSED
@@ -142,15 +150,22 @@ tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_utilidor_pipe_
 tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_urgency_multiplier_short_time_to_violation PASSED
 tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_deliberation_session_blackboard_and_bus_dispatch PASSED
 tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent::test_interactive_query_response PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_initialization_and_clean_state PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_generator_trip_sop_proposal_formulation PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_utilidor_freeze_mitigation_proposal PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_katabatic_blizzard_hvac_recirculation_proposal PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_safety_interlock_guardrail_rejection_of_invalid_proposal PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_deliberation_session_blackboard_and_whatif_dispatch PASSED
+tests/agents/test_agent_planning.py::TestPlanningAgent::test_interactive_query_response PASSED
 ... [146 original sensor tests across Energy, Infrastructure, Environment, Logistics] ...
 
-============================= 199 passed in 4.23s =============================
+============================= 206 passed in 4.12s =============================
 ```
 
 ---
 
-## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.5
+## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.6
 
 In accordance with strict pairing instructions:
-- **Sub-Phase 3.4 is 100% complete and tested.**
-- **Awaiting Operator Approval before starting Sub-Phase 3.5 (Planning / Recommendation Agent: `planning.py`).**
+- **Sub-Phase 3.5 is 100% complete and tested.**
+- **Awaiting Operator Approval before starting Sub-Phase 3.6 (What-If / Simulation Agent: `what_if.py`).**

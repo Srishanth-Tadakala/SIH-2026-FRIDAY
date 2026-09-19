@@ -125,6 +125,21 @@ class ActionProposal:
     status: ProposalStatus = ProposalStatus.DRAFT
     created_at: float = field(default_factory=time.time)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize action proposal to dictionary for JSON streaming and bus messaging."""
+        return {
+            "proposal_id": self.proposal_id,
+            "title": self.title,
+            "target_subsystem": self.target_subsystem,
+            "parameter_overrides": self.parameter_overrides,
+            "tier": self.tier.value if isinstance(self.tier, AutonomyTier) else self.tier,
+            "rationale": self.rationale,
+            "projected_impact": self.projected_impact,
+            "simulation_delta": self.simulation_delta,
+            "status": self.status.value if isinstance(self.status, ProposalStatus) else self.status,
+            "created_at": self.created_at,
+        }
+
 
 @dataclass
 class DeliberationSession:
