@@ -30,6 +30,12 @@ from .mission_ops import (
 )
 from .planning import PlanningAgent
 from .prediction import PredictionAgent, PredictionProjection
+from .resource_optimizer import (
+    CHPDispatchRecommendation,
+    OptimizationObjective,
+    ResourceOptimizationPlan,
+    ResourceOptimizerAgent,
+)
 from .risk_impact import ImpactAssessment, RiskImpactAgent
 from .situation_awareness import AnomalyRecord, SituationAwarenessAgent
 from .what_if import PlanSimulationVerdict, WhatIfSimulationAgent
@@ -54,4 +60,8 @@ __all__ = [
     "MaintenanceUrgency",
     "AssetMaintenanceProfile",
     "MaintenanceHealthReport",
+    "ResourceOptimizerAgent",
+    "ResourceOptimizationPlan",
+    "CHPDispatchRecommendation",
+    "OptimizationObjective",
 ]
