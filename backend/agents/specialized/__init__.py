@@ -10,11 +10,18 @@ Exports:
 - RiskImpactAgent (Sub-Phase 3.4)
 - PlanningAgent (Sub-Phase 3.5)
 - WhatIfSimulationAgent (Sub-Phase 3.6)
+- MissionOpsAgent (Sub-Phase 3.7)
 """
 
 from __future__ import annotations
 
 from .diagnostic import DiagnosisResult, DiagnosticAgent
+from .mission_ops import (
+    FieldPartyStatus,
+    MissionFeasibilityAssessment,
+    MissionOperationalStatus,
+    MissionOpsAgent,
+)
 from .planning import PlanningAgent
 from .prediction import PredictionAgent, PredictionProjection
 from .risk_impact import ImpactAssessment, RiskImpactAgent
@@ -33,4 +40,8 @@ __all__ = [
     "PlanningAgent",
     "WhatIfSimulationAgent",
     "PlanSimulationVerdict",
+    "MissionOpsAgent",
+    "MissionOperationalStatus",
+    "FieldPartyStatus",
+    "MissionFeasibilityAssessment",
 ]

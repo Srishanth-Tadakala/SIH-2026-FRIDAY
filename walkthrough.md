@@ -1,4 +1,4 @@
-# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.6 Implementation
+# Walkthrough: Phase 1, Phase 2 & Sub-Phases 3.1–3.7 Implementation
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
@@ -11,7 +11,8 @@
 - **Sub-Phase 3.4**: Risk & Impact Agent (Completed & Verified)  
 - **Sub-Phase 3.5**: Planning / Recommendation Agent (Completed & Verified)  
 - **Sub-Phase 3.6**: What-If / Simulation Agent (Completed & Verified)  
-**Total Test Results**: **213 passed in 5.25s (0 failures, 0 errors, 100% green)**.
+- **Sub-Phase 3.7**: Mission Operations Agent (Completed & Verified)  
+**Total Test Results**: **220 passed in 5.35s (0 failures, 0 errors, 100% green)**.
 
 ---
 
@@ -32,8 +33,8 @@
 │  ├── [COMPLETED] Sub-Phase 3.4: Risk & Impact Agent ("What could this affect?")           │
 │  ├── [COMPLETED] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions to take?") │
 │  ├── [COMPLETED] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change it?")      │
-│  ├── [PENDING APPROVAL] Sub-Phase 3.7: Mission Operations Agent ("Can missions proceed?") │
-│  ├── [PENDING] Sub-Phase 3.8: Maintenance Agent ("What assets need spares / attention?")  │
+│  ├── [COMPLETED] Sub-Phase 3.7: Mission Operations Agent ("Can missions proceed safely?") │
+│  ├── [PENDING APPROVAL] Sub-Phase 3.8: Maintenance Agent ("What assets need spares?")    │
 │  ├── [PENDING] Sub-Phase 3.9: Resource Optimization Agent ("How to allocate fuel/water?") │
 │  └── [PENDING] Sub-Phase 3.10: F.R.I.D.A.Y. Master Orchestrator ("Supervisory Control")   │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
@@ -51,36 +52,28 @@
 
 ---
 
-## 2. Sub-Phase 3.6: What-If / Simulation Agent
+## 2. Sub-Phase 3.7: Mission Operations Agent
 
 ### Files Created / Modified:
-1. `backend/agents/specialized/what_if.py` (`WhatIfSimulationAgent`, `PlanSimulationVerdict`)
+1. `backend/agents/specialized/mission_ops.py` (`MissionOpsAgent`, `MissionFeasibilityAssessment`, `FieldPartyStatus`, `MissionOperationalStatus`)
 2. `backend/agents/specialized/__init__.py` (Package exports)
-3. `tests/agents/test_agent_what_if.py` (7 specialized unit tests)
+3. `tests/agents/test_agent_mission_ops.py` (7 specialized unit tests)
 
 ### Key Capabilities Implemented:
-1. **Counterfactual Forward Simulation via In-Memory Sandboxes**:
-   - For every candidate `ActionProposal`, forks an unmitigated baseline sandbox and a candidate plan sandbox (`TwinSandbox.fork(engine)`).
-   - Fast-forwards coupled station dynamics across configurable horizons ($1\,\text{h}$, $2\,\text{h}$, $4\,\text{h}$) at accelerated rates ($>1000\times$).
-   - Evaluates quantitative trajectory delta metrics via `TwinSandbox.compare_trajectories()`:
-     - Fuel consumed delta ($\Delta L$) and percentage saved
-     - Minimum indoor temperature margin ($\Delta^\circ\text{C}$)
-     - Battery reserve margin ($\Delta\%$)
-     - Composite risk reduction score ($\%$)
-2. **Antarctic Life-Support Floor & Safety Enforcement**:
-   - Checks trajectory outcomes and parameter overrides against mandatory life-support floors:
-     - Indoor living temperature must not breach $16.0^\circ\text{C}$ minimum
-     - Critical UPS battery buffer must not breach $30.0\%$ reserve
-     - Electrical capacity must not exceed continuous rating ($190.0\,\text{kW}$)
-   - Rejects unsafe plans with `is_safe=False` and status `ProposalStatus.REJECTED`.
-3. **Cyclic Deliberation Feedback & Counterfactual Critiques**:
-   - Rather than acting as a passive linear pipeline, when an unsafe plan is detected, publishes an explicit `MessageType.CRITIQUE` back to `AgentRole.PLANNING`.
-   - Populates `DeliberationSession.critiques` on the shared blackboard, forcing the Planning Agent to re-deliberate and generate safer alternatives.
-4. **Multi-Proposal Comparative Ranking**:
-   - Implements `compare_proposals()` to evaluate and rank multiple competing operational strategies.
-   - Orders proposals: Safe plans first, followed by highest risk reduction, highest thermal stability margin, and fuel savings.
-5. **Zero Mutation Guarantee**:
-   - Verified that extreme forward simulations operate in complete memory decoupling without altering master twin state, simulation clock, or telemetry readings.
+1. **Field Expedition Safety Envelope Tracking**:
+   - Tracks active field party telemetry (Team 01, Team 02): distance from Bharati base, return margin minutes, and radio check status (zero PII, anonymous group IDs).
+   - Detects overdue return cutoffs and missed radio check cycles, triggering immediate search party standby actions.
+2. **Polar Environmental Limits & Wind Chill Calculation**:
+   - Implements standardized Antarctic wind chill index ($T_{wc}$).
+   - Evaluates severe weather thresholds:
+     - Aviation flight window grounding ($\text{Wind} \ge 18\,\text{m/s}$ or $\text{Visibility} < 800\,\text{m}$).
+     - Ground traverse closure and mandatory whiteout recall ($\text{Wind} \ge 25\,\text{m/s}$, $\text{Visibility} < 300\,\text{m}$, or $T_{wc} < -50^\circ\text{C}$).
+3. **Cyclic Deliberation Constraint & Comms Defense Loop**:
+   - **Communications Defense**: When the Planning Agent or Orchestrator proposes electrical load shedding, Mission Ops intercepts the proposal. If outdoor field teams are deployed, it **vetoes** attempts to de-energize radio repeaters, satcom uplinks, or telemetry antennas (`MISSION_COMMS_PRESERVATION`).
+   - **Outdoor Blizzard Exposure Veto**: Rejects proposals scheduling manual outdoor physical tasks or snowcat yard transfers during blizzard strikes ($>25\,\text{m/s}$).
+   - Publishes `MessageType.CRITIQUE` to `AgentRole.PLANNING` and logs critique payloads onto `session.critiques` on the shared blackboard.
+4. **Interactive Mission Queries & Weather Alerts**:
+   - Answers `MessageType.QUERY` requests from human operators or orchestrators with comprehensive operational status packages (`MissionFeasibilityAssessment`).
 
 ---
 
@@ -95,23 +88,23 @@ python -m pytest tests/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-collected 213 items
+collected 220 items
 
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_engine_initialization PASSED
 ...
-tests/agents/test_agent_planning.py::TestPlanningAgent::test_interactive_query_response PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_initialization_and_clean_state PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_counterfactual_simulation_baseline_vs_candidate PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_unsafe_plan_rejection_and_counterfactual_critique PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_pubsub_proposal_evaluation_and_feedback_dispatch PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_multi_proposal_comparative_ranking PASSED
-tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_explicit_sim_request_handling PASSED
 tests/agents/test_agent_what_if.py::TestWhatIfSimulationAgent::test_zero_mutation_contamination PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_initialization_and_clean_state PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_nominal_mission_envelope_assessment PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_blizzard_severe_weather_mandatory_recall PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_field_team_overdue_and_radio_loss_detection PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_cyclic_critique_defense_of_mission_comms PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_cyclic_critique_outdoor_blizzard_exposure_veto PASSED
+tests/agents/test_agent_mission_ops.py::TestMissionOpsAgent::test_pubsub_deliberation_session_critique_dispatch PASSED
 
-============================= 213 passed in 5.25s =============================
+============================= 220 passed in 5.35s =============================
 ```
 
 ---
 
-## 4. Next Step: Sub-Phase 3.7
-Awaiting user explicit approval before beginning **Sub-Phase 3.7: Mission Operations Agent (`backend/agents/specialized/mission_ops.py`)**.
+## 4. Next Step: Sub-Phase 3.8
+Awaiting user explicit approval before beginning **Sub-Phase 3.8: Maintenance Agent (`backend/agents/specialized/maintenance.py`)**.
