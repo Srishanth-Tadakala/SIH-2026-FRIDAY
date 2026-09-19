@@ -1,4 +1,4 @@
-# Walkthrough: Phase 1, Phase 2 & Sub-Phase 3.1 Implementation
+# Walkthrough: Phase 1, Phase 2, Sub-Phase 3.1 & Sub-Phase 3.2 Implementation
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
@@ -6,7 +6,8 @@
 - **Phase 1**: Digital Twin Core & Causal Graph Engine (Completed & Verified)  
 - **Phase 2**: Multi-Agent Message Bus & Safety Interlocks (Completed & Verified)  
 - **Sub-Phase 3.1**: Situation Awareness Agent (Completed & Verified)  
-**Total Test Results**: **178 passed in 1.71s (0 failures, 0 errors, 100% green)**.
+- **Sub-Phase 3.2**: Diagnostic / Root-Cause Agent (Completed & Verified)  
+**Total Test Results**: **185 passed in 1.85s (0 failures, 0 errors, 100% green)**.
 
 ---
 
@@ -22,8 +23,8 @@
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │  3. F.R.I.D.A.Y. COGNITIVE AGENTS (10 Sub-Phases)                                         │
 │  ├── [COMPLETED] Sub-Phase 3.1: Situation Awareness Agent ("What is happening now?")      │
-│  ├── [PENDING APPROVAL] Sub-Phase 3.2: Diagnostic / Root-Cause Agent ("Why is it happening?") │
-│  ├── [PENDING] Sub-Phase 3.3: Prediction Agent ("What is likely to happen next?")         │
+│  ├── [COMPLETED] Sub-Phase 3.2: Diagnostic / Root-Cause Agent ("Why is it happening?")    │
+│  ├── [PENDING APPROVAL] Sub-Phase 3.3: Prediction Agent ("What is likely to happen next?") │
 │  ├── [PENDING] Sub-Phase 3.4: Risk & Impact Agent ("What could this affect?")             │
 │  ├── [PENDING] Sub-Phase 3.5: Planning / Recommendation Agent ("What actions to consider?")│
 │  ├── [PENDING] Sub-Phase 3.6: What-If / Simulation Agent ("What if we change something?") │
@@ -46,35 +47,37 @@
 
 ---
 
-## 2. Sub-Phase 3.1: Situation Awareness Agent
+## 2. Sub-Phase 3.2: Diagnostic / Root-Cause Agent
 
 ### Files Created / Modified:
-1. `backend/agents/specialized/situation_awareness.py` (`SituationAwarenessAgent`, `AnomalyRecord`)
+1. `backend/agents/specialized/diagnostic.py` (`DiagnosticAgent`, `DiagnosisResult`, `SENSOR_TO_NODE_MAP`)
 2. `backend/agents/specialized/__init__.py` (Package exports)
-3. `backend/agents/framework/models.py` (Added `RESPONSE` and `ADVISORY` to `MessageType`)
-4. `tests/agents/test_agent_situation_awareness.py` (7 specialized unit tests)
+3. `tests/agents/test_agent_diagnostic.py` (7 specialized unit tests)
 
 ### Key Capabilities Implemented:
-1. **Perception Pipeline (`scan_telemetry`)**:
-   - Scans all 505 sensors across Energy, Infrastructure, Environment, and Logistics pillars on every tick.
-   - Monitors physical limit boundaries (katabatic blizzard speeds, indoor thermal envelopes, fuel reserves, utilidor water line freeze thresholds, cold chain storage limits).
-2. **Rate-of-Change (RoC) Tracking**:
-   - Maintains sliding window deques (5-minute window) recording timestamps and physical readings for critical assets.
-   - Computes derivatives $\frac{\Delta X}{\Delta t}$ to detect acute deterioration (such as indoor temperatures dropping faster than $0.02^\circ\text{C}/\text{s}$ or wind acceleration) before hard thresholds are crossed.
-3. **Multi-Sensor Anomaly Correlation**:
-   - Correlates environmental storm conditions with utilidor pipe cooling and building thermal loss.
-   - Flags station-wide emergencies (e.g. Total Station Blackout when all 3 CHP units and the battery bus are unpowered).
-4. **Deliberation Session Initiation & Broadcasting**:
-   - Automatically initiates a `DeliberationSession` on the `AgentMessageBus` when a critical or emergency anomaly is detected.
-   - Broadcasts structured `MessageType.ALERT` payloads containing primary sensor, observed value, threshold value, rate of change, and correlated sensor tags.
-5. **Interactive Operational Status Queries**:
-   - Handles `MessageType.QUERY` requests from F.R.I.D.A.Y. Orchestrator or human operators and returns a real-time station situation summary.
+1. **Upstream Topological Graph Traversal**:
+   - Walks incoming causal dependency edges from any symptom node up to depth 6 in $O(V+E)$ time.
+   - Traces multi-hop propagation chains (e.g. `day_tank` $\to$ `chp_1` $\to$ `mlvd_bus`).
+2. **Telemetry Corroboration & Healthy Node Elimination**:
+   - Inspects real-time digital twin sensor telemetry and physical state representations (`_evaluate_node_health`).
+   - Safely extracts scalar and object telemetry using robust value unwrapping (`_extract_val`).
+   - Distinguishes between originating primary equipment failures vs dependent cascading symptoms.
+3. **Multi-Hop Root-Cause Isolation**:
+   - Correctly prioritizes upstream originating faults over downstream symptoms (e.g. Day Tank fuel depletion vs tripping generators vs power bus alarms).
+4. **Environmental External Disturbance Detection**:
+   - Distinguishes external atmospheric stressors (e.g. Katabatic Blizzard storm winds $> 30\,\text{m/s}$) from internal mechanical failure, setting `is_environmental=True`.
+5. **Deliberation Session Blackboard & Downstream Pub/Sub Dispatch**:
+   - Listens to incoming `MessageType.ALERT` events from Situation Awareness.
+   - Automatically updates `session.root_causes` on the shared blackboard.
+   - Dispatches targeted `MessageType.DIAGNOSIS` messages to `AgentRole.PREDICTION` and `AgentRole.PLANNING`.
+6. **Interactive Operational Diagnostic Inquiries**:
+   - Responds to `MessageType.QUERY` requests from human operators or F.R.I.D.A.Y. Orchestrator with structured diagnostic narratives and causal chains.
 
 ---
 
 ## 3. Test Verification & Code Correctness
 
-### Regression & Sub-Phase 3.1 Test Suite Run:
+### Full Regression & Multi-Agent Test Suite Run:
 ```bash
 python -m pytest tests/ -v
 ```
@@ -83,7 +86,7 @@ python -m pytest tests/ -v
 ============================= test session starts =============================
 platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-collected 178 items
+collected 185 items
 
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_engine_initialization PASSED
 tests/core/test_twin_core.py::TestTwinCoreEngine::test_master_clock_synchronization PASSED
@@ -117,15 +120,22 @@ tests/agents/test_agent_situation_awareness.py::TestSituationAwarenessAgent::tes
 tests/agents/test_agent_situation_awareness.py::TestSituationAwarenessAgent::test_utilidor_freeze_risk_detection PASSED
 tests/agents/test_agent_situation_awareness.py::TestSituationAwarenessAgent::test_cold_chain_excursion_detection PASSED
 tests/agents/test_agent_situation_awareness.py::TestSituationAwarenessAgent::test_interactive_query_response PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_initialization_and_clean_state PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_direct_generator_trip_root_cause_diagnosis PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_multi_hop_fuel_depletion_root_cause PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_katabatic_storm_environmental_root_cause PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_utilidor_water_freeze_root_cause PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_deliberation_session_integration_and_bus_dispatch PASSED
+tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent::test_interactive_query_response PASSED
 ... [146 original sensor tests across Energy, Infrastructure, Environment, Logistics] ...
 
-============================= 178 passed in 1.71s =============================
+============================= 185 passed in 1.85s =============================
 ```
 
 ---
 
-## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.2
+## 4. Next Step: Awaiting Explicit Approval for Sub-Phase 3.3
 
 In accordance with strict pairing instructions:
-- **Sub-Phase 3.1 is 100% complete and tested.**
-- **Awaiting Operator Approval before starting Sub-Phase 3.2 (Diagnostic / Root-Cause Agent: `diagnostic.py`).**
+- **Sub-Phase 3.2 is 100% complete and tested.**
+- **Awaiting Operator Approval before starting Sub-Phase 3.3 (Prediction Agent: `prediction.py`).**
