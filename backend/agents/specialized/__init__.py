@@ -6,11 +6,13 @@ Digital Platform for Efficient Remote Management of Indian Antarctic Research St
 Exports:
 - SituationAwarenessAgent (Sub-Phase 3.1)
 - DiagnosticAgent (Sub-Phase 3.2)
+- PredictionAgent (Sub-Phase 3.3)
 """
 
 from __future__ import annotations
 
 from .diagnostic import DiagnosisResult, DiagnosticAgent
+from .prediction import PredictionAgent, PredictionProjection
 from .situation_awareness import AnomalyRecord, SituationAwarenessAgent
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "AnomalyRecord",
     "DiagnosticAgent",
     "DiagnosisResult",
+    "PredictionAgent",
+    "PredictionProjection",
 ]
