@@ -105,9 +105,40 @@ class ServerState:
             snap = eng.get_snapshot()
             self._record_history(sid, snap)
 
+        # 6. Polar Satcom Bandwidth-Aware Synchronization (Sub-Phase 4.2)
+        from backend.satcom import (
+            DeltaEncoder,
+            MirrorTwinEngine,
+            PolarSatcomChannelEmulator,
+            SatcomChannelProfile,
+        )
+
+        self.satcom_encoders: dict[str, DeltaEncoder] = {
+            "bharati": DeltaEncoder(),
+            "maitri": DeltaEncoder(),
+        }
+        self.satcom_emulators: dict[str, PolarSatcomChannelEmulator] = {
+            "bharati": PolarSatcomChannelEmulator(
+                profile=SatcomChannelProfile.INMARSAT_STANDARD,
+                deterministic=True,
+            ),
+            "maitri": PolarSatcomChannelEmulator(
+                profile=SatcomChannelProfile.INMARSAT_STANDARD,
+                deterministic=True,
+            ),
+        }
+        self.mainland_mirrors: dict[str, MirrorTwinEngine] = {
+            "bharati": MirrorTwinEngine("bharati"),
+            "maitri": MirrorTwinEngine("maitri"),
+        }
+
+        # Initialize mainland mirror baseline keyframes
+        for sid in self.stations.keys():
+            self.sync_station_telemetry(sid, force_keyframe=True)
+
         # Server start timestamp
         self.server_start_time = time.time()
-        logger.info("F.R.I.D.A.Y. Dual-Station State & 10 Cognitive Agents Online.")
+        logger.info("F.R.I.D.A.Y. Dual-Station State, Agents & Satcom Sync Engines Online.")
 
     def get_engine(self, station_id: str | None = None) -> BharatiMasterTwinEngine:
         """Retrieve engine for the specified or active station."""
@@ -144,11 +175,106 @@ class ServerState:
         # Record history
         self._record_history(sid, snapshot)
 
+        # Synchronize telemetry delta to mainland mirror twin via satcom link
+        self.sync_station_telemetry(sid, force_keyframe=False)
+
         # Trigger situation awareness on active station
         if sid == self.active_station_id:
             self.situation_awareness.on_tick(snapshot)
 
         return snapshot
+
+    def sync_station_telemetry(
+        self, station_id: str, force_keyframe: bool = False
+    ) -> tuple[Any, dict[str, Any]]:
+        """Encode, transmit over satcom link, and mirror station telemetry at mainland HQ."""
+        sid = station_id.lower()
+        engine = self.get_engine(sid)
+        encoder = self.satcom_encoders[sid]
+        emulator = self.satcom_emulators[sid]
+        mirror = self.mainland_mirrors[sid]
+
+        readings = engine.get_all_readings()
+        kpis = engine.get_station_kpis()
+        alerts = engine.get_active_alerts()
+        sim_time = engine.clock.elapsed_seconds
+        ts_iso = engine.clock.isoformat()
+
+        if force_keyframe:
+            frame = encoder.encode_keyframe(
+                station_id=sid,
+                readings=readings,
+                sim_time_seconds=sim_time,
+                timestamp_iso=ts_iso,
+                kpis=kpis,
+                alerts=alerts,
+            )
+        else:
+            frame = encoder.encode_delta(
+                station_id=sid,
+                readings=readings,
+                sim_time_seconds=sim_time,
+                timestamp_iso=ts_iso,
+                kpis=kpis,
+                alerts=alerts,
+            )
+
+        success, status, delay, s_bytes = emulator.transmit(frame)
+        if success:
+            mirror.apply_frame(frame)
+
+        tx_stats = {
+            "success": success,
+            "status": status,
+            "delay_seconds": delay,
+            "packet_bytes": len(s_bytes),
+            "frame_type": frame.frame_type.value,
+            "seq_num": frame.seq_num,
+            "delta_count": frame.delta_count,
+        }
+        return frame, tx_stats
+
+    def set_satcom_profile(self, profile: str, station_id: str | None = None) -> None:
+        """Update satcom channel profile for specified or all stations."""
+        targets = [station_id.lower()] if station_id else list(self.satcom_emulators.keys())
+        for sid in targets:
+            if sid in self.satcom_emulators:
+                self.satcom_emulators[sid].set_profile(profile)
+
+    def recover_satcom_blackout(
+        self, station_id: str, new_profile: str = "INMARSAT_STANDARD"
+    ) -> list[dict[str, Any]]:
+        """Drain spooled blackout queue and apply frames to mainland mirror twin in priority order."""
+        sid = station_id.lower()
+        emulator = self.satcom_emulators[sid]
+        mirror = self.mainland_mirrors[sid]
+
+        drained = emulator.recover_from_blackout(new_profile=new_profile)
+        applied_summaries = []
+        for frame, _, delay in drained:
+            accepted, status_code = mirror.apply_frame(frame)
+            applied_summaries.append({
+                "frame_id": frame.frame_id,
+                "frame_type": frame.frame_type.value,
+                "seq_num": frame.seq_num,
+                "priority": frame.priority,
+                "accepted": accepted,
+                "mirror_status": status_code,
+                "tx_delay": delay,
+            })
+        return applied_summaries
+
+    def get_satcom_summary(self, station_id: str) -> dict[str, Any]:
+        """Aggregate satcom telemetry, channel metrics, and mainland mirror sync status."""
+        sid = station_id.lower()
+        emulator = self.satcom_emulators[sid]
+        mirror = self.mainland_mirrors[sid]
+        return {
+            "station_id": sid,
+            "channel_metrics": emulator.get_channel_metrics(),
+            "mirror_twin": mirror.get_metrics(),
+            "is_synchronized": mirror.is_synchronized(),
+        }
 
     def inject_scenario(
         self, scenario: MasterScenario | str, station_id: str | None = None, **params: Any

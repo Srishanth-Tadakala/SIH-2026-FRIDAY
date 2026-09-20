@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from .routes.actions import router as actions_router
 from .routes.agents import router as agents_router
 from .routes.deliberations import router as deliberations_router
+from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
 from .routes.stations import router as stations_router
 from .routes.telemetry import router as telemetry_router
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     # Register API Routers
     app.include_router(stations_router)
     app.include_router(telemetry_router)
+    app.include_router(satcom_router)
     app.include_router(agents_router)
     app.include_router(deliberations_router)
     app.include_router(actions_router)
@@ -82,6 +84,7 @@ def create_app() -> FastAPI:
             "sensor_count": active_engine.sensor_count,
             "cognitive_agents_count": 10,
             "interlocks_active": True,
+            "satcom_sync_active": True,
         }
 
     @app.exception_handler(Exception)
