@@ -1,142 +1,140 @@
-# Walkthrough: Phase 1, Phase 2 & Phase 3 (All 10 Specialized Cognitive Agents) Implementation
+# Walkthrough: Sub-Phase 4.1 Implementation (FastAPI Engine Core & Dual-Station REST Endpoints)
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
-**Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
+**Target Stations**: 
+- **Bharati Station** (Larsemann Hills, East Antarctica — $69^\circ 24' 28''\text{ S}, 76^\circ 11' 14''\text{ E}$)
+- **Maitri Station** (Schirmacher Oasis, East Antarctica — $70^\circ 45' 58''\text{ S}, 11^\circ 43' 50''\text{ E}$)
+- **Mainland Command**: National Centre for Polar and Ocean Research (NCPOR), Goa & MoES, New Delhi  
+
 **Status**: 
-- **Phase 1**: Digital Twin Core & Causal Graph Engine (Completed & Verified)  
-- **Phase 2**: Multi-Agent Message Bus & Safety Interlocks (Completed & Verified)  
-- **Phase 3 (All 10 Cognitive Agents Completed & Verified)**:
-  - **Sub-Phase 3.1**: Situation Awareness Agent (Completed & Verified)  
-  - **Sub-Phase 3.2**: Diagnostic / Root-Cause Agent (Completed & Verified)  
-  - **Sub-Phase 3.3**: Prediction Agent (Completed & Verified)  
-  - **Sub-Phase 3.4**: Risk & Impact Agent (Completed & Verified)  
-  - **Sub-Phase 3.5**: Planning / Recommendation Agent (Completed & Verified)  
-  - **Sub-Phase 3.6**: What-If / Simulation Agent (Completed & Verified)  
-  - **Sub-Phase 3.7**: Mission Operations Agent (Completed & Verified)  
-  - **Sub-Phase 3.8**: Maintenance Agent (Completed & Verified)  
-  - **Sub-Phase 3.9**: Resource Optimization Agent (Completed & Verified)  
-  - **Sub-Phase 3.10**: F.R.I.D.A.Y. Chief AI / Master Orchestrator (Completed & Verified)  
-**Total Test Results**: **243 passed in 5.19s (0 failures, 0 errors, 100% green)**.
+- **Phase 1**: Digital Twin Core & Causal Graph Engine (Completed & Verified — 14 tests)  
+- **Phase 2**: Multi-Agent Message Bus & Safety Interlocks (Completed & Verified — 11 tests)  
+- **Phase 3**: All 10 Specialized Cognitive Agents (Completed & Verified — 72 tests)  
+- **Phase 4 (In Progress)**:
+  - **Sub-Phase 4.1**: FastAPI Engine Core & Dual-Station REST Endpoints (**Completed & Verified — 10 tests**)  
+  - **Sub-Phase 4.2**: Polar Satcom Delta-Sync Protocol (Pending Approval)  
+  - **Sub-Phase 4.3**: Multiplexed WebSocket Streaming Engine (Pending Approval)  
+**Total Test Results**: **253 passed (0 failures, 0 errors, 100% green)**.
 
 ---
 
-## 1. Complete Phase 3 Architecture: The 10-Agent Cognitive Society
+## 1. Complete Multi-Tiered Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                       F.R.I.D.A.Y. CHIEF AI PLATFORM                                    │
 │                                           (100% Offline Polar AI)                                       │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 5. REACT FLOW DIGITAL TWIN FRONTEND (Next Phase)                                                        │
+│ 5. REACT FLOW DIGITAL TWIN FRONTEND (Future Phase)                                                      │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 4. SATCOM SYNC & HEADLESS FASTAPI (Next Phase)                                                          │
+│ 4. HEADLESS SERVER & SATCOM BANDWIDTH-AWARE DELTA SYNC ENGINE                                           │
+│  ├── [COMPLETED] Sub-Phase 4.1: FastAPI Engine Core & Dual-Station REST API                             │
+│  │   • /api/health           • /api/stations       • /api/telemetry/{sid}                              │
+│  │   • /api/agents           • /api/deliberations  • /api/actions            • /api/scenarios           │
+│  ├── [NEXT] Sub-Phase 4.2: Polar Satcom Bandwidth-Aware Protocol (Deadband + Compression + Spool)       │
+│  └── [NEXT] Sub-Phase 4.3: Real-Time Multiplexed WebSocket Streaming Engine                            │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 3. F.R.I.D.A.Y. MULTI-AGENT COGNITIVE ARCHITECTURE (ALL 10 SUB-PHASES COMPLETE)                         │
-│                                                                                                         │
-│  [10] F.R.I.D.A.Y. Master Orchestrator ("Chief AI") ◄── Consensus Arbitration & Commander Cards       │
-│    ▲                                                                                                    │
-│    ├── [1] Situation Awareness Agent: Anomaly Detection, RoC Sliders, Event Ingestion                  │
-│    ├── [2] Diagnostic Agent: Causal Graph Path Traversal, Root-Cause Isolation                         │
-│    ├── [3] Prediction Agent: 15m, 1h, 4h Accelerated Lookaheads, TtF / TtV Metrics                     │
-│    ├── [4] Risk & Impact Agent: 5-Tier Criticality, Blast Radius, Life-Support Threat Matrix            │
-│    ├── [5] Planning Agent: Polar Playbook SOPs, Mitigation Proposals, Safety Pre-Screening              │
-│    ├── [6] What-If Simulation Agent: In-Memory Sandbox Forks, Trajectory Scoring, Physics Critiques     │
-│    ├── [7] Mission Operations Agent: Autonomous Field Teams, Blizzard Envelopes, Comms Defense         │
-│    ├── [8] Maintenance Agent: MTBF / Run-Hour Degradation, Madrid Protocol Spares Veto                 │
-│    └── [9] Resource Optimization Agent: 60-85% Sweet-Spot Dispatch, Wet-Stacking Prevention, RO Fill   │
+│ 3. F.R.I.D.A.Y. MULTI-AGENT COGNITIVE ARCHITECTURE (ALL 10 AGENTS COMPLETE — 72 Tests)                   │
+│    [10] Orchestrator  [1] Perception  [2] Diagnostic  [3] Prediction  [4] Risk  [5] Planning            │
+│    [6] What-If Sim    [7] Mission Ops [8] Maintenance [9] Resource Optimizer                            │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 2. AGENT COMMUNICATION & SAFETY GOVERNANCE (Phase 2)                                                    │
+│ 2. AGENT COMMUNICATION & SAFETY GOVERNANCE (Phase 2 — 11 Tests)                                         │
 │    • MessageBus (Async Pub/Sub Blackboard)  • SafetyInterlockManager (Tier 1/2/3 Hard Safety Invariants)│
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 1. DIGITAL TWIN CORE & CAUSAL GRAPH (Phase 1)                                                           │
-│    • Master Twin Engine (Bharati & Maitri)  • Causal Dependency Graph  • In-Memory Sandbox Forking      │
+│ 1. DIGITAL TWIN CORE & CAUSAL GRAPH (Phase 1 — 14 Tests)                                                │
+│    • BharatiMasterTwinEngine  • MaitriMasterTwinEngine  • TwinCausalGraph  • TwinSandbox Forking        │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ FOUNDATION: 4-PILLAR PHYSICAL SENSOR LAYER                                                              │
-│    • Energy & Microgrid (112)  • Life Support & HVAC (145)  • Infrastructure (150)  • Logistics (98)     │
+│ FOUNDATION: 4-PILLAR PHYSICAL SENSOR LAYER (146 Tests)                                                  │
+│    • Energy & Microgrid (140)  • Life Support & HVAC (180)  • Environment (87)  • Logistics (98)        │
+│    ► Total: 505 Deterministic Physical Points Across 37 Subsystem Domains                                │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Sub-Phase 3.10: F.R.I.D.A.Y. Chief AI / Master Orchestrator
+## 2. Sub-Phase 4.1: Delivered Components
 
-### Files Created:
-1. `backend/agents/orchestrator/friday_core.py`
-   - `FridayMasterOrchestrator`: Top-level orchestrator agent coordinating all 9 specialized agents.
-   - `CommanderBriefingCard`: Structured, explainable briefing cards synthesized for station leadership.
-   - `SupervisedAction`: Pending supervisor approvals under Tier 2 supervision countdowns.
-   - `TieredExecutionResult`: Execution telemetry tracking closed-loop twin actuation, countdown queues, and PIN verification.
-2. `backend/agents/orchestrator/__init__.py`
-   - Clean export of `FridayMasterOrchestrator`, `CommanderBriefingCard`, `SupervisedAction`, and `TieredExecutionResult`.
-3. `backend/agents/__init__.py`
-   - Unified export of all 10 cognitive agents and core framework primitives.
-4. `tests/agents/test_orchestrator_friday_core.py`
-   - 9 comprehensive unit tests verifying the full orchestration lifecycle.
+### 1. Dual-Station Digital Twin Support:
+- [MaitriMasterTwinEngine](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/core/engine.py): Dedicated simulation twin for Maitri Station in Schirmacher Oasis ($70^\circ 45' 58''\text{ S}, 11^\circ 43' 50''\text{ E}$), with Priyadarshini Lake fresh water pipeline, 3x Kirloskar gensets, and containerized habitat telemetry.
+- [BharatiMasterTwinEngine](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/core/engine.py): Updated with station metadata, location, and coordinates in Larsemann Hills ($69^\circ 24' 28''\text{ S}, 76^\circ 11' 14''\text{ E}$).
 
-### Key Capabilities Implemented:
-1. **Multi-Agent Deliberation Lifecycle Management**:
-   - Ingests anomalies from the `SituationAwarenessAgent` or human operators.
-   - Spawns and tracks active `DeliberationSession`s across the shared blackboard bus.
-   - Coordinates the multi-agent deliberation loop: Situation Awareness -> Diagnostics -> Risk/Impact -> Prediction -> Planning -> What-If Simulation -> Maintenance/Resource/Mission critiques.
-2. **Consensus Arbitration Matrix**:
-   - Filters out any action proposal rejected by `SafetyInterlockManager`.
-   - Disqualifies proposals critiqued with `safety_critical=True` (e.g., from What-If physics violations, Maintenance overdue machinery starts, or Resource Optimizer wet-stacking).
-   - Evaluates surviving proposals via multi-attribute utility scoring:
-     $$\text{Utility} = 0.35 \times \text{Efficacy} + 0.35 \times (1 - \text{Risk}) + 0.15 \times \text{Confidence} + 0.15 \times (1 - \text{Resource Cost})$$
-   - Formally breaks deliberation cycles when consensus or maximum critique iterations (3) are reached.
-3. **Commander Briefing Card Synthesizer**:
-   - Compiles a transparent, human-readable briefing for station leadership detailing:
-     - Root cause and diagnostic explanation.
-     - Blast radius, impacted subsystems, and time-to-criticality (TtF / TtV).
-     - Recommended action plan, alternative actions considered, and rejected proposals.
-     - Dissenting critiques logged by specialized agents (What-If, Maintenance, Resource Optimizer).
-     - Safety tier classification and clear decision deadline.
-4. **Tiered Autonomy Execution Pipeline**:
-   - **Tier 1 (Routine / Low-Risk)**: Auto-executed closed-loop into the digital twin immediately upon arbitration.
-   - **Tier 2 (Operational / Moderate-Risk)**: Enters a 60-second supervised countdown queue, auto-executing unless paused/cancelled by station operators, or immediately executable with explicit supervisor bypass.
-   - **Tier 3 (Life-Safety / High-Risk)**: Enforces hard interlock gatekeeping requiring explicit Station Commander PIN verification (`BHARATI-CMD-2026`).
+### 2. Central Server State Manager:
+- [ServerState](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/state.py): Singleton holding dual twin engines (`bharati`, `maitri`), causal graph, message bus, safety interlock manager, and all 10 specialized cognitive agents.
+- Provides thread-safe simulation stepping, crisis injection, active station context switching, and sliding time-series historical buffers (up to 120 points).
+
+### 3. Comprehensive REST API Endpoints:
+- **System Health**: `GET /api/health` — Probe reporting system readiness, managed stations, clock, and agent society status.
+- **Dual-Station Management**:
+  - `GET /api/stations`: Listing all stations with live health indices and coordinates.
+  - `GET /api/stations/{station_id}`: Granular metadata and environmental overview.
+  - `POST /api/stations/active/{station_id}`: Switch default active station context.
+  - `POST /api/stations/{station_id}/step`: Manual simulation clock advancement.
+- **Subsystem Telemetry**:
+  - `GET /api/telemetry/{station_id}/snapshot`: Complete 505-sensor snapshot.
+  - `GET /api/telemetry/{station_id}/kpis`: Aggregated power, thermal, fuel, water, and risk metrics.
+  - `GET /api/telemetry/{station_id}/alerts`: Active operational and life-safety alerts.
+  - `GET /api/telemetry/{station_id}/pillars/{pillar}`: Filtered readings for Energy, Infrastructure, Environment, or Logistics.
+  - `GET /api/telemetry/{station_id}/sensors/{sensor_id}`: Instant $O(1)$ single-sensor lookup.
+  - `GET /api/telemetry/{station_id}/history`: Time-series sliding buffer for dashboard charts.
+- **Cognitive Agent Society**:
+  - `GET /api/agents/status`: Status of all 10 cognitive agents and bus message statistics.
+  - `GET /api/agents/{agent_role}`: Detail and recent messages for a specific agent.
+  - `GET /api/agents/bus/stats`: Bus message throughput and session counts.
+- **Deliberation Sessions & Commander Briefing Cards**:
+  - `GET /api/deliberations`: List of active and resolved multi-agent deliberations.
+  - `GET /api/deliberations/{session_id}`: Complete session blackboard (proposals, simulations, critiques).
+  - `GET /api/deliberations/{session_id}/briefing_card`: Synthesizes or retrieves explainable Commander Briefing Card.
+- **Tiered Autonomy Action Pipeline**:
+  - `POST /api/actions/execute`: Tier 1 auto-execute, Tier 2 supervised countdown queue.
+  - `GET /api/actions/pending`: List pending Tier 2 supervised countdown actions.
+  - `POST /api/actions/supervised/{action_id}/bypass`: Supervisor bypass for immediate execution.
+  - `POST /api/actions/supervised/{action_id}/cancel`: Operator cancellation / veto.
+  - `POST /api/actions/authorize_pin`: Mandatory Station Commander PIN verification (`BHARATI-CMD-2026` / `MAITRI-CMD-2026`).
+- **Crisis Scenario Injection**:
+  - `GET /api/scenarios`: List 8 physical crisis scenarios.
+  - `POST /api/scenarios/inject`: Inject blizzard, generator trip, utilidor freeze, etc.
+  - `POST /api/scenarios/clear`: Restore station to nominal baseline.
 
 ---
 
-## 3. Comprehensive Verification & Full Test Suite Run
+## 3. Test Verification & Code Correctness
 
+### Server Endpoint Tests (`tests/server/test_api_endpoints.py`):
 ```powershell
-python -m pytest tests/ -v
+python -m pytest tests/server/test_api_endpoints.py -v
 ```
-
 ```
 ============================= test session starts =============================
-platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
-rootdir: C:\Users\siddu\OneDrive\Desktop\F.R.I.D.A.Y
-plugins: anyio-4.13.0, hypothesis-6.152.7, langsmith-0.8.5, asyncio-1.3.0, cov-7.1.0
-collected 243 items
+collected 10 items
 
-tests/core/test_twin_core.py::TestTwinCoreEngine (14 passed)
-tests/framework/test_agent_framework.py::TestAgentFramework (11 passed)
-tests/agents/test_agent_situation_awareness.py::TestSituationAwarenessAgent (7 passed)
-tests/agents/test_agent_diagnostic.py::TestDiagnosticAgent (7 passed)
-tests/agents/test_agent_prediction.py::TestPredictionAgent (7 passed)
-tests/agents/test_agent_risk_impact.py::TestRiskImpactAgent (7 passed)
-tests/agents/test_agent_planning.py::TestPlanningAgent (7 passed)
-tests/agents/test_agent_what_if.py::TestWhatIfAgent (7 passed)
-tests/agents/test_agent_mission_ops.py::TestMissionOperationsAgent (7 passed)
-tests/agents/test_agent_maintenance.py::TestMaintenanceAgent (7 passed)
-tests/agents/test_agent_resource_optimizer.py::TestResourceOptimizerAgent (7 passed)
-tests/agents/test_orchestrator_friday_core.py::TestFridayMasterOrchestrator (9 passed)
-tests/sensors/bharati/energy/test_energy_sensors.py (35 passed)
-tests/sensors/bharati/environment/test_environment_sensors.py (38 passed)
-tests/sensors/bharati/infrastructure/test_infrastructure_sensors.py (30 passed)
-tests/sensors/bharati/logistics/test_logistics_sensors.py (43 passed)
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_system_health_check PASSED [ 10%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_dual_stations_listing_and_detail PASSED [ 20%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_active_station_switching_and_clock_step PASSED [ 30%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_telemetry_snapshot_kpis_and_alerts PASSED [ 40%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_telemetry_pillar_filtering_and_single_sensor_lookup PASSED [ 50%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_agents_status_and_bus_statistics PASSED [ 60%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_crisis_scenario_injection_and_deliberation_trigger PASSED [ 70%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_deliberation_session_detail_and_briefing_card PASSED [ 80%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_tiered_action_execution_pipeline PASSED [ 90%]
+tests/server/test_api_endpoints.py::TestFastAPIServerEndpoints::test_tier_3_commander_pin_gatekeeping PASSED [100%]
 
-============================= 243 passed in 5.19s =============================
+======================== 10 passed in 94.47s ========================
+```
+
+### Full Repository Regression Test Suite:
+```powershell
+python -m pytest tests/ -q
+```
+```
+253 passed in 95.93s (100% green, 0 regressions)
 ```
 
 ---
 
-## 4. Phase 3 Complete: Ready for Phase 4
-
-With Sub-Phase 3.10 verified, **Phase 3 is 100% complete**. All 10 cognitive agents are fully operational, tested, and interconnected via the asynchronous message bus, safety interlock engine, and causal twin core.
-
-**Upcoming Phase: Phase 4 — Headless FastAPI & Satcom Synchronization Engine**:
-- Local REST and WebSocket endpoints for real-time telemetry streaming and operator commands.
-- Low-bandwidth Satcom synchronization protocol between Antarctic stations and mainland NCAOR/MoES headquarters (Goa/Delhi).
+## 4. Next Step: Sub-Phase 4.2
+Awaiting user approval before proceeding to **Sub-Phase 4.2: Polar Satcom Bandwidth-Aware Sync Protocol** (`backend/satcom/`):
+- Deadband filtering (thermal ±0.2°C, electrical ±1 kW, levels ±0.5%).
+- Sparse delta encoding ($S_t - S_{t-1}$).
+- High-ratio zlib/delta compression (>95% bandwidth reduction).
+- Store-and-forward offline buffer for polar blackout resilience.
+- Mainland mirror twin synchronization engine.

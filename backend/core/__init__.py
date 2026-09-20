@@ -24,6 +24,7 @@ from .causal_graph import (
 )
 from .engine import (
     BharatiMasterTwinEngine,
+    MaitriMasterTwinEngine,
     MasterScenario,
     MasterTwinSnapshot,
 )
@@ -35,6 +36,7 @@ from .sandbox import (
 
 __all__ = [
     "BharatiMasterTwinEngine",
+    "MaitriMasterTwinEngine",
     "MasterScenario",
     "MasterTwinSnapshot",
     "TwinCausalGraph",

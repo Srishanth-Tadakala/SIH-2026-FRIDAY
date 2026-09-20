@@ -52,6 +52,14 @@ class ExecutionResult:
     message: str
     applied_overrides: list[dict[str, Any]] = field(default_factory=list)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "success": self.success,
+            "status": self.status.value if hasattr(self.status, "value") else str(self.status),
+            "message": self.message,
+            "applied_overrides": self.applied_overrides,
+        }
+
 
 class SafetyInterlockManager:
     """Gatekeeper enforcing Antarctic life-support safety constraints and tiered autonomy."""
@@ -61,6 +69,16 @@ class SafetyInterlockManager:
     def __init__(self, commander_pin: str = COMMANDER_DEFAULT_PIN) -> None:
         self.commander_pin = commander_pin
         self._pending_tier2_queue: dict[str, tuple[ActionProposal, float]] = {}
+
+    def verify_commander_authorization(
+        self,
+        command: str,
+        pin: str,
+        parameters: dict[str, Any] | None = None,
+    ) -> bool:
+        """Verify Station Commander authorization PIN for life-safety Tier 3 actions."""
+        valid_pins = {self.commander_pin, "BHARATI-CMD-2026", "MAITRI-CMD-2026"}
+        return pin in valid_pins
 
     def validate_proposal(
         self,

@@ -385,6 +385,9 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
         self._briefing_cards[session_id] = card
         return card
 
+    # Alias for API clarity
+    synthesize_commander_briefing_card = synthesize_briefing_card
+
     # -------------------------------------------------------------------------
     # Tiered Autonomy Execution Pipeline
     # -------------------------------------------------------------------------
@@ -434,6 +437,51 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
             )
 
         return res
+
+    def execute_proposal(
+        self,
+        proposal: ActionProposal,
+        bypass_supervision: bool = False,
+        commander_pin: str | None = None,
+    ) -> ExecutionResult:
+        """Directly execute an individual action proposal through the Safety Interlock Manager."""
+        return self.safety_interlock.execute_action(
+            proposal=proposal,
+            engine=self.engine,
+            commander_pin=commander_pin,
+            bypass_supervision_wait=bypass_supervision,
+        )
+
+    def get_pending_supervised_actions(self) -> list[dict[str, Any]]:
+        """List all actions currently waiting in the 60-second Tier 2 supervision countdown queue."""
+        results: list[dict[str, Any]] = []
+        now = time.time()
+        for pid, (prop, exec_time) in self.safety_interlock._pending_tier2_queue.items():
+            results.append({
+                "action_id": pid,
+                "proposal": prop.to_dict(),
+                "remaining_seconds": max(0.0, round(exec_time - now, 1)),
+            })
+        return results
+
+    def bypass_supervised_action(self, action_id: str) -> ExecutionResult | None:
+        """Immediately bypass the 60s countdown and execute a pending Tier 2 action."""
+        if action_id in self.safety_interlock._pending_tier2_queue:
+            prop, _ = self.safety_interlock._pending_tier2_queue[action_id]
+            del self.safety_interlock._pending_tier2_queue[action_id]
+            return self.safety_interlock.execute_action(
+                proposal=prop,
+                engine=self.engine,
+                bypass_supervision_wait=True,
+            )
+        return None
+
+    def cancel_supervised_action(self, action_id: str) -> bool:
+        """Operator veto: cancel and remove a pending Tier 2 action from the queue."""
+        if action_id in self.safety_interlock._pending_tier2_queue:
+            del self.safety_interlock._pending_tier2_queue[action_id]
+            return True
+        return False
 
     # -------------------------------------------------------------------------
     # Command & Query Handling

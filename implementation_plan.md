@@ -1,358 +1,189 @@
-# Master Implementation Plan: Phase 3 — Multi-Agent Cognitive Platform (10 Sub-Phases)
+# Master Implementation Plan: Efficient Remote Monitoring & Digital Twin (Phases 4 & 5)
 
 **Project**: SIH 2026 Problem Statement SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
-**Target Stations**: Bharati Station (Larsemann Hills) & Maitri Station (Schirmacher Oasis), East Antarctica  
-**Scope**: **Phase 3 (The 9 Specialized Cognitive Agents & F.R.I.D.A.Y. Core Orchestrator)**  
-**Foundation Complete**:
-- **Sensor Observation Layer**: 505 sensors across 4 pillars (Energy, Infra, Environment, Logistics).
-- **Phase 1: Digital Twin Core**: `BharatiMasterTwinEngine`, `TwinCausalGraph`, `TwinSandbox`.
-- **Phase 2: Agent Framework**: `AgentMessageBus`, `SafetyInterlockManager`, `BaseSpecializedAgent`, `models.py`.
-- **Regression Test Baseline**: 171 automated unit tests passing 100% green in 4.03s.
+**Target Stations**: 
+- **Bharati Station** (Larsemann Hills, East Antarctica — $69^\circ 24' 28''\text{ S}, 76^\circ 11' 14''\text{ E}$)
+- **Maitri Station** (Schirmacher Oasis, East Antarctica — $70^\circ 45' 58''\text{ S}, 11^\circ 43' 50''\text{ E}$)
+- **Mainland Command Centres**: National Centre for Polar and Ocean Research (NCPOR), Goa & Ministry of Earth Sciences (MoES), New Delhi
+
+**Baseline Completed**:
+- **Foundation**: 505 sensors across 4 pillars (Energy, Infrastructure, Environment, Logistics) — 146 unit tests green.
+- **Phase 1**: Digital Twin Core & Causal Graph Engine (`BharatiMasterTwinEngine`, `MaitriMasterTwinEngine`, `TwinCausalGraph`, `TwinSandbox`) — 14 unit tests green.
+- **Phase 2**: Multi-Agent Message Bus & Tiered Safety Interlocks (`AgentMessageBus`, `SafetyInterlockManager`) — 11 unit tests green.
+- **Phase 3**: All 10 Specialized Cognitive Agents (Perception, Diagnostics, Prediction, Risk, Planning, What-If, Mission Ops, Maintenance, Resource Optimizer, Master Orchestrator) — 72 unit tests green.
+- **Total Test Suite**: **243 / 243 unit tests passing 100% green**.
 
 ---
 
-## 1. Multi-Agent Cognitive Architecture (The OODA Deliberation Loop)
+## 1. Problem Context: Why "Efficient Remote Monitoring" Requires Specialized Polar Architecture
 
-Rather than building all agents in a single monolithic step, Phase 3 is broken down into **10 discrete, self-contained sub-phases**. Each sub-phase implements **exactly one agent** with its own internal reasoning engine, typed bus contracts, and dedicated unit test suite.
+Antarctic research stations operate under physical and telecommunication constraints vastly different from commercial mainland IoT:
+1. **Satellite Link Reality**: Stations communicate via narrowband polar satellites (Inmarsat / Iridium / polar LEO / limited VSAT) with:
+   - Bandwidth as low as **32–64 kbps** (shared between voice, science data, and station operations).
+   - High round-trip latency of **800–1200 ms**.
+   - Frequent **polar blackouts** (auroral ionospheric scintillation, antenna icing, low satellite elevation angles < 5°).
+   - High data transmission cost per megabyte.
+2. **Naïve Cloud Approaches Fail**: Sending raw 505-sensor payloads every second over HTTP/REST saturates the link within seconds and fails completely during blackout windows.
+3. **The Solution: Multi-Tiered Efficient Architecture**:
+   - **Local Edge Autonomy**: Full digital twin and all 10 cognitive agents run **100% locally on on-station edge servers** with zero cloud dependency. If satcom goes dark for 10 hours, the station remains fully autonomous and safe.
+   - **Bandwidth-Aware Satcom Delta Sync Protocol**: Deadband filtering, sparse delta encoding, and high-ratio compression achieving **>95% bandwidth reduction**.
+   - **Store-and-Forward Offline Buffer**: Prioritized queuing ensures zero loss of critical alarms, diagnostic logs, and Commander audit trails during blackout intervals.
+   - **Mainland Mirror Twin**: Mainland headquarters in Goa/Delhi run a synchronized digital twin replica that mirrors remote station health with clear sync freshness and link quality telemetry.
+   - **Tactical Interactive Digital Twin Cockpit**: High-fidelity, dark-mode polar operations center with interactive topological subsystem schematics, live particle flow lines, real-time agent deliberation feeds, What-If simulation comparisons, and 1-click Commander PIN verification.
+
+---
+
+## 2. Roadmap: Phase 4 & Phase 5 Sub-Phase Breakdown
 
 ```
-                                      CRISIS TRIGGER
-                          (e.g., Katabatic Blizzard / CHP Overheat)
-                                            │
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   1. PERCEPTION    │ Sub-Phase 3.1: SITUATION AWARENESS AGENT      │
-                    │ ("What is happening right now?")              │
-                    └───────────────────────┬───────────────────────┘
-                                            │ ALERT
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   2. DIAGNOSTICS   │ Sub-Phase 3.2: DIAGNOSTIC / ROOT-CAUSE AGENT  │
-                    │ ("Why is it happening?" - Causal Traversal)   │
-                    └───────────────────────┬───────────────────────┘
-                                            │ DIAGNOSIS
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   3. PROJECTION    │ Sub-Phase 3.3: PREDICTION AGENT               │
-                    │ ("What will happen next?" - Time-to-Critical) │
-                    └───────────────────────┬───────────────────────┘
-                                            │ PREDICTION_PROJECTION
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   4. RISK BLAST    │ Sub-Phase 3.4: RISK & IMPACT AGENT            │
-                    │ ("What could this affect?" - Blast Radius)    │
-                    └───────────────────────┬───────────────────────┘
-                                            │ IMPACT_ASSESSMENT
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   5. STRATEGY      │ Sub-Phase 3.5: PLANNING & RECOMMENDATION AGENT│
-                    │ ("What actions can solve this? - 2-3 Plans)   │
-                    └───────┬───────────────────────────────┬───────┘
-                            │ SIM_REQUEST                   │ PROPOSAL
-                            ▼                               ▼
-  ┌───────────────────────────────────┐   ┌───────────────────────────────────┐
-  │ Sub-Phase 3.6: WHAT-IF AGENT      │   │ Sub-Phase 3.9: RESOURCE OPTIMIZER │
-  │ ("What if we change something?")  │   │ ("How to balance fuel vs thermal")│
-  │ [Fast-forward 4h in TwinSandbox]  │   └─────────────────┬─────────────────┘
-  └─────────────────┬─────────────────┘                     │
-                    │ SIM_RESULT                            │ CRITIQUE
-                    └───────────────────────┬───────────────┘
-                                            │
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   6. VALIDATION    │ Sub-Phase 3.7: MISSION OPERATIONS AGENT       │
-   & DOMAIN CHECKS  │ ("Can missions / flights proceed? - Go/No-Go")│
-                    ├───────────────────────────────────────────────┤
-                    │ Sub-Phase 3.8: MAINTENANCE AGENT              │
-                    │ ("What assets need spares / Madrid Protocol?")│
-                    └───────────────────────┬───────────────────────┘
-                                            │ DOMAIN_ADVISORIES
-                                            ▼
-                    ┌───────────────────────────────────────────────┐
-   7. SYNTHESIS     │ Sub-Phase 3.10: F.R.I.D.A.Y. CHIEF AI         │
-   & COMMAND        │ (Executive Action Card + Safety Interlock PIN)│
-                    └───────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                     THE POLAR REMOTE DIGITAL TWIN PLATFORM                              │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PHASE 5: TACTICAL POLAR DIGITAL TWIN & REMOTE COCKPIT (Frontend)                                        │
+│  ├── Sub-Phase 5.1: Polar Cockpit UI Shell & Dual-Station Explorer (Bharati & Maitri)                   │
+│  ├── Sub-Phase 5.2: Topological 2D Schematic & Animated Flow Visualizer (Microgrid, HVAC, Fuel, Water)  │
+│  ├── Sub-Phase 5.3: Chief AI Deliberation Visualizer & Commander Briefing Card Action Console           │
+│  └── Sub-Phase 5.4: Crisis Injection Sandbox & Real-Time Satcom Link Telemetry Monitor                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PHASE 4: HEADLESS SERVER & SATCOM BANDWIDTH-AWARE DELTA SYNC ENGINE (Backend)                          │
+│  ├── Sub-Phase 4.1: High-Performance FastAPI Engine & REST API (Dual-Station Telemetry, Agents, Safety) │
+│  ├── Sub-Phase 4.2: Polar Satcom Delta-Sync Protocol (Deadband Filter, Compression, Store-and-Forward) │
+│  └── Sub-Phase 4.3: Low-Latency Multiplexed WebSocket Streaming Server (Telemetry, Deliberations, Sync) │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PHASES 1–3 [COMPLETED & VERIFIED]: 10 COGNITIVE AGENTS, SAFETY INTERLOCKS, CAUSAL TWIN CORE (243 Tests) │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Detailed 10 Sub-Phase Implementation Breakdown
+## 3. Phase 4: Headless Server & Satcom Bandwidth-Efficient Synchronization Engine
 
-```
-Target Directory: backend/agents/specialized/
-Test Directory:   tests/agents/
-```
+### Sub-Phase 4.1: FastAPI Engine Core & Dual-Station REST Endpoints
+- **Target Files**:
+  - `backend/server/app.py`: FastAPI application factory, CORS, lifespan handlers, global background simulation runner, and engine registry.
+  - `backend/server/routes/stations.py`: Dual-station management (Bharati & Maitri), station metadata, environmental conditions, and high-level health indices.
+  - `backend/server/routes/telemetry.py`: 4-pillar subsystem telemetry endpoints (`/energy`, `/life_support`, `/infrastructure`, `/logistics`), single-sensor drill-downs, and historical sliding buffer.
+  - `backend/server/routes/agents.py`: Agent society status, active deliberation sessions, message bus statistics.
+  - `backend/server/routes/actions.py`: Commander action authorization, Tier 2 supervised countdown queue management (review/bypass/cancel), and Tier 3 PIN authentication (`BHARATI-CMD-2026`).
+  - `backend/server/routes/scenarios.py`: Crisis injection endpoints (Katabatic Blizzard, Generator Trip, Utilidor Freeze, Fuel Contamination, Comms Blackout).
+- **Test File**: `tests/server/test_api_endpoints.py` (Validates all REST endpoints, dual-station switching, PIN verification, and crisis injections).
 
-### Sub-Phase 3.1: Situation Awareness Agent (`situation_awareness.py`)
-- **Cognitive Question**: *"What is happening right now?"*
-- **Role**: Continuous anomaly detector scanning all 505 sensors across Energy, Infrastructure, Environment, and Logistics.
-- **Inputs**:
-  - `engine.get_snapshot()` on each tick (`on_tick`).
-  - Threshold envelopes (high/low limits, maximum rates of change $\Delta X / \Delta t$).
-- **Internal Reasoning Engine**:
-  - Multi-sensor correlation detector (e.g. ambient wind surge correlated with utilidor thermal drop).
-  - Rate-of-change (RoC) tracker across sliding 5-minute windows.
-  - Severity level evaluator (`INFO`, `WARNING`, `CRITICAL`, `EMERGENCY`).
-- **Outputs**:
-  - Creates a new `DeliberationSession` when an anomaly exceeds critical thresholds.
-  - Broadcasts `MessageType.ALERT` to the bus with anomaly details, affected sensor IDs, observed values, and baseline limits.
-- **Unit Test File**: `tests/agents/test_agent_situation_awareness.py`
-  - Nominal steady-state scan (zero false alarms).
-  - High-wind katabatic surge detection.
-  - CHP power droop & over-temperature detection.
-  - Session creation & broadcast verification.
+### Sub-Phase 4.2: Polar Satcom Bandwidth-Aware Sync Protocol (The "Efficient" Engine)
+- **Target Files**:
+  - `backend/satcom/protocol.py`:
+    - **Deadband Filter**: Suppresses sensor telemetry jitter (e.g. thermal ±0.2°C, electrical ±1 kW, levels ±0.5%).
+    - **Sparse Delta Encoder**: Encodes only modified sensor keys and values ($S_t - S_{t-1}$).
+    - **Binary / Compressed Serialization**: Compact payload packaging with zlib/delta compression, achieving >95% bandwidth reduction.
+  - `backend/satcom/store_and_forward.py`:
+    - Offline queue storing timestamped frames during satcom outages.
+    - Priority-based queue drain:
+      - **Priority 0 (Emergency)**: Critical alarms, Life-Support breaches, Commander PIN authorizations.
+      - **Priority 1 (Deliberation)**: Agent diagnoses, prediction countdowns, Commander Briefing Cards.
+      - **Priority 2 (Routine)**: Compacted sensor deltas and hourly rollups.
+  - `backend/satcom/channel_emulator.py`:
+    - Simulates realistic polar satcom channel conditions: `BROADBAND_LOCAL` (LAN, 0ms), `INMARSAT_STANDARD` (64 kbps, 850ms latency), `IRIDIUM_LOW` (9.6 kbps, 1500ms latency), and `POLAR_BLACKOUT` (0 kbps, 100% packet loss).
+    - Tracks transmission statistics: Raw bytes, compressed bytes, compression ratio, packets sent, packets dropped, queue depth.
+  - `backend/satcom/mirror_twin.py`:
+    - Mainland replica engine maintained at Goa/Delhi HQ, receiving and unpacking delta frames to reconstruct the full remote station twin state in real time.
+- **Test File**: `tests/satcom/test_satcom_protocol.py` (Validates deadband filtering, compression ratio > 90%, store-and-forward priority order, channel degradation, and mainland mirror synchronization).
 
----
-
-### Sub-Phase 3.2: Diagnostic / Root-Cause Agent (`diagnostic.py`)
-- **Cognitive Question**: *"Why is it happening?"*
-- **Role**: Root-cause isolator that prevents alarm floods by distinguishing between primary faults and secondary symptom cascades.
-- **Inputs**:
-  - Subscribes to `MessageType.ALERT` on the message bus.
-  - Queries `graph.get_upstream_causes(node_id, max_depth=5)` on `TwinCausalGraph`.
-- **Internal Reasoning Engine**:
-  - Upstream graph traversal isolating root physical assets.
-  - Cross-references upstream equipment telemetry to eliminate healthy nodes.
-  - Identifies single root cause (e.g. trace heating breaker trip vs freeze symptom).
-- **Outputs**:
-  - Publishes `MessageType.DIAGNOSIS` targeted to `AgentRole.PREDICTION` and `AgentRole.PLANNING`.
-  - Payload contains `root_cause_asset`, `root_cause_name`, `confidence`, `causal_chain` (list of node IDs), and `explanation`.
-- **Unit Test File**: `tests/agents/test_agent_diagnostic.py`
-  - Isolates fuel delivery fault from day-tank low level.
-  - Isolates utilidor freeze from RO plant failure.
-  - Validates causal path length and attribution confidence.
+### Sub-Phase 4.3: Low-Latency Multiplexed WebSocket Streaming Engine
+- **Target Files**:
+  - `backend/server/ws.py`:
+    - WebSocket connection manager handling multiple simultaneous clients (Mainland HQ, Station Control Room, Mobile/Rugged Tablets).
+    - Multiplexed channel subscriptions:
+      - `/ws/telemetry`: High-frequency sensor delta stream.
+      - `/ws/deliberations`: Real-time agent blackboard events (anomalies, causal chains, what-if forks, briefing cards).
+      - `/ws/satcom`: Live satcom link quality, bandwidth savings, and queue telemetry.
+- **Test File**: `tests/server/test_websocket_stream.py` (Validates async pub/sub broadcast, client connect/disconnect, and message delivery).
 
 ---
 
-### Sub-Phase 3.3: Prediction Agent (`prediction.py`)
-- **Cognitive Question**: *"What will happen next if unmitigated?"*
-- **Role**: Forward extrapolator computing physical time-to-critical countdowns.
-- **Inputs**:
-  - Subscribes to `MessageType.DIAGNOSIS`.
-  - Queries active twin telemetry (current temperatures, tank levels, battery SOC).
-- **Internal Reasoning Engine**:
-  - First-order thermal decay equation:
-    $$T(t) = T_{\text{ambient}} + (T_0 - T_{\text{ambient}}) \cdot e^{-t / \tau}$$
-  - Fuel exhaustion runway:
-    $$t_{\text{exhaustion}} = \frac{V_{\text{day\_tank}} + V_{\text{bulk}}}{\dot{V}_{\text{fuel\_burn}}}$$
-  - Battery depletion countdown:
-    $$t_{\text{battery}} = \frac{\text{Capacity}_{\text{Ah}} \times \text{SOC}}{I_{\text{critical\_discharge}}}$$
-- **Outputs**:
-  - Publishes `MessageType.PREDICTION_PROJECTION` targeted to `AgentRole.RISK_IMPACT` and `AgentRole.PLANNING`.
-  - Payload contains `time_to_freeze_minutes`, `hours_to_blackout`, `hours_to_fuel_starvation`, and `projected_trajectory`.
-- **Unit Test File**: `tests/agents/test_agent_prediction.py`
-  - Predicts time until living module drops below $16^\circ\text{C}$ during heating loss.
-  - Predicts fuel runway during high-demand blizzard run.
-  - Verifies countdown bounds and mathematical stability.
+## 4. Phase 5: Tactical Polar Digital Twin & Remote Cockpit (Frontend)
+
+Built using Vite + React + TypeScript with a dedicated, custom polar military-grade dark design system.
+
+### Sub-Phase 5.1: Cockpit Foundation & Dual-Station Explorer
+- **Components**:
+  - `StationHeader`: Real-time UTC & station local time, station switcher (Bharati / Maitri), connectivity badge (Satcom vs Edge LAN), active alert count.
+  - `PillarMetricsBar`: 4-Pillar quick health summary (Energy, Life Support, Infrastructure, Logistics) with status indicators and key KPIs (Total Load kW, Indoor Temp °C, Potable Water L, Fuel Runway Days).
+  - `GlobalStatusBar`: System clock, simulation speed controls (1x, 10x, 100x), and emergency halt button.
+
+### Sub-Phase 5.2: Topological 2D Schematic & Animated Flow Visualizer
+- **Components**:
+  - `SubsystemSchematic`: Interactive system flow graph representing physical station infrastructure:
+    - **Bharati Station**: Scania CHPs (1, 2, 3) -> 415V Main Switchboard -> Glycol Waste Heat Loop (68°C) -> AHUs -> Module Living Quarters -> RO Desalination -> Wastewater Treatment -> Helipad & Fleet.
+    - **Maitri Station**: Generator Shed -> Main Thermal Loop -> Heated Trace-Water Line from Priyadarshini Lake -> Habitation Modules -> Waste Incineration.
+  - **Animated Flow Particles**: Visual flow of electricity (gold sparks), hot glycol (orange/red pulse), fuel (amber), and water (cyan).
+  - **Interactive Node Inspection**: Click any machine/subsystem to open an inspector card showing exact sensor readings, operating hours, MTBF, and causal dependencies.
+
+### Sub-Phase 5.3: F.R.I.D.A.Y. Chief AI Deliberation & Commander Console
+- **Components**:
+  - `AgentBlackboardStream`: Live visual timeline of the 10 cognitive agents in action:
+    - Situation Awareness: Alert beacon + rate-of-change trigger.
+    - Diagnostic Agent: Causal graph path highlighting root cause.
+    - Prediction Agent: TtF (Time-to-Freeze) and TtV countdown clocks.
+    - What-If Agent: Interactive dual-trajectory graph comparing "Baseline (No Action)" vs "Mitigation Plan".
+  - `CommanderBriefingCardModal`:
+    - Clean, military-grade briefing card synthesized by F.R.I.D.A.Y.
+    - Tier 1: Auto-execution status.
+    - Tier 2: 60-second animated circular countdown with "Override / Pause" button.
+    - Tier 3: PIN Entry prompt requiring `BHARATI-CMD-2026` with full cryptographic audit logging.
+
+### Sub-Phase 5.4: Polar Satcom Monitor & Crisis Injection Sandbox
+- **Components**:
+  - `SatcomLinkMonitor`:
+    - Visual link status (Connected / Degraded / Blackout).
+    - Bandwidth gauge (kbps), Latency radar (ms), Cumulative Data Reduction (%) (e.g., "97.2% Saved via Delta Sync").
+    - Store-and-forward queue meter.
+    - Link mode selector for live demonstration (`LAN`, `Inmarsat 64k`, `Iridium 9.6k`, `Blizzard Blackout`).
+  - `CrisisInjectionPanel`:
+    - Instant 1-click crisis injection buttons:
+      - 🌪️ *Katabatic Blizzard Strike (140 km/h, -38°C)*
+      - ⚡ *Main Generator Trip (CHP-1 Failure)*
+      - ❄️ *Utilidor / Priyadarshini Water Line Freeze*
+      - ⛽ *Day-Tank Fuel Transfer Pump Lockup*
+      - 📡 *Complete Satcom Polar Blackout*
 
 ---
 
-### Sub-Phase 3.4: Risk & Impact Agent (`risk_impact.py`)
-- **Cognitive Question**: *"What could this affect across the station?"*
-- **Role**: Blast-radius evaluator calculating cascading failure spread across the 4 pillars.
-- **Inputs**:
-  - Subscribes to `MessageType.DIAGNOSIS` and `MessageType.PREDICTION_PROJECTION`.
-  - Calls `graph.calculate_blast_radius(root_node_id)` on `TwinCausalGraph`.
-- **Internal Reasoning Engine**:
-  - Traverses downstream dependencies across 4 impact categories:
-    1. **Life Support** (Human thermal comfort, breathable air, potable water, medical facility).
-    2. **Grid Power** (MLVD 400V bus stability, UPS battery reserves, critical IT servers).
-    3. **Structural Health** (Foundation stilt strain, utilidor pipe containment).
-    4. **Mission Readiness** (Aviation helipad, field expedition teams, cargo integrity).
-  - Computes weighted severity score ($0.0$ to $100.0$).
-- **Outputs**:
-  - Publishes `MessageType.IMPACT_ASSESSMENT` targeted to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
-  - Payload contains `severity_score`, `life_support_threat` (boolean), `affected_subsystems`, and `criticality_breakdown`.
-- **Unit Test File**: `tests/agents/test_agent_risk_impact.py`
-  - Evaluates blast radius of MLVD bus failure (threatens all life support).
-  - Evaluates blast radius of localized Reefer compressor failure (logistics only).
-  - Verifies severity scoring accuracy.
+## 5. Verification & Testing Plan
+
+### Automated Backend Tests:
+- `tests/server/test_api_endpoints.py`: Verify all FastAPI REST endpoints, dual-station switching, and PIN validation.
+- `tests/satcom/test_satcom_protocol.py`: Verify deadband filtering, delta encoding, zlib compression (>90% savings), store-and-forward priority queueing, and mainland mirror sync.
+- `tests/server/test_websocket_stream.py`: Verify real-time multiplexed WebSocket streaming.
+- Complete regression suite: **All 243 existing tests must remain 100% green**.
+
+### End-to-End Simulation Validation:
+1. Start FastAPI server.
+2. Connect WebSocket client.
+3. Switch satcom channel to `INMARSAT_STANDARD` (64 kbps, 850ms latency).
+4. Inject `KATABATIC_BLIZZARD_SURGE`.
+5. Verify deadband delta sync transmits minimal compressed packet (<2 KB).
+6. Verify Situation Awareness -> Diagnostic -> Prediction -> Planning -> What-If -> Orchestrator generates Commander Briefing Card.
+7. Execute Tier 3 action via PIN `BHARATI-CMD-2026`.
+8. Switch satcom to `POLAR_BLACKOUT` -> verify store-and-forward queues frames on station edge -> restore satcom -> verify prioritized queue drain to mainland mirror twin.
 
 ---
 
-### Sub-Phase 3.5: Planning / Recommendation Agent (`planning.py`)
-- **Cognitive Question**: *"What operational actions could solve this?"*
-- **Role**: Strategy formulator synthesizing 2 to 3 distinct operational mitigation options.
-- **Inputs**:
-  - Subscribes to `MessageType.IMPACT_ASSESSMENT` and `MessageType.DIAGNOSIS`.
-  - Reads station operating procedures and equipment configuration rules.
-- **Internal Reasoning Engine**:
-  - Formulates competing candidate plans:
-    - **Plan A (Conservative / Resource Preserving)**: E.g., Trim fresh air ventilation by 15%, shed non-essential lab heating, keep single CHP online.
-    - **Plan B (Aggressive / High Reliability)**: E.g., Crank standby CHP-2 immediately, bring hydronic flow to 100%, maintain all heating loops.
-  - Assigns parameter overrides and provisional `AutonomyTier` to each plan.
-- **Outputs**:
-  - Publishes `MessageType.SIM_REQUEST` to `AgentRole.WHAT_IF` to test the candidate plans in the sandbox.
-  - Publishes `MessageType.PROPOSAL` to `AgentRole.RESOURCE_OPTIMIZER` for efficiency critique.
-- **Unit Test File**: `tests/agents/test_agent_planning.py`
-  - Generates valid candidate proposals for a generator trip scenario.
-  - Generates valid candidate proposals for a severe cold blizzard scenario.
-  - Verifies parameter override structure and syntax.
+## 6. Execution Order & User Approval Gateway
+
+We will implement this in the following sequence:
+1. **Phase 4 (Backend Server & Satcom Sync Engine)**:
+   - **Sub-Phase 4.1**: FastAPI Core & REST Endpoints.
+   - **Sub-Phase 4.2**: Satcom Bandwidth-Efficient Protocol & Store-and-Forward Engine.
+   - **Sub-Phase 4.3**: WebSocket Streaming Engine.
+2. **Phase 5 (Tactical Polar Digital Twin & Remote Cockpit Frontend)**:
+   - **Sub-Phase 5.1**: Vite/React Cockpit Foundation & Dual-Station Explorer.
+   - **Sub-Phase 5.2**: 2D Topological Subsystem Schematic & Animated Flows.
+   - **Sub-Phase 5.3**: Chief AI Deliberation Visualizer & Commander Briefing Card Console.
+   - **Sub-Phase 5.4**: Polar Satcom Monitor & Crisis Injection Sandbox.
 
 ---
-
-### Sub-Phase 3.6: What-If / Simulation Agent (`what_if.py`)
-- **Cognitive Question**: *"What happens if we execute this plan?"*
-- **Role**: Predictive validator executing candidate action plans in `TwinSandbox`.
-- **Inputs**:
-  - Subscribes to `MessageType.SIM_REQUEST` containing candidate action proposals.
-- **Internal Reasoning Engine**:
-  - Forks `TwinSandbox.fork(engine)` into isolated memory.
-  - Injects candidate parameter overrides into the sandbox state.
-  - Executes accelerated forward simulation (4 hours physical time in $< 25\,\text{ms}$).
-  - Compares candidate trajectory against unmitigated baseline:
-    $$\Delta\text{Fuel} = \text{Fuel}_{\text{baseline}} - \text{Fuel}_{\text{candidate}}$$
-    $$\Delta\text{Temp} = T_{\text{candidate\_min}} - T_{\text{baseline\_min}}$$
-  - Checks for safety violations (e.g. indoor temp $< 16^\circ\text{C}$ or load $> 95\%$).
-- **Outputs**:
-  - Publishes `MessageType.SIM_RESULT` targeted to `AgentRole.PLANNING` and `AgentRole.FRIDAY_ORCHESTRATOR`.
-  - Payload contains `simulation_delta`, `fuel_saved_l`, `temp_margin_c`, `is_safe`, and `safety_assessment`.
-- **Unit Test File**: `tests/agents/test_agent_what_if.py`
-  - Fast-forward simulation of Plan A vs Plan B.
-  - Correctly detects safety violation if a plan causes indoor freezing.
-  - Benchmarks execution time ($< 100\,\text{ms}$).
-
----
-
-### Sub-Phase 3.7: Mission Operations Agent (`mission_ops.py`)
-- **Cognitive Question**: *"Can outdoor missions, helicopter flights, or cargo operations proceed?"*
-- **Role**: Field safety and logistics operational evaluator.
-- **Inputs**:
-  - Subscribes to environmental weather and logistics telemetry.
-  - Tracks status of:
-    - PistenBully PB-01 to PB-06 convoys.
-    - Helicopter flight operations from helipad.
-    - Quilty Bay ship offloading and barge operations.
-    - Fast ice traverse routes.
-- **Internal Reasoning Engine**:
-  - Evaluates weather envelopes:
-    - Helipad: Wind $\le 20\,\text{m/s}$, Visibility $\ge 800\,\text{m}$, Blizzard risk $< 0.6 \implies \text{GO}$.
-    - Fast Ice Route: Ice thickness $\ge 1.5\,\text{m}$, Surface traction $\ge 60\% \implies \text{PASSABLE}$.
-  - Computes operational decision: `GO`, `CAUTION`, `NO_GO`.
-- **Outputs**:
-  - Publishes `MessageType.ADVISORY` or `MessageType.ALERT` on mission safety.
-  - Submits emergency traverse halt or recall proposals if weather deteriorates.
-- **Unit Test File**: `tests/agents/test_agent_mission_ops.py`
-  - Generates `NO_GO` when wind exceeds 25 m/s or whiteout conditions occur.
-  - Generates `GO` under mild summer weather.
-  - Verifies traction and sea-ice safety calculations.
-
----
-
-### Sub-Phase 3.8: Maintenance Agent (`maintenance.py`)
-- **Cognitive Question**: *"What assets need inspection, maintenance, or spare parts?"*
-- **Role**: Equipment health monitor and Antarctic environmental treaty compliance officer.
-- **Inputs**:
-  - Tracks cumulative running hours across CHPs, vehicles, RO pumps, MBR blowers.
-  - Reads warehouse stores inventory and spares stock levels.
-  - Observes Madrid Protocol waste staging and wastewater discharge quality.
-- **Internal Reasoning Engine**:
-  - Maintenance interval tracking (e.g. Scania CHP 250h oil change, 1000h major overhaul; PB-01 track tension inspection).
-  - Spares stockout risk evaluation.
-  - Environmental discharge compliance verification (MBR effluent COD $< 100\,\text{mg/L}$, BOD $< 25\,\text{mg/L}$).
-- **Outputs**:
-  - Publishes `MessageType.ADVISORY` with maintenance schedules and spares warnings.
-  - Critiques planning proposals that would push an asset past its critical maintenance window.
-- **Unit Test File**: `tests/agents/test_agent_maintenance.py`
-  - Flags overdue maintenance when CHP hours exceed service interval.
-  - Verifies Madrid Protocol waste staging alerts.
-  - Verifies warehouse inventory stockout alerts.
-
----
-
-### Sub-Phase 3.9: Resource Optimization Agent (`resource_optimizer.py`)
-- **Cognitive Question**: *"How should constrained station resources be balanced globally?"*
-- **Role**: Multi-objective Pareto optimizer balancing competing station priorities:
-  $$\min (\text{Fuel Burn Rate}) \quad \text{subject to} \quad T_{\text{indoor}} \ge 18^\circ\text{C}, \quad P_{\text{grid}} \le 95\%, \quad \text{Water} \ge 3\,\text{days}$$
-- **Inputs**:
-  - Subscribes to `MessageType.PROPOSAL` from Planning Agent.
-  - Observes fuel reserve trajectories, electrical loads, and thermal recovery loops.
-- **Internal Reasoning Engine**:
-  - Evaluates global trade-offs (e.g., shifting RO desalination batch run to daytime when solar is high; peak-shaving battery duty cycles; night setback heating).
-  - Critiques candidate plans that save fuel at the expense of life-support stability.
-- **Outputs**:
-  - Publishes `MessageType.CRITIQUE` on candidate proposals with recommended parameter tweaks.
-  - Publishes `MessageType.CONSENSUS_PLAN` endorsing the optimal trade-off.
-- **Unit Test File**: `tests/agents/test_agent_resource_optimizer.py`
-  - Critiques plan with excessive fuel burn.
-  - Recommends electrical load shifting for RO plant.
-  - Verifies Pareto trade-off scoring.
-
----
-
-### Sub-Phase 3.10: F.R.I.D.A.Y. Chief AI Orchestrator (`friday_orchestrator.py`)
-- **Cognitive Question**: *"What is the final decision and operational plan for the station commander?"*
-- **Role**: Executive Commander, dialogue manager, and multi-agent coordinator.
-- **Inputs**:
-  - Observes entire `DeliberationSession` blackboard across all agents.
-  - Handles operator queries and commands (terminal or chat interface).
-- **Internal Reasoning Engine**:
-  - Initiates and manages multi-agent deliberation rounds during anomalies.
-  - Synthesizes agent diagnoses, predictions, simulation results, and critiques into a unified **Executive Action Card**:
-    ```
-    ┌─────────────────────────────────────────────────────────────────┐
-    │ F.R.I.D.A.Y. EXECUTIVE ACTION CARD: INCIDENT SES-91A04          │
-    ├─────────────────────────────────────────────────────────────────┤
-    │ Anomaly: Severe Katabatic Blizzard & Heating Demand Surge       │
-    │ Root Cause: Ambient temp plunged to -32.5°C; wind gust 45 m/s   │
-    │ Prediction: Indoor temp will drop to 15.2°C in 48 min           │
-    │ Risk Score: 88.5 / 100 (CRITICAL: Life Support Threat)          │
-    ├─────────────────────────────────────────────────────────────────┤
-    │ Recommended Action: PLAN B (Dual CHP Dispatch & Damper Trim)    │
-    │ • Start Standby CHP-2 to support 155 kWth heating surge         │
-    │ • Trim AHU-01 fresh air damper to 15% to limit thermal loss     │
-    │ • Halts Quilty Bay marine offload and closes helipad            │
-    ├─────────────────────────────────────────────────────────────────┤
-    │ Simulation Validation:                                          │
-    │ • Indoor temp stabilizes at 20.4°C (Safe)                       │
-    │ • Fuel burn increases by +12.4 L/h (Autonomy: 242 days)         │
-    │ Autonomy Tier: TIER 3 (MANDATORY COMMANDER AUTHORIZATION)       │
-    │ PIN Required: [ BHARATI-CMD-2026 ]                              │
-    └─────────────────────────────────────────────────────────────────┘
-    ```
-  - Dispatches validated proposals through `SafetyInterlockManager`.
-- **Outputs**:
-  - Publishes `MessageType.CONSENSUS_PLAN` and dispatches execution.
-  - Provides natural-language reasoning summary for operator explanation.
-- **Unit Test File**: `tests/agents/test_friday_orchestrator.py`
-  - Full end-to-end deliberation round on blizzard incident.
-  - Executive Action Card generation.
-  - Tier 3 Commander confirmation execution.
-
----
-
-## 3. End-to-End Deliberation Integration Test (`tests/agents/test_deliberation_loop.py`)
-
-Following the completion of sub-phases 3.1 through 3.10, an end-to-end multi-agent integration test will verify the complete cognitive chain:
-1. Master engine injects `BLIZZARD_STRIKE`.
-2. `SituationAwarenessAgent` fires `ALERT` and spawns session.
-3. `DiagnosticRootCauseAgent` attributes root cause to katabatic weather surge.
-4. `PredictionAgent` calculates thermal decay countdown.
-5. `RiskImpactAgent` computes life-support blast radius (88/100).
-6. `PlanningRecommendationAgent` formulates Plan A and Plan B.
-7. `WhatIfSimulationAgent` forks sandbox, validates Plan B, and rejects Plan A for indoor freezing.
-8. `MissionOperationsAgent` issues Helipad and Traverse `NO_GO`.
-9. `ResourceOptimizationAgent` approves Plan B fuel-to-warmth ratio.
-10. `FridayOrchestrator` compiles Executive Action Card, verifies Commander PIN, and executes on the live digital twin.
-
----
-
-## 4. Verification Plan
-
-### Test Strategy:
-- Each of the 10 agents has its own dedicated test file (`test_agent_<name>.py`).
-- 10 new test files + 1 end-to-end integration test file.
-- Strict regression baseline: all 171 existing unit tests must remain 100% green after each sub-phase.
-
-### Execution Plan:
-- We will execute Sub-Phase 3.1 first, verify its unit tests, and then proceed sequentially through Sub-Phase 3.10.
-
----
-
-## 5. User Review & Approval Gateway
 
 > [!IMPORTANT]
-> **Sub-Phase 3.1 Initiation**:
-> We are ready to begin **Sub-Phase 3.1: Situation Awareness Agent** (`backend/agents/specialized/situation_awareness.py` and `tests/agents/test_agent_situation_awareness.py`).
+> **User Review Required**:
+> We are ready to proceed with **Sub-Phase 4.1: FastAPI Engine Core & Dual-Station REST Endpoints** (`backend/server/`).
 >
-> Please confirm if you approve proceeding with **Sub-Phase 3.1**!
+> Please review this plan and approve proceeding with Sub-Phase 4.1.

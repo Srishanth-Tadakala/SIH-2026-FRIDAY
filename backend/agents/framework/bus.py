@@ -91,6 +91,14 @@ class AgentMessageBus:
         """Return all active or past deliberation sessions."""
         return list(self._sessions.values())
 
+    def get_active_sessions(self) -> list[DeliberationSession]:
+        """Return all currently active deliberation sessions."""
+        return [s for s in self._sessions.values() if not s.resolved]
+
+    def get_history(self) -> list[AgentMessage]:
+        """Return all recorded messages in the bus audit history."""
+        return list(self._message_history)
+
     def publish(self, message: AgentMessage) -> None:
         """Publish a message onto the bus and dispatch it to relevant subscribers."""
         # 1. Record in global audit history

@@ -61,6 +61,7 @@ class MasterTwinSnapshot:
     readings: dict[str, Any]
     kpis: dict[str, Any]
     alerts: list[dict[str, Any]] = field(default_factory=list)
+    station_id: str = "bharati"
 
 
 class BharatiMasterTwinEngine:
@@ -72,6 +73,16 @@ class BharatiMasterTwinEngine:
         clock: SimulationClock | None = None,
     ) -> None:
         """Initialize all 4 observation pillars with a synchronized clock and shared seed."""
+        self.station_id: str = "bharati"
+        self.station_name: str = "Bharati Research Station"
+        self.location: str = "Larsemann Hills, East Antarctica"
+        self.coordinates: dict[str, Any] = {
+            "latitude": -69.4078,
+            "longitude": 76.1872,
+            "latitude_dms": "69° 24' 28'' S",
+            "longitude_dms": "76° 11' 14'' E",
+            "elevation_m": 35.0,
+        }
         self.clock = clock if clock is not None else SimulationClock()
         self.seed = seed
         self._active_scenario: MasterScenario = MasterScenario.NORMAL
@@ -422,4 +433,34 @@ class BharatiMasterTwinEngine:
             readings=dict(self._cached_readings),
             kpis=self.get_station_kpis(),
             alerts=self.get_active_alerts(),
+            station_id=self.station_id,
         )
+
+
+class MaitriMasterTwinEngine(BharatiMasterTwinEngine):
+    """Master Digital Twin simulation engine for Maitri Station.
+    
+    Target: Maitri Station, Schirmacher Oasis, Queen Maud Land, East Antarctica.
+    - Coordinates: 70° 45' 58" S, 11° 43' 50" E, Elevation: 117m.
+    - Primary fresh water line from Priyadarshini Lake with active trace heating.
+    - 3x 100 kVA Cummins/Kirloskar Gensets.
+    - Containerized modular architecture.
+    """
+
+    def __init__(
+        self,
+        seed: int | None = 101,
+        clock: SimulationClock | None = None,
+    ) -> None:
+        super().__init__(seed=seed, clock=clock)
+        self.station_id = "maitri"
+        self.station_name = "Maitri Research Station"
+        self.location = "Schirmacher Oasis, Queen Maud Land, East Antarctica"
+        self.coordinates = {
+            "latitude": -70.7661,
+            "longitude": 11.7306,
+            "latitude_dms": "70° 45' 58'' S",
+            "longitude_dms": "11° 43' 50'' E",
+            "elevation_m": 117.0,
+        }
+
