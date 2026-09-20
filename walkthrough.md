@@ -1,4 +1,4 @@
-# Walkthrough: Sub-Phase 4.2 Implementation (Polar Satcom Bandwidth-Aware Sync Protocol & Mainland Mirror Twin)
+# Walkthrough: Phase 4 Complete (Headless Server & Polar Satcom Sync Engine)
 
 **Project**: SIH 2026 SIH26060 — *F.R.I.D.A.Y. (Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations)*  
 **Target Stations**: 
@@ -7,185 +7,139 @@
 - **Mainland Command**: National Centre for Polar and Ocean Research (NCPOR), Vasco da Gama, Goa & MoES, New Delhi  
 
 **Status**: 
-- **Phase 1**: Digital Twin Core & Causal Graph Engine (Completed & Verified — 14 tests)  
-- **Phase 2**: Multi-Agent Message Bus & Safety Interlocks (Completed & Verified — 11 tests)  
-- **Phase 3**: All 10 Specialized Cognitive Agents (Completed & Verified — 72 tests)  
-- **Phase 4 (In Progress)**:
-  - **Sub-Phase 4.1**: FastAPI Engine Core & Dual-Station REST Endpoints (**Completed & Verified — 10 tests**)  
-  - **Sub-Phase 4.2**: Polar Satcom Delta-Sync Protocol & Mainland Mirror Twin (**Completed & Verified — 8 tests**)  
-  - **Sub-Phase 4.3**: Real-Time Multiplexed WebSocket Streaming Engine (Next up)  
-- **Phase 5**: Tactical Polar Digital Twin & Remote Cockpit (Vite + React + React Flow + Animated Subsystem Schematic)  
-**Total Test Results**: **261 passed (0 failures, 0 errors, 100% green in 44.81s)**.
+- **Phase 1**: Digital Twin Core & Causal Graph Engine (**Completed & Verified — 14 tests**)  
+- **Phase 2**: Multi-Agent Message Bus & Safety Interlocks (**Completed & Verified — 11 tests**)  
+- **Phase 3**: All 10 Specialized Cognitive Agents (**Completed & Verified — 72 tests**)  
+- **Phase 4**: Headless Server & Polar Satcom Bandwidth-Aware Sync Engine (**100% COMPLETE & VERIFIED — 27 tests**):
+  - **Sub-Phase 4.1**: FastAPI Engine Core & Dual-Station REST Endpoints (**Completed — 10 tests**)  
+  - **Sub-Phase 4.2**: Polar Satcom Delta-Sync Protocol & Mainland Mirror Twin (**Completed — 8 tests**)  
+  - **Sub-Phase 4.3**: Real-Time Multiplexed WebSocket Streaming Engine (**Completed — 9 tests**)  
+- **Phase 5 (Next Phase)**: Tactical Polar Digital Twin & Remote Cockpit (Vite + React + React Flow + Animated Subsystem Schematic)  
+
+**Total Test Results**: **270 passed (0 failures, 0 errors, 100% green in 47.18s)**.
 
 ---
 
-## 1. Polar Satcom Architectural Overview
+## 1. Complete Architecture Hierarchy
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       POLAR SATELLITE TELEMETRY SYNCHRONIZATION PIPELINE                                 │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-      ANTARCTIC RESEARCH STATIONS                                              MAINLAND HEADQUARTERS
-   (Bharati Station / Maitri Station)                                     (NCPOR Goa / MoES New Delhi)
-
-  ┌─────────────────────────────────┐                                    ┌───────────────────────────────────┐
-  │   Station Digital Twin Engine   │                                    │    Mainland Mirror Twin Engine    │
-  │   • 505 Physical Sensor Points  │                                    │    • Full 505 Reconstructed Twin │
-  │   • 4 Pillars / 37 Subsystems   │                                    │    • O(1) Real-Time Sensor Lookup │
-  │   • Active Crisis Scenarios     │                                    │    • SHA-256 State Checksum Parity│
-  └────────────────┬────────────────┘                                    └─────────────────▲─────────────────┘
-                   │                                                                       │
-  ┌────────────────▼────────────────┐                                    ┌─────────────────┴─────────────────┐
-  │        Deadband Filter          │                                    │      Satcom Deserializer &        │
-  │  • Temp: ±0.20°C                │                                    │      Frame Sequence Validator     │
-  │  • Power/Load: ±0.50 kW         │                                    │  • Validates Monotonic Sequence   │
-  │  • Tank/SOC: ±0.50%             │                                    │  • Detects Dropped Packet Gaps    │
-  │  • Discrete Flags: Immediate    │                                    │  • Triggers Keyframe Resync       │
-  └────────────────┬────────────────┘                                    └─────────────────▲─────────────────┘
-                   │ Filtered Channels                                                     │
-  ┌────────────────▼────────────────┐                                                      │
-  │      Sparse Delta Encoder       │                                                      │
-  │  • Frame 1: Full Baseline KEY   │                                                      │
-  │  • Frame 2+: Sparse DELTA (N<20)│                                                      │
-  │  • Sequence Number Counter      │                                                      │
-  └────────────────┬────────────────┘                                                      │
-                   │ SatcomFrame                                                           │
-  ┌────────────────▼────────────────┐                                                      │
-  │  Compressed Binary Serializer   │                                                      │
-  │  • Header: b"FRDY\x01" (Magic)  │                                                      │
-  │  • Zlib Level 9 Deflate Packing │                                                      │
-  │  • >90% Bandwidth Reduction     │                                                      │
-  └────────────────┬────────────────┘                                                      │
-                   │ Binary Packet                                                         │
-  ┌────────────────▼───────────────────────────────────────────────────────────────────────┴─────────────────┐
-  │                                    POLAR SATCOM CHANNEL EMULATOR                                        │
-  │  Profiles:                                                                                              │
-  │  • LAN_DIRECT: 100 Mbps, 0ms latency, 0% packet loss (Control Room)                                     │
-  │  • INMARSAT_STANDARD: 64 kbps, 850ms latency, 2% packet loss (Primary GEO BGAN)                           │
-  │  • IRIDIUM_LOW: 9.6 kbps, 1500ms latency, 8% packet loss (Backup Polar LEO)                             │
-  │  • POLAR_BLACKOUT: 0 kbps, inf latency, 100% loss (Solar storms / Radome icing)                        │
-  │                                                                                                         │
-  │  ┌───────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-  │  │                            PRIORITIZED STORE-AND-FORWARD SPOOL QUEUE                              │  │
-  │  │  • Priority 0 (CRITICAL): Alarms, Generator Trips, PIN Audits (Never dropped)                    │  │
-  │  │  • Priority 1 (DELIBERATION): Multi-Agent Briefing Cards, Action Proposals                       │  │
-  │  │  • Priority 2 (TELEMETRY): Routine Deltas (Bounded buffer, oldest evicted during multi-day blackout│  │
-  │  │  ► Upon Link Restoration: Drains in strict priority order (0 -> 1 -> 2)                          │  │
-  │  └───────────────────────────────────────────────────────────────────────────────────────────────────┘  │
-  └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                       F.R.I.D.A.Y. CHIEF AI PLATFORM                                    │
+│                                           (100% Offline Polar AI)                                       │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 5. TACTICAL DIGITAL TWIN REMOTE COCKPIT (Next Phase — Vite + React + React Flow + SVG Schematics)       │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. HEADLESS SERVER & SATCOM BANDWIDTH-AWARE DELTA SYNC ENGINE (PHASE 4 COMPLETE — 27 Tests)            │
+│  ├── [COMPLETED] Sub-Phase 4.1: FastAPI Engine Core & Dual-Station REST Endpoints (10 Tests)            │
+│  │   • /api/health           • /api/stations       • /api/telemetry/{sid}                              │
+│  │   • /api/agents           • /api/deliberations  • /api/actions            • /api/scenarios           │
+│  ├── [COMPLETED] Sub-Phase 4.2: Polar Satcom Bandwidth-Aware Sync Protocol (8 Tests)                   │
+│  │   • DeadbandFilter        • DeltaEncoder        • CompressedSerializer (>90% reduction)             │
+│  │   • PrioritizedSpoolQueue • PolarSatcomEmulator • MainlandMirrorTwinEngine (NCPOR Goa)              │
+│  └── [COMPLETED] Sub-Phase 4.3: Real-Time Multiplexed WebSocket Streaming Engine (9 Tests)              │
+│      • /ws/telemetry/{sid}   • Channels: kpis, sensors, alerts, deliberations, satcom                  │
+│      • 4-Pillar / Sensor-ID Selective Filtering    • Bi-Directional Full-Duplex Controls               │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. F.R.I.D.A.Y. MULTI-AGENT COGNITIVE ARCHITECTURE (ALL 10 AGENTS COMPLETE — 72 Tests)                   │
+│    [10] Orchestrator  [1] Perception  [2] Diagnostic  [3] Prediction  [4] Risk  [5] Planning            │
+│    [6] What-If Sim    [7] Mission Ops [8] Maintenance [9] Resource Optimizer                            │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. AGENT COMMUNICATION & SAFETY GOVERNANCE (Phase 2 — 11 Tests)                                         │
+│    • MessageBus (Async Pub/Sub Blackboard)  • SafetyInterlockManager (Tier 1/2/3 Hard Safety Invariants)│
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. DIGITAL TWIN CORE & CAUSAL GRAPH (Phase 1 — 14 Tests)                                                │
+│    • BharatiMasterTwinEngine  • MaitriMasterTwinEngine  • TwinCausalGraph  • TwinSandbox Forking        │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ FOUNDATION: 4-PILLAR PHYSICAL SENSOR LAYER (146 Tests)                                                  │
+│    • Energy & Microgrid (140)  • Life Support & HVAC (180)  • Environment (87)  • Logistics (98)        │
+│    ► Total: 505 Deterministic Physical Points Across 37 Subsystem Domains                                │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Sub-Phase 4.2: Delivered Components
+## 2. Sub-Phase 4.3: Delivered Components
 
-### 1. Polar Satcom Telemetry Protocol & Compression Engine
-- [protocol.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/satcom/protocol.py):
-  - **`DeadbandRule` & `DeadbandFilter`**:
-    - Suppresses sensor telemetry jitter across steady-state operations.
-    - Tailored physical deadbands: Temperatures ($\pm0.20\,^\circ\text{C}$), Electrical Loads ($\pm0.50\,\text{kW}$), Tank Levels ($\pm0.50\,\%$), Pressures ($\pm0.50\,\text{hPa}$), Flow Rates ($\pm0.50\,\text{L/h}$), Wind Speeds ($\pm0.30\,\text{m/s}$).
-    - Discrete states, trips, alarms, and boolean flags have threshold $0.0$, guaranteeing immediate transmission upon state transitions.
-    - Configurable `max_silence_seconds` ($60.0\,\text{s}$) heartbeat prevents channels from going stale.
-  - **`FrameType` & `SatcomFrame`**:
-    - Defines frame classifications: `KEYFRAME` (505 sensors baseline), `DELTA` (sparse channel diffs), `ALARM` (urgent warnings), `COMMAND_AUDIT` (PIN authorizations), `DELIBERATION_CARD` (multi-agent consensus), `HEARTBEAT`, and `RESYNC_REQUEST`.
-    - Standardized metadata with sequence numbering, simulation timestamps, KPIs, active alarms, and delta counts.
-  - **`DeltaEncoder`**:
-    - Monotonically sequence-tracked differential frame encoding per station.
-    - Initial frame is always an authoritative baseline `KEYFRAME`. Subsequent frames transmit sparse deltas containing only modified channels ($N < 20$ vs $505$).
-  - **`CompressedSerializer`**:
-    - Packs frames into compact binary payloads with magic header `b"FRDY\x01"` and zlib Level 9 compression.
-    - Yields $>90\%$ payload reduction on full keyframes and compresses sparse deltas down to $< 300$ bytes.
+### 1. Multiplexed Telemetry WebSocket Streaming Engine
+- [ws_manager.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/ws_manager.py):
+  - **`TelemetryWebSocketManager`**: High-throughput multiplexed streaming manager handling client sessions, channel routing, rate throttling, and selective subscriptions.
+  - **`WebSocketChannel`**: Five dedicated streaming channels over a single WebSocket connection:
+    - `kpis`: High-level station vital signs (1 Hz: Generation, Load, Temperatures, Fuel/Water Autonomy, Risk Score).
+    - `sensors`: 505-sensor granular telemetry deltas with JSON scalar serialization.
+    - `alerts`: Immediate push of operational and life-safety alarms.
+    - `deliberations`: Real-time streaming of multi-agent cognitive events and explainable Commander Briefing Cards.
+    - `satcom`: Live satellite link metrics (channel profile, bandwidth savings, spool queue depth, mirror twin sync status).
+    - `system`: Connection acknowledgments, subscription confirmations, and ping/pong heartbeats.
+  - **Selective Client Filtering**:
+    - Pillar filtering (`"filter": {"pillar": "energy"}`): Restricts sensor broadcasts strictly to the requested pillar (Energy, Infrastructure, Environment, Logistics).
+    - Explicit sensor ID filtering (`"filter": {"sensor_ids": ["ENV-WX-TEMP", "ENG-GEN-1-KW"]}`): Eliminates client over-fetching.
+  - **Full-Duplex Interactive Controls**:
+    - `step`: Advance station simulation clock over WebSocket (`{"action": "step", "dt_seconds": 1.0}`).
+    - `ping` / `pong`: Low-overhead keepalive heartbeat verification.
+    - `get_snapshot`: On-demand instant full station snapshot.
+    - `subscribe` / `unsubscribe`: Dynamic channel membership updates.
 
-### 2. Prioritized Store-and-Forward Spool Queue
-- [store_and_forward.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/satcom/store_and_forward.py):
-  - Multi-level prioritized ring buffer designed for polar blackouts:
-    - **`PRIORITY_CRITICAL` ($0$)**: Emergency alarms, generator blackouts, PIN authorizations, commander overrides. Never dropped unless hard safety threshold is exceeded.
-    - **`PRIORITY_DELIBERATION` ($1$)**: Explainable multi-agent briefing cards, proposed action plans, diagnostic root causes.
-    - **`PRIORITY_TELEMETRY` ($2$)**: Routine sensor deltas and periodic snapshots. Bounded capacity with oldest-frame eviction to preserve satcom bandwidth.
-  - Guarantees $O(1)$ enqueue and dequeue operations.
-  - Drains in strict priority order upon link restoration ($0 \to 1 \to 2$).
-
-### 3. Polar Satcom Channel Emulator
-- [channel_emulator.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/satcom/channel_emulator.py):
-  - Emulates physical characteristics of polar satellite constellations:
-    - `LAN_DIRECT`: $100\,\text{Mbps}$, $0\,\text{ms}$, $0\%$ packet loss (Antarctic station control room LAN).
-    - `INMARSAT_STANDARD`: $64\,\text{kbps}$, $850\,\text{ms}$ RTT latency, $2\%$ packet loss (Primary Inmarsat BGAN).
-    - `IRIDIUM_LOW`: $9.6\,\text{kbps}$, $1500\,\text{ms}$ RTT latency, $8\%$ packet loss (Backup polar orbit LEO link).
-    - `POLAR_BLACKOUT`: $0\,\text{kbps}$, $\infty\,\text{ms}$, $100\%$ packet loss (Solar coronal mass ejections, radome snow icing).
-  - Automatically redirects frames to `PrioritizedSpoolQueue` during blackout conditions (`SPOOLED_BLACKOUT`).
-  - Provides `recover_from_blackout()` to drain spooled frames in priority order when link connectivity is re-established.
-  - Tracks cumulative transmitted bytes, raw uncompressed equivalent bytes, and total bandwidth savings.
-
-### 4. Mainland Mirror Digital Twin Replica Engine
-- [mirror_twin.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/satcom/mirror_twin.py):
-  - Runs at Mainland Command (NCPOR Goa / MoES New Delhi).
-  - Maintains a synchronized, reconstructed digital twin of Bharati and Maitri stations.
-  - Validates frame sequence numbers: detects packet drops (`GAP_DETECTED`), flags `resync_required`, and generates `RESYNC_REQUEST` frames.
-  - Computes deterministic SHA-256 state checksums to verify mathematical parity between remote Antarctic station engines and the mainland replica.
-  - Provides $O(1)$ sensor lookup, active alerts, and cached deliberation briefing cards.
-
-### 5. FastAPI REST API Integration
-- [satcom.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/routes/satcom.py):
-  - `GET /api/satcom/status`: Aggregated channel metrics, compression savings, and sync status for both stations.
-  - `GET /api/satcom/{station_id}/summary`: Granular channel telemetry and mirror twin status for a specific station.
-  - `GET /api/satcom/{station_id}/mirror`: Reconstructed mainland twin readings (all 505 sensors), KPIs, active alerts, and SHA-256 checksum.
-  - `POST /api/satcom/profile`: Dynamically switch channel profiles (`LAN_DIRECT`, `INMARSAT_STANDARD`, `IRIDIUM_LOW`, `POLAR_BLACKOUT`).
-  - `POST /api/satcom/{station_id}/sync`: Trigger manual satcom delta or keyframe transmission.
-  - `POST /api/satcom/{station_id}/recover`: Restore satellite connection from blackout and drain the prioritized spool queue.
-  - `POST /api/satcom/{station_id}/resync`: Force full keyframe resynchronization to heal sequence gaps.
-- [state.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/state.py):
-  - Embedded satcom encoders, emulators, and mainland mirror engines into `ServerState`.
-  - Automatic background delta transmission on simulation clock steps.
+### 2. WebSocket Route & Diagnostics
+- [ws.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/routes/ws.py):
+  - `WEBSOCKET /ws/telemetry/{station_id}`: Persistent bidirectional WebSocket connection for Bharati and Maitri stations. Unknown stations rejected with policy code 1008.
+  - `GET /api/ws/stats`: Live diagnostic telemetry reporting active connections per station and supported channels.
 - [app.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/app.py):
-  - Registered `satcom_router` in FastAPI application and exposed `satcom_sync_active: True` in `/api/health`.
+  - Registered `ws_router` in FastAPI application.
+  - `/api/health` now reports `websocket_streaming_active: True`.
+- [state.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/backend/server/state.py):
+  - `ServerState.step()` automatically triggers async background WebSocket broadcasts across all connected clients on that station.
 
 ---
 
-## 3. Test Verification & Zero Regressions
+## 3. Test Verification: 270 / 270 Tests (100% Green)
 
-A dedicated test suite was implemented in [test_satcom_protocol.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/tests/satcom/test_satcom_protocol.py) covering all Sub-Phase 4.2 capabilities:
-1. `test_deadband_filtering_dampens_jitter`: Verified steady-state jitter suppression, deadband thresholds, and discrete flag triggers.
-2. `test_delta_encoder_keyframe_and_sparse_delta`: Verified 505-sensor baseline keyframe generation and sparse delta frames.
-3. `test_compressed_serializer_binary_efficiency`: Verified binary header `b"FRDY\x01"`, zlib Level 9 deflation, and $>90\%$ bandwidth savings.
-4. `test_prioritized_spool_queue_ordering_and_eviction`: Verified strict priority draining ($0 > 1 > 2$) and bounded telemetry eviction.
-5. `test_polar_channel_emulator_profiles_and_blackout`: Verified profile switching, latency simulation, blackout spooling, and priority recovery.
-6. `test_mainland_mirror_twin_state_reconstruction_and_checksum`: Verified exact state reconstruction, $O(1)$ lookup, and SHA-256 checksum parity.
-7. `test_mainland_mirror_twin_gap_detection_and_resync`: Verified sequence gap detection (`GAP_DETECTED`) and keyframe healing.
-8. `test_satcom_rest_api_endpoints`: Verified FastAPI REST endpoints for satcom status, mirror twin, profile switching, spool recovery, and resync.
+The dedicated test suite [test_websocket_streaming.py](file:///c:/Users/siddu/OneDrive/Desktop/F.R.I.D.A.Y/tests/server/test_websocket_streaming.py) validates all 9 WebSocket requirements:
+1. `test_websocket_handshake_and_system_ack`: Handshake acknowledgment with default channels (`kpis`, `alerts`, `satcom`).
+2. `test_websocket_ping_pong_heartbeat`: Full-duplex heartbeat verification.
+3. `test_websocket_channel_subscription_and_unsubscription`: Dynamic channel subscription and unsubscription.
+4. `test_websocket_selective_pillar_filtering`: Confirmed client receives strictly Energy pillar sensors when filtered.
+5. `test_websocket_selective_sensor_ids_filtering`: Confirmed client receives only explicitly requested sensor IDs.
+6. `test_websocket_instant_snapshot_request`: On-demand full snapshot query returning 505 sensors.
+7. `test_websocket_station_isolation`: Verified Bharati and Maitri client stream isolation.
+8. `test_websocket_unknown_station_rejected`: Verified invalid station connection rejected with close code 1008.
+9. `test_websocket_diagnostic_stats_endpoint`: Verified live connection count increments and cleanup on disconnect.
 
-### Full Regression Suite Run:
+### Full Test Suite Execution:
 ```bash
 python -m pytest
-============================ 261 passed in 44.81s =============================
+============================ 270 passed in 47.18s =============================
 ```
-- **Total Tests**: 261 / 261 passed (100% green).
-- **Test Breakdown**:
-  - Sensors (Energy, Environment, Infrastructure, Logistics): **146 tests**
-  - Digital Twin Core & Causal Graph: **14 tests**
-  - Multi-Agent Message Bus & Safety Interlocks: **11 tests**
-  - 10 Specialized Cognitive Agents & Orchestrator: **72 tests**
-  - FastAPI Server REST Endpoints (Sub-Phase 4.1): **10 tests**
-  - Polar Satcom Bandwidth-Aware Telemetry & Mirror Twin (Sub-Phase 4.2): **8 tests**
-- **Git Commit**: `5675d43` pushed to `origin/main`.
+- **Sensors Layer** (146 tests): 100% passed
+- **Digital Twin Core & Causal Graph** (14 tests): 100% passed
+- **Agent Message Bus & Safety Interlocks** (11 tests): 100% passed
+- **10 Specialized Cognitive Agents** (72 tests): 100% passed
+- **FastAPI REST API Endpoints** (10 tests): 100% passed
+- **Polar Satcom Protocol & Mirror Twin** (8 tests): 100% passed
+- **Multiplexed WebSocket Streaming** (9 tests): 100% passed
+- **Git Commit**: `470bf9b` pushed to `origin/main`.
 
 ---
 
-## 4. Next Step: Sub-Phase 4.3 Implementation Plan
+## 4. Phase 5: Tactical Polar Digital Twin & Remote Cockpit Plan
 
-With Sub-Phase 4.1 and Sub-Phase 4.2 fully implemented, tested, and pushed, the next logical step in Phase 4 is:
+With the complete backend engine, digital twin physics, 10 cognitive agents, polar satcom delta-sync protocol, and multiplexed WebSocket streaming fully implemented and tested, we are ready for **Phase 5: Tactical Polar Digital Twin & Remote Cockpit**.
 
-### **Sub-Phase 4.3: Real-Time Multiplexed WebSocket Streaming Engine**
-1. **WebSocket Protocol & Multiplexing**:
-   - Create `backend/server/routes/ws.py` providing `/ws/telemetry/{station_id}`.
-   - Channel multiplexing over a single connection:
-     - `channel: "kpis"` (1 Hz high-level overview).
-     - `channel: "sensors"` (selective subscription by sensor ID or pillar).
-     - `channel: "alerts"` (immediate broadcast of new alarms).
-     - `channel: "deliberations"` (live agent blackboard messages and briefing cards).
-     - `channel: "satcom"` (satcom profile, bandwidth stats, blackout alerts).
-2. **Client-Side Throttling & Backpressure**:
-   - Dynamic rate-limiting based on connection profile (LAN: 10 Hz, Satcom: 0.1-1 Hz).
-   - Heartbeat ping/pong and auto-reconnect handling.
-3. **Unit & Integration Tests**:
-   - WebSocket subscription testing using FastAPI TestClient with WebSocket transport.
-   - Verifying selective channel subscriptions and delta broadcasting.
+### Phase 5 Proposed Sub-Phases:
+- **Sub-Phase 5.1: Modern React + Vite Frontend Foundation & Dark Polar UI System**:
+  - Tailwind / Modern Polar HUD design system (Deep Navy `#070d18`, Cyan `#00f0ff`, Amber `#ffaa00`, Crimson `#ff3344`).
+  - Dual-Station Switcher (Bharati Station vs Maitri Station vs Mainland NCPOR Mirror).
+  - Satcom Link Monitor Widget (bandwidth usage, compression ratio, blackout indicator, latency gauge).
+- **Sub-Phase 5.2: React Flow Polar Digital Twin Subsystem Schematic**:
+  - Interactive nodes for 4 Critical Pillars: Energy (3x CHPs, Microgrid, Fuel Tanks), Infrastructure (HVAC, Trace Heating, Potable Water), Environment (Weather Station, Blizzard Radar), Logistics (Traverse Fleet, Reefer Containers).
+  - Animated edge flows (power flow kW, heat flow kWth, fuel flow L/h, water flow).
+  - Dynamic status glow (green nominal, amber warning, red emergency trip).
+- **Sub-Phase 5.3: Cognitive AI Society Blackboard & Explainable Briefing Cards**:
+  - Live agent activity feed (Perception -> Diagnostic -> Prediction -> Risk -> Planning).
+  - Commander Briefing Card modal with root causes, confidence scores, and action proposals.
+- **Sub-Phase 5.4: Tiered Action Approval & Commander PIN Modal**:
+  - Tier 1 Autonomous execution log.
+  - Tier 2 Supervised action countdown timer with supervisor Cancel/Bypass buttons.
+  - Tier 3 Mandatory Station Commander PIN Modal (`BHARATI-CMD-2026` / `MAITRI-CMD-2026`).
+- **Sub-Phase 5.5: Master Crisis Scenario Injector & Simulation Controls**:
+  - One-click trigger for 8 crisis scenarios (Blizzard Strike, Generator Trip, Pipe Freeze, Cold Chain Excursion, etc.).
+  - Play/Pause/Step simulation speed controls.
