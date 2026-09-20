@@ -182,6 +182,17 @@ class ServerState:
         if sid == self.active_station_id:
             self.situation_awareness.on_tick(snapshot)
 
+        # Broadcast update to connected WebSocket clients if asyncio loop is running
+        try:
+            import asyncio
+            from .ws_manager import get_ws_manager
+            loop = asyncio.get_running_loop()
+            if loop.is_running():
+                ws_manager = get_ws_manager()
+                loop.create_task(ws_manager.broadcast_station_step(sid, snapshot, self))
+        except (RuntimeError, ImportError):
+            pass
+
         return snapshot
 
     def sync_station_telemetry(

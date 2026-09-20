@@ -24,6 +24,7 @@ from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
 from .routes.stations import router as stations_router
 from .routes.telemetry import router as telemetry_router
+from .routes.ws import router as ws_router
 from .state import get_server_state
 
 
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(stations_router)
     app.include_router(telemetry_router)
     app.include_router(satcom_router)
+    app.include_router(ws_router)
     app.include_router(agents_router)
     app.include_router(deliberations_router)
     app.include_router(actions_router)
@@ -85,6 +87,7 @@ def create_app() -> FastAPI:
             "cognitive_agents_count": 10,
             "interlocks_active": True,
             "satcom_sync_active": True,
+            "websocket_streaming_active": True,
         }
 
     @app.exception_handler(Exception)
