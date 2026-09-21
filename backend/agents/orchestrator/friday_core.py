@@ -106,6 +106,8 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
         self._processed_messages: set[str] = set()
         # Active incident tracking
         self._active_session_id: str | None = None
+        # Edge blackout mode flag for local command authority
+        self.edge_blackout_mode: bool = False
 
         # Subscribe to all key blackboard events across the multi-agent bus
         self.bus.subscribe_type(MessageType.ALERT, self._on_alert)
@@ -295,9 +297,12 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
         card = self.synthesize_briefing_card(session_id)
         self._briefing_cards[session_id] = card
 
-        # Auto-execute Tier 1 proposals immediately
-        if winning_proposal.tier == AutonomyTier.TIER_1_AUTONOMOUS and not session.resolved:
-            self.execute_consensus_plan(session_id=session_id)
+        # Auto-execute Tier 1 proposals immediately, or Tier 2 under edge blackout authority
+        if not session.resolved:
+            if winning_proposal.tier == AutonomyTier.TIER_1_AUTONOMOUS:
+                self.execute_consensus_plan(session_id=session_id)
+            elif winning_proposal.tier == AutonomyTier.TIER_2_SUPERVISED and getattr(self, "edge_blackout_mode", False):
+                self.execute_consensus_plan(session_id=session_id, bypass_supervision=True)
 
         return winning_proposal
 

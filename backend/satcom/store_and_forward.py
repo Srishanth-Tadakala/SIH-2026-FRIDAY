@@ -162,6 +162,10 @@ class PrioritizedSpoolQueue:
         """Total number of frames pending in the buffer."""
         return len(self._critical_queue) + len(self._deliberation_queue) + len(self._telemetry_queue)
 
+    def __len__(self) -> int:
+        """Return total queue depth."""
+        return self.qsize()
+
     def qsize_by_priority(self) -> dict[int, int]:
         """Count of frames grouped by priority."""
         return {

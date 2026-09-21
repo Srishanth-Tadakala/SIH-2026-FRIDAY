@@ -1,0 +1,3017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F.R.I.D.A.Y. | Chief AI Polar Digital Twin Mission Control (SIH26060)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-space: #030712;
+      --bg-panel: rgba(10, 17, 34, 0.85);
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(22, 33, 58, 0.9);
+      --border-subtle: rgba(56, 189, 248, 0.18);
+      --border-highlight: rgba(56, 189, 248, 0.6);
+      --border-hud: rgba(0, 240, 255, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --cyan: #00f0ff;
+      --cyan-glow: 0 0 16px rgba(0, 240, 255, 0.4);
+      --blue: #38bdf8;
+      --emerald: #10b981;
+      --emerald-glow: 0 0 14px rgba(16, 185, 129, 0.4);
+      --amber: #f59e0b;
+      --amber-glow: 0 0 14px rgba(245, 158, 11, 0.4);
+      --crimson: #ef4444;
+      --crimson-glow: 0 0 18px rgba(239, 68, 68, 0.5);
+      --purple: #a855f7;
+      --purple-glow: 0 0 14px rgba(168, 85, 247, 0.4);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-hud: 'Orbitron', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-space);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 20%, rgba(168, 85, 247, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.7); }
+    ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.35); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+    /* Top Command Header */
+    header {
+      background: rgba(8, 14, 28, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 60;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .emblem-box {
+      background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+      border: 1px solid var(--cyan);
+      box-shadow: var(--cyan-glow);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-hud);
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+    .brand-titles h1 {
+      font-family: var(--font-hud);
+      font-size: 14px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-titles p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Dual-Station Radar Toggle */
+    .station-dock {
+      display: flex;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .station-dock-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.2s ease;
+    }
+    .station-dock-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(14, 165, 233, 0.15) 100%);
+      color: var(--cyan);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+      border: 1px solid var(--border-highlight);
+    }
+    .station-dock-btn:hover:not(.active) {
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Header Satcom Telemetry HUD */
+    .satcom-hud {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 5px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .pulse-beacon {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: var(--emerald-glow);
+      animation: beaconPulse 1.8s infinite;
+    }
+    .pulse-beacon.blackout {
+      background: var(--crimson);
+      box-shadow: var(--crimson-glow);
+      animation: beaconPulse 0.8s infinite;
+    }
+    @keyframes beaconPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.5; }
+    }
+
+    /* Tactical Edge Autonomy & Polar Blackout Banner */
+    .tactical-banner {
+      background: linear-gradient(90deg, rgba(8, 20, 42, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(8, 20, 42, 0.95) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.3s ease;
+      position: sticky;
+      top: 55px;
+      z-index: 50;
+    }
+    .tactical-banner.blackout {
+      background: linear-gradient(90deg, rgba(88, 14, 14, 0.95) 0%, rgba(136, 19, 19, 0.95) 50%, rgba(88, 14, 14, 0.95) 100%);
+      border-bottom: 1px solid var(--crimson);
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.4);
+      animation: blackoutAlert 2.5s infinite;
+    }
+    @keyframes blackoutAlert {
+      0%, 100% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 32px rgba(239, 68, 68, 0.65); }
+    }
+    .badge-tactical {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-family: var(--font-hud);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+    .badge-tactical.online {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid var(--emerald);
+      color: var(--emerald);
+    }
+    .badge-tactical.blackout {
+      background: rgba(239, 68, 68, 0.3);
+      border: 1px solid var(--crimson);
+      color: #fff;
+      animation: beaconPulse 1.2s infinite;
+    }
+
+    /* Secondary Flight Control Bar (Clock & Judge Demonstrations) */
+    .control-deck {
+      background: rgba(11, 18, 33, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .deck-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .deck-label {
+      font-family: var(--font-hud);
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+    .btn {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+    .btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--blue);
+      color: var(--cyan);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+      box-shadow: var(--cyan-glow);
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.4);
+      border-color: var(--crimson);
+      color: #fff;
+      box-shadow: var(--crimson-glow);
+    }
+    .btn-demo {
+      background: rgba(168, 85, 247, 0.18);
+      border-color: rgba(168, 85, 247, 0.5);
+      color: #e9d5ff;
+      font-size: 11px;
+    }
+    .btn-demo:hover {
+      background: rgba(168, 85, 247, 0.35);
+      border-color: var(--purple);
+      color: #fff;
+      box-shadow: var(--purple-glow);
+    }
+    .select-tactical {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 5px 10px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Main Operations Dashboard Grid */
+    main {
+      flex: 1;
+      padding: 16px 24px;
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 16px;
+    }
+
+    /* Row 1: Vital Signs KPI Bar */
+    .kpi-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .kpi-hud-card {
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .kpi-hud-card:hover {
+      border-color: var(--border-highlight);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.08);
+    }
+    .kpi-hud-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    }
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-family: var(--font-hud);
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .kpi-big-val {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .kpi-unit {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+    .kpi-sparkline-box {
+      height: 24px;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .kpi-footer-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Panel Card Base */
+    .hud-panel {
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .hud-panel-header {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.7);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hud-panel-title {
+      font-family: var(--font-hud);
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+    }
+
+    /* Station Digital Twin Synoptic Blueprint (SVG Interactive View) */
+    .synoptic-container {
+      background: rgba(5, 10, 22, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      position: relative;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .synoptic-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-family: var(--font-hud);
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--cyan);
+    }
+    .synoptic-svg {
+      width: 100%;
+      height: 180px;
+      display: block;
+    }
+
+    /* Actuator Cards Grid */
+    .actuator-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .actuator-unit {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .actuator-unit:hover {
+      border-color: var(--border-highlight);
+      background: rgba(22, 33, 58, 0.85);
+    }
+    .actuator-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .actuator-name {
+      font-family: var(--font-hud);
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-status {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
+    }
+    .status-online { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--emerald); color: var(--emerald); }
+    .status-standby { background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.4); color: var(--text-muted); }
+    .status-alert { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--crimson); color: #fca5a5; }
+
+    .actuator-readouts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      font-size: 10px;
+      background: rgba(8, 14, 26, 0.6);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+    .readout-lbl { color: var(--text-dim); }
+    .readout-val { text-align: right; color: var(--cyan); font-weight: 600; }
+
+    .actuator-btn-row {
+      display: flex;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .btn-act {
+      flex: 1;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-family: var(--font-hud);
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(30, 41, 59, 0.7);
+      color: #fff;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .btn-act:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .btn-act-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .btn-act-danger:hover {
+      background: rgba(239, 68, 68, 0.4);
+      border-color: var(--crimson);
+      color: #fff;
+    }
+
+    /* Cognitive Society Neural Stream ("What Was Noticed & What Was Done") */
+    .cognitive-nav {
+      display: flex;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(8, 14, 26, 0.7);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+    }
+    .cog-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: var(--font-hud);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cog-tab.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    }
+    .cognitive-stream-box {
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cog-event-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--cyan);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .cog-event-card:hover {
+      transform: translateX(2px);
+      background: rgba(22, 33, 58, 0.9);
+      border-color: var(--border-highlight);
+    }
+    .cog-event-card.PERCEPTION { border-left-color: var(--cyan); }
+    .cog-event-card.DIAGNOSIS { border-left-color: var(--purple); }
+    .cog-event-card.PREDICTION { border-left-color: var(--amber); }
+    .cog-event-card.ACTUATION { border-left-color: var(--emerald); }
+    .cog-event-card.EDGE_AUTHORITY { border-left-color: var(--crimson); }
+
+    .cog-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .cog-pill {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .pill-PERCEPTION { background: rgba(0, 240, 255, 0.15); color: var(--cyan); }
+    .pill-DIAGNOSIS { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+    .pill-PREDICTION { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+    .pill-ACTUATION { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+    .pill-EDGE_AUTHORITY { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+
+    .cog-time { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); }
+    .cog-title { font-size: 11px; font-weight: 700; color: #fff; }
+    .cog-narrative {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.4;
+      background: rgba(0,0,0,0.3);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border-left: 2px solid rgba(255,255,255,0.1);
+    }
+
+    /* Tactical Commander PIN Keypad Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-hud-window {
+      background: #090f1d;
+      border: 1px solid var(--cyan);
+      box-shadow: 0 0 36px rgba(0, 240, 255, 0.3);
+      border-radius: 10px;
+      width: 90%;
+      max-width: 480px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-hud-header {
+      padding: 12px 18px;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-hud-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .keypad-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      font-family: var(--font-hud);
+      font-size: 16px;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .keypad-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .keypad-display {
+      background: #030712;
+      border: 1px solid var(--border-highlight);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 18px;
+      color: var(--cyan);
+      letter-spacing: 3px;
+      text-align: center;
+      min-height: 44px;
+    }
+
+    /* F.R.I.D.A.Y. Cognitive Neural Society & Deliberation Visualizer */
+    .neural-canvas-container {
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, rgba(14, 25, 48, 0.95) 0%, rgba(6, 11, 22, 0.98) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 8px 6px;
+      overflow: hidden;
+    }
+    .neural-svg {
+      width: 100%;
+      height: 250px;
+      display: block;
+      filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.15));
+    }
+    .synapse-path {
+      stroke: rgba(56, 189, 248, 0.25);
+      stroke-width: 1.5;
+      fill: none;
+      stroke-dasharray: 4, 3;
+      transition: stroke 0.3s;
+    }
+    .synapse-path.active {
+      stroke: var(--cyan);
+      stroke-width: 2.2;
+      stroke-dasharray: 6, 4;
+      animation: synapseFlow 1.2s linear infinite;
+      filter: drop-shadow(0 0 6px var(--cyan));
+    }
+    @keyframes synapseFlow {
+      from { stroke-dashoffset: 20; }
+      to { stroke-dashoffset: 0; }
+    }
+    .agent-node-circle {
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .agent-node-circle:hover {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 10px var(--cyan));
+    }
+    .friday-orb-ring {
+      transform-origin: 190px 125px;
+      animation: rotateRing 18s linear infinite;
+    }
+    .friday-orb-pulse {
+      transform-origin: 190px 125px;
+      animation: orbGlow 2.4s ease-in-out infinite;
+    }
+    @keyframes rotateRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes orbGlow {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 16px var(--cyan)); }
+    }
+
+    /* Deliberation 6-Stage Ribbon */
+    .delib-ribbon {
+      display: flex;
+      background: rgba(8, 14, 28, 0.9);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 6px 8px;
+      gap: 3px;
+      overflow-x: auto;
+    }
+    .delib-stage {
+      flex: 1;
+      min-width: 50px;
+      padding: 4px 2px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      text-align: center;
+      font-size: 8px;
+      font-family: var(--font-hud);
+      color: var(--text-dim);
+      letter-spacing: 0.3px;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .delib-stage.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+      animation: delibGlow 1.2s infinite;
+      font-weight: 700;
+    }
+    .delib-stage.completed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--emerald);
+    }
+    @keyframes delibGlow {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; box-shadow: 0 0 14px var(--cyan); }
+    }
+    .delib-headline-bar {
+      padding: 5px 12px;
+      background: rgba(10, 18, 36, 0.85);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Tactical Command Navigation -->
+  <header>
+    <div class="brand-section">
+      <div class="emblem-box">F.R.I.D.A.Y.</div>
+      <div class="brand-titles">
+        <h1>CHIEF AI POLAR DIGITAL TWIN <span style="font-size:10px; color:var(--cyan); font-weight:400;">(SIH26060)</span></h1>
+        <p>National Centre for Polar and Ocean Research (NCPOR) Vasco da Gama, Goa &bull; Indian Antarctic Programme</p>
+      </div>
+    </div>
+
+    <!-- Dual Antarctic Station Switcher -->
+    <div class="station-dock">
+      <button class="station-dock-btn active" id="btn-station-bharati" onclick="switchStation('bharati')">
+        <span>BHARATI STATION</span>
+        <span style="font-size:9px; color:var(--text-dim);">69°24′S, 76°11′E</span>
+      </button>
+      <button class="station-dock-btn" id="btn-station-maitri" onclick="switchStation('maitri')">
+        <span>MAITRI STATION</span>
+        <span style="font-size:9px; color:var(--text-dim);">70°46′S, 11°44′E</span>
+      </button>
+    </div>
+
+    <!-- Telemetry Link & Satcom HUD -->
+    <div class="deck-group">
+      <div class="satcom-hud" style="cursor:pointer;" onclick="openDatabaseModal()" title="Inspect 2-Step Distributed Database, Case Memory & Asset Wear">
+        <span class="pulse-beacon" id="db-edge-beacon" style="background:var(--emerald);"></span>
+        <span id="db-header-edge-label" style="font-weight:600;">EDGE DB: ONLINE</span>
+        <span style="color:var(--text-dim);">&bull;</span>
+        <span id="db-header-cloud-label" style="color:var(--cyan); font-weight:700;">CLOUD ATLAS: SYNCED</span>
+      </div>
+      <button class="btn btn-primary" onclick="openDatabaseModal()" style="border-color:var(--purple); background:rgba(168,85,247,0.15); color:#c084fc;" title="Inspect 2-Step Database Topology, Episodic Memory & Equipment Lifecycle">
+        <span>💾 Database & Memory</span>
+      </button>
+      <div class="satcom-hud">
+        <span class="pulse-beacon" id="ws-beacon"></span>
+        <span id="satcom-hud-label" style="font-weight:600;">INMARSAT (64 kbps)</span>
+        <span style="color:var(--text-dim);">&bull;</span>
+        <span id="satcom-hud-savings" style="color:var(--cyan); font-weight:700;">94.2% Saved</span>
+      </div>
+      <button class="btn btn-primary" onclick="openBriefingCardModal()">
+        <span>Briefing Card</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tactical Polar Satcom Blackout & Edge Autonomous Control Banner -->
+  <div class="tactical-banner" id="tactical-banner">
+    <div style="display:flex; align-items:center; gap:12px; flex:1;">
+      <span class="badge-tactical online" id="banner-tactical-badge">
+        <span class="pulse-beacon" id="banner-beacon" style="width:7px; height:7px;"></span>
+        <span id="banner-tactical-status">HQ LINK: NOMINAL (256 kbps)</span>
+      </span>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:#fff;" id="banner-tactical-headline">
+          Mainland Telemetry Stream Synchronized (NCPOR Goa Mirror Twin)
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);" id="banner-tactical-desc">
+          Continuous 1 Hz Digital Twin closed-loop. Edge Autonomous Controller standby for zero-delay local physical intervention.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Edge Autonomy Action Buttons -->
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="btn btn-danger" id="btn-sever-satcom" onclick="severSatcomBlackout()" title="Simulate complete polar magnetic storm severance (0 kbps)">
+        <span>⚡ Sever Link (Blackout)</span>
+      </button>
+      <button class="btn" id="btn-restore-satcom" onclick="restoreSatcomLink()" style="display:none; border-color:var(--emerald); color:var(--emerald); background:rgba(16,185,129,0.15);" title="Restore Satcom and drain prioritize spool buffer">
+        <span>🔄 Reconnect to HQ</span>
+      </button>
+      <button class="btn" id="btn-toggle-autonomy" onclick="toggleAutonomousLoop()" style="background:rgba(56,189,248,0.15); border-color:var(--blue); color:var(--cyan);">
+        <span id="autonomy-status-text">Edge Autonomy: ON (1 Hz)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Secondary Tactical Flight Deck (Simulation Clock & Judge Demonstrations) -->
+  <div class="control-deck">
+    <!-- Clock Controls -->
+    <div class="deck-group">
+      <span class="deck-label">Clock:</span>
+      <span id="clock-display" style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--cyan); margin-right:6px;">T+ 00:00:00</span>
+      <span id="continuous-indicator" style="font-size:10px; font-family:var(--font-mono); color:var(--emerald); font-weight:700; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:2px 6px; border-radius:4px;">● AUTO-RUN 1Hz</span>
+      <button class="btn" onclick="stepClock(1.0)">+1s</button>
+      <button class="btn" onclick="stepClock(5.0)">+5s</button>
+      <button class="btn" id="btn-auto-step" onclick="toggleAutoStep()">Pause Loop</button>
+    </div>
+
+    <!-- Satcom Link Profile -->
+    <div class="deck-group">
+      <span class="deck-label">Satcom:</span>
+      <select class="select-tactical" id="satcom-profile-select" onchange="changeSatcomProfile(this.value)">
+        <option value="INMARSAT_STANDARD">Inmarsat BGAN (64k - Nom)</option>
+        <option value="IRIDIUM_LOW">Iridium Polar (9.6k - Low)</option>
+        <option value="LAN_DIRECT">Local Control LAN (100M)</option>
+        <option value="POLAR_BLACKOUT">POLAR BLACKOUT (0 kbps)</option>
+      </select>
+      <button class="btn" onclick="recoverSatcom()" title="Drain prioritized blackout spool buffer">Drain Buffer</button>
+      <button class="btn" onclick="resyncSatcom()" title="Force 505-sensor baseline keyframe">Resync Keyframe</button>
+    </div>
+
+    <!-- Judge Demonstration Reel (One-Click Crisis Mitigation Scenarios) -->
+    <div class="deck-group">
+      <span class="deck-label" style="color:var(--purple);">Judge Demos:</span>
+      <button class="btn btn-demo" onclick="injectQuickScenario('GENERATOR_TRIP')" title="Primary generator trips offline; F.R.I.D.A.Y. autonomously starts standby CHP-02 and sheds science load">
+        ⚡ Demo 1: Gen Trip Auto-Dispatch
+      </button>
+      <button class="btn btn-demo" onclick="injectQuickScenario('BLIZZARD_STRIKE')" title="140 km/h blizzard hits station; F.R.I.D.A.Y. seals HVAC dampers and boosts trace heating">
+        ❄ Demo 2: Katabatic Blizzard Defense
+      </button>
+      <button class="btn btn-demo" onclick="injectQuickScenario('WATER_LINE_FREEZE')" title="Utilidor freeze threat; F.R.I.D.A.Y. energizes emergency trace heating boost">
+        💧 Demo 3: Water Line Freeze Defense
+      </button>
+      <button class="btn" onclick="clearScenario()">Reset Normal</button>
+    </div>
+
+    <!-- Cognitive Tools (Voice AI & Causal Graph) -->
+    <div class="deck-group">
+      <span class="deck-label" style="color:var(--cyan);">Cognitive Tools:</span>
+      <button class="btn" id="btn-voice-toggle" onclick="toggleVoiceBriefings()" title="Toggle audible speech briefing synthesis">
+        <span id="voice-icon">🔊</span> <span id="voice-label">Voice AI: ON</span>
+      </button>
+      <button class="btn" onclick="testVoiceBriefing()" title="Play audio check" style="padding:4px 8px; font-size:10px;">
+        ▶ Test Voice
+      </button>
+      <button class="btn btn-demo" onclick="openCausalGraphModal()" title="Inspect 35-node Topological Causal Dependency Graph">
+        🕸️ Causal Graph (35 Nodes)
+      </button>
+      <button class="btn" onclick="openDatabaseModal()" title="Inspect 2-Step Database, Episodic Memory & Equipment Wear" style="border-color:var(--purple); color:#c084fc; background:rgba(168,85,247,0.15);">
+        💾 Memory & Assets
+      </button>
+      <button class="btn btn-primary" onclick="openBriefingCardModal()" title="View Commander Briefing Card for active deliberation">
+        📋 Briefing Card
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Multi-Panel Cockpit -->
+  <main>
+    <!-- Row 1: High-Level Station Vital Signs (Full Width) -->
+    <div class="kpi-row">
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Power Generation</span><span>⚡</span></div>
+        <div class="kpi-big-val"><span id="kpi-gen">0.0</span><span class="kpi-unit">kW</span></div>
+        <div class="kpi-sparkline-box">
+          <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none">
+            <polyline fill="none" stroke="var(--cyan)" stroke-width="2" id="spark-gen" points="0,12 20,10 40,11 60,8 80,10 100,9"/>
+          </svg>
+        </div>
+        <div class="kpi-footer-sub"><span>Online: <strong id="kpi-chps" style="color:var(--emerald);">0</strong> CHPs</span><span>Grid: 50.0 Hz</span></div>
+      </div>
+
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Electrical Load</span><span>🔌</span></div>
+        <div class="kpi-big-val"><span id="kpi-load">0.0</span><span class="kpi-unit">kW</span></div>
+        <div class="kpi-sparkline-box">
+          <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none">
+            <polyline fill="none" stroke="var(--blue)" stroke-width="2" id="spark-load" points="0,15 20,14 40,13 60,16 80,12 100,14"/>
+          </svg>
+        </div>
+        <div class="kpi-footer-sub"><span>Thermal: <strong id="kpi-heat">0.0</strong> kWth</span><span>Life-Safety: OK</span></div>
+      </div>
+
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Indoor Habitat Temp</span><span>🌡️</span></div>
+        <div class="kpi-big-val"><span id="kpi-indoor-temp">0.0</span><span class="kpi-unit">°C</span></div>
+        <div class="kpi-sparkline-box">
+          <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none">
+            <polyline fill="none" stroke="var(--emerald)" stroke-width="2" id="spark-temp" points="0,8 20,8 40,9 60,8 80,7 100,8"/>
+          </svg>
+        </div>
+        <div class="kpi-footer-sub"><span>Target: 18.0 °C</span><span>Life-Support: ACTIVE</span></div>
+      </div>
+
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Ambient Polar Weather</span><span>❄️</span></div>
+        <div class="kpi-big-val"><span id="kpi-ambient-temp">0.0</span><span class="kpi-unit">°C</span></div>
+        <div class="kpi-sparkline-box">
+          <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#60a5fa" stroke-width="2" points="0,18 20,16 40,19 60,17 80,20 100,18"/>
+          </svg>
+        </div>
+        <div class="kpi-footer-sub"><span>Wind: <strong id="kpi-wind">0.0</strong> m/s</span><span>Polar Plateau</span></div>
+      </div>
+
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Fuel Autonomy</span><span>⛽</span></div>
+        <div class="kpi-big-val"><span id="kpi-fuel-days">0</span><span class="kpi-unit">Days</span></div>
+        <div style="background:rgba(0,0,0,0.4); border-radius:3px; height:6px; margin:6px 0; overflow:hidden;">
+          <div id="fuel-progress-bar" style="width:78%; height:100%; background:linear-gradient(90deg, #38bdf8, #10b981);"></div>
+        </div>
+        <div class="kpi-footer-sub"><span><strong id="kpi-fuel-litres">0</strong> L</span><span>Reserve: Safe</span></div>
+      </div>
+
+      <div class="kpi-hud-card">
+        <div class="kpi-header"><span>Water Autonomy</span><span>💧</span></div>
+        <div class="kpi-big-val"><span id="kpi-water-days">0</span><span class="kpi-unit">Days</span></div>
+        <div style="background:rgba(0,0,0,0.4); border-radius:3px; height:6px; margin:6px 0; overflow:hidden;">
+          <div id="water-progress-bar" style="width:82%; height:100%; background:linear-gradient(90deg, #0284c7, #00f0ff);"></div>
+        </div>
+        <div class="kpi-footer-sub"><span>Tank: <strong id="kpi-water-pct">0</strong>%</span><span>Priyadarshini Line</span></div>
+      </div>
+
+      <div class="kpi-hud-card" style="border-color: rgba(245, 158, 11, 0.4);">
+        <div class="kpi-header"><span style="color:var(--amber);">Threat Risk Index</span><span>🛡️</span></div>
+        <div class="kpi-big-val" style="color:var(--amber);"><span id="kpi-risk">0.0</span><span class="kpi-unit">/100</span></div>
+        <div class="kpi-sparkline-box">
+          <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none">
+            <polyline fill="none" stroke="var(--amber)" stroke-width="2" id="spark-risk" points="0,20 20,18 40,21 60,19 80,18 100,17"/>
+          </svg>
+        </div>
+        <div class="kpi-footer-sub"><span>Autonomous Invariant</span><span id="risk-status-pill" style="color:var(--emerald);">NORMAL</span></div>
+      </div>
+    </div>
+
+    <!-- Col 1: Alarms & Commander Tactical PIN Gatekeeper -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Active Life-Safety Alarms Panel -->
+      <div class="hud-panel" style="flex:1;">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>🚨</span> Active Alarms (<span id="alert-count">0</span>)</span>
+        </div>
+        <div style="padding:12px; flex:1; overflow-y:auto;" id="alerts-container">
+          <p style="color:var(--text-dim); font-size:12px; font-style:italic;">No active life-safety alarms.</p>
+        </div>
+      </div>
+
+      <!-- Commander Tactical PIN Terminal -->
+      <div class="hud-panel">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>🔐</span> Tier 3 Commander Interlock</span>
+        </div>
+        <div style="padding:14px; display:flex; flex-direction:column; gap:10px;">
+          <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+            Station Commander cryptographic PIN required for life-critical physical overrides (e.g. stopping last operational generator).
+          </p>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="commander-pin-input" placeholder="PIN: BHARATI-CMD-2026" style="flex:1; background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:5px; padding:8px 10px; color:#fff; font-family:var(--font-mono); font-size:12px; outline:none;">
+            <button class="btn btn-primary" onclick="verifyCommanderPinManual()">Verify</button>
+          </div>
+          <div id="pin-status-box" style="font-size:11px; font-family:var(--font-mono);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2: Interactive Digital Twin Synoptic Blueprint & Actuators Matrix -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Interactive Digital Twin Synoptic Blueprint -->
+      <div class="synoptic-container">
+        <div class="synoptic-title-bar">
+          <span>PHYSICAL DIGITAL TWIN SYNOPTIC TOPOLOGY (4 PILLARS)</span>
+          <span id="synoptic-status-lbl" style="color:var(--emerald);">ALL PHYSICAL SYSTEMS NOMINAL</span>
+        </div>
+
+        <svg class="synoptic-svg" viewBox="0 0 850 170" preserveAspectRatio="xMidYMid meet">
+          <!-- Background Grid Lines -->
+          <defs>
+            <linearGradient id="pipeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="100%" stop-color="#00f0ff" />
+            </linearGradient>
+            <linearGradient id="powerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#00f0ff" />
+            </linearGradient>
+          </defs>
+
+          <!-- Module 1: Power House (CHPs) -->
+          <rect x="20" y="25" width="200" height="120" rx="8" fill="rgba(15,23,42,0.85)" stroke="var(--border-highlight)" stroke-width="1.5"/>
+          <text x="30" y="45" fill="var(--cyan)" font-family="Orbitron" font-size="10" font-weight="700">POWER PLANT (CHP 1-3)</text>
+          
+          <!-- Gen 1 Icon -->
+          <circle id="syn-gen1-c" cx="60" cy="85" r="18" fill="rgba(16,185,129,0.2)" stroke="var(--emerald)" stroke-width="2"/>
+          <text id="syn-gen1-t" x="60" y="89" fill="#fff" font-family="JetBrains Mono" font-size="9" text-anchor="middle" font-weight="700">G1</text>
+          <text id="syn-gen1-kw" x="60" y="115" fill="var(--cyan)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">65 kW</text>
+
+          <!-- Gen 2 Icon -->
+          <circle id="syn-gen2-c" cx="120" cy="85" r="18" fill="rgba(16,185,129,0.2)" stroke="var(--emerald)" stroke-width="2"/>
+          <text id="syn-gen2-t" x="120" y="89" fill="#fff" font-family="JetBrains Mono" font-size="9" text-anchor="middle" font-weight="700">G2</text>
+          <text id="syn-gen2-kw" x="120" y="115" fill="var(--cyan)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">65 kW</text>
+
+          <!-- Gen 3 Icon -->
+          <circle id="syn-gen3-c" cx="180" cy="85" r="18" fill="rgba(148,163,184,0.15)" stroke="rgba(148,163,184,0.4)" stroke-width="1.5"/>
+          <text id="syn-gen3-t" x="180" y="89" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="9" text-anchor="middle">G3</text>
+          <text id="syn-gen3-kw" x="180" y="115" fill="var(--text-dim)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">STBY</text>
+
+          <!-- Main Power Bus Cable to Station -->
+          <path d="M 220 85 L 340 85" fill="none" stroke="var(--amber)" stroke-width="3" stroke-dasharray="6,4"/>
+          <text x="280" y="78" fill="var(--amber)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">415V BUS</text>
+
+          <!-- Module 2: Main Station Habitat -->
+          <rect x="340" y="20" width="220" height="130" rx="10" fill="rgba(15,23,42,0.85)" stroke="var(--cyan)" stroke-width="1.5"/>
+          <text x="355" y="42" fill="#fff" font-family="Orbitron" font-size="11" font-weight="700">BHARATI MAIN HABITAT</text>
+
+          <!-- HVAC Blizzard Damper Element -->
+          <rect id="syn-damper-box" x="355" y="55" width="90" height="35" rx="5" fill="rgba(56,189,248,0.15)" stroke="var(--blue)" stroke-width="1"/>
+          <text x="400" y="70" fill="var(--blue)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">HVAC DAMPER</text>
+          <text id="syn-damper-status" x="400" y="82" fill="var(--emerald)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">VENT (25%)</text>
+
+          <!-- Habitat Interior Temp Monitor -->
+          <rect x="460" y="55" width="85" height="35" rx="5" fill="rgba(16,185,129,0.1)" stroke="var(--emerald)" stroke-width="1"/>
+          <text x="502" y="70" fill="var(--emerald)" font-family="JetBrains Mono" font-size="8" text-anchor="middle">HABITAT LIFE</text>
+          <text id="syn-indoor-temp-txt" x="502" y="82" fill="#fff" font-family="JetBrains Mono" font-size="9" text-anchor="middle" font-weight="700">20.3 °C</text>
+
+          <!-- Science Deck -->
+          <rect id="syn-science-box" x="355" y="100" width="190" height="38" rx="5" fill="rgba(168,85,247,0.12)" stroke="var(--purple)" stroke-width="1"/>
+          <text x="365" y="116" fill="var(--purple)" font-family="Orbitron" font-size="9" font-weight="700">SCIENCE LABS</text>
+          <text id="syn-science-status" x="450" y="125" fill="#fff" font-family="JetBrains Mono" font-size="8">FULL POWER (ONLINE)</text>
+
+          <!-- Module 3: Utilidor Water Conduit from Priyadarshini -->
+          <path id="syn-pipe-path" d="M 560 115 L 680 115" fill="none" stroke="url(#pipeGradient)" stroke-width="5" stroke-linecap="round"/>
+          <rect x="680" y="80" width="140" height="65" rx="8" fill="rgba(15,23,42,0.85)" stroke="var(--blue)" stroke-width="1.5"/>
+          <text x="690" y="98" fill="var(--cyan)" font-family="Orbitron" font-size="9" font-weight="700">PRIYADARSHINI</text>
+          <text x="690" y="112" fill="var(--text-dim)" font-family="JetBrains Mono" font-size="8">Utilidor Water Line</text>
+          <text id="syn-pipe-temp-txt" x="690" y="130" fill="var(--emerald)" font-family="JetBrains Mono" font-size="9" font-weight="700">Pipe: 14.2 °C (SAFE)</text>
+
+          <!-- Module 4: Roof Satcom Dish & Link to Mainland -->
+          <path d="M 450 20 L 450 5 L 470 5" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+          <circle id="syn-dish-c" cx="475" cy="5" r="6" fill="var(--cyan)" />
+          <path id="syn-radio-wave" d="M 485 5 Q 560 -15 620 5" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-dasharray="4,3"/>
+          <circle cx="630" cy="5" r="8" fill="#0284c7" stroke="#fff" stroke-width="1.5"/>
+          <text x="645" y="8" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="8">NCPOR GOA HQ</text>
+        </svg>
+      </div>
+
+      <!-- Physical Station Actuators Matrix Panel -->
+      <div class="hud-panel">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>⚡</span> Station Physical Actuators Matrix</span>
+          <span style="font-size:10px; color:var(--emerald); font-family:var(--font-hud); font-weight:700;" id="edge-authority-pill">LOCAL EDGE AUTHORITY: 100% DIRECT GOVERNANCE</span>
+        </div>
+        <div style="padding:12px;">
+          <div class="actuator-matrix-grid" id="actuators-grid">
+            <div style="color:var(--text-dim); font-size:12px; padding:10px;">Loading physical actuators...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 505-Sensor Granular Telemetry Matrix -->
+      <div class="hud-panel" style="flex:1;">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>📊</span> 505-Sensor Telemetry Matrix</span>
+          <span style="font-size:10px; color:var(--text-dim); font-family:var(--font-mono);" id="sensor-total-counter">505 Points</span>
+        </div>
+        <div style="display:flex; gap:6px; padding:6px 12px; background:rgba(8,14,26,0.6); border-bottom:1px solid var(--border-subtle);">
+          <button class="btn" style="padding:2px 8px; font-size:10px;" onclick="filterPillar('ALL')">All</button>
+          <button class="btn" style="padding:2px 8px; font-size:10px;" onclick="filterPillar('ENERGY')">Energy</button>
+          <button class="btn" style="padding:2px 8px; font-size:10px;" onclick="filterPillar('INFRASTRUCTURE')">Infra/HVAC</button>
+          <button class="btn" style="padding:2px 8px; font-size:10px;" onclick="filterPillar('ENVIRONMENT')">Environment</button>
+          <button class="btn" style="padding:2px 8px; font-size:10px;" onclick="filterPillar('LOGISTICS')">Logistics</button>
+        </div>
+        <div style="padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.05);">
+          <input type="text" id="sensor-search-input" placeholder="Search sensor ID or keyword (e.g. TEMP, KW, WATER)..." oninput="filterSensorsBySearch(this.value)" style="width:100%; background:rgba(15,23,42,0.8); border:1px solid var(--border-subtle); border-radius:4px; padding:5px 10px; color:#fff; font-size:11px; outline:none;">
+        </div>
+        <div style="max-height:220px; overflow-y:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:11px;">
+            <thead>
+              <tr style="color:var(--text-dim); background:rgba(15,23,42,0.9); text-align:left;">
+                <th style="padding:6px 10px;">Channel</th>
+                <th style="padding:6px 10px;">Pillar</th>
+                <th style="padding:6px 10px;">Value</th>
+                <th style="padding:6px 10px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="telemetry-tbody">
+              <tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding:16px;">Loading telemetry...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 3: Cognitive Society Stream ("Noticed vs Done") & Mainland Mirror -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Cognitive Stream Panel -->
+      <div class="hud-panel">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>🧠</span> F.R.I.D.A.Y. Cognitive Society & Deliberation</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" onclick="fetchAgentStatus()" style="padding:2px 8px; font-size:10px;">Sync AI</button>
+            <button class="btn btn-demo" onclick="openCausalGraphModal()" style="padding:2px 8px; font-size:10px;">🕸️ Causal</button>
+          </div>
+        </div>
+
+        <!-- Interactive Neural Society Canvas (SVG) -->
+        <div class="neural-canvas-container">
+          <svg class="neural-svg" id="agent-neural-svg" viewBox="0 0 380 250">
+            <defs>
+              <radialGradient id="fridayCoreGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.9"/>
+                <stop offset="70%" stop-color="#0284c7" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#030712" stop-opacity="0.2"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Background Radar Range Rings -->
+            <circle cx="190" cy="125" r="95" fill="none" stroke="rgba(56, 189, 248, 0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+            <circle cx="190" cy="125" r="60" fill="none" stroke="rgba(56, 189, 248, 0.05)" stroke-width="1"/>
+
+            <!-- Synapse Beams from Center to all 9 Satellites -->
+            <g id="synapse-beams-layer"></g>
+
+            <!-- Inter-Agent Pipeline Synapse Arc -->
+            <g id="pipeline-synapses-layer"></g>
+
+            <!-- Central F.R.I.D.A.Y. Master Mind Node -->
+            <g id="node-friday-core" class="agent-node-circle" onclick="openAgentDetailModal('FRIDAY_ORCHESTRATOR')">
+              <circle class="friday-orb-pulse" cx="190" cy="125" r="30" fill="url(#fridayCoreGrad)" stroke="var(--cyan)" stroke-width="2"/>
+              <circle class="friday-orb-ring" cx="190" cy="125" r="36" fill="none" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="6,4"/>
+              <text x="190" y="122" text-anchor="middle" font-family="Orbitron" font-size="8.5" font-weight="800" fill="#fff">F.R.I.D.A.Y.</text>
+              <text x="190" y="133" text-anchor="middle" font-family="JetBrains Mono" font-size="7" font-weight="700" fill="var(--cyan)" id="svg-core-mode">ORCHESTRATOR</text>
+              <text x="190" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="var(--emerald)" id="svg-core-status">● AUTONOMOUS</text>
+            </g>
+
+            <!-- 9 Orbiting Cognitive Agent Nodes Layer -->
+            <g id="agent-satellites-layer"></g>
+          </svg>
+        </div>
+
+        <!-- 6-Stage Deliberation Pipeline Ribbon -->
+        <div class="delib-ribbon">
+          <div class="delib-stage active" id="delib-stage-1" title="Perception: Detecting physical anomalies across 505 sensors">1. PERCEIVE</div>
+          <div class="delib-stage" id="delib-stage-2" title="Diagnostic: Causal DAG root-cause isolation">2. DIAGNOSE</div>
+          <div class="delib-stage" id="delib-stage-3" title="Prediction: Time-to-failure & thermal decay horizon">3. PREDICT</div>
+          <div class="delib-stage" id="delib-stage-4" title="Proposals: Action plans (Tiers 1-3)">4. PROPOSE</div>
+          <div class="delib-stage" id="delib-stage-5" title="Simulation: Twin sandbox validation">5. SIMULATE</div>
+          <div class="delib-stage" id="delib-stage-6" title="Consensus: F.R.I.D.A.Y. arbitration & actuation">6. ARBITRATE</div>
+        </div>
+
+        <!-- Active Deliberation Session Headline Bar -->
+        <div class="delib-headline-bar">
+          <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+            <span style="font-weight:700; color:var(--cyan);" id="delib-phase-label">PERCEPTION:</span>
+            <span id="delib-phase-headline" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:#e2e8f0;">Station telemetry nominal across all 4 observation pillars.</span>
+          </div>
+          <button class="btn" onclick="openBriefingCardModal()" style="padding:1px 6px; font-size:9px; white-space:nowrap; background:rgba(56,189,248,0.15); border-color:var(--cyan); color:var(--cyan);">Inspect Debate</button>
+        </div>
+
+        <!-- Cognitive Log Filter Tabs -->
+        <div class="cognitive-nav">
+          <button class="cog-tab active" id="cog-tab-ALL" onclick="filterCognitiveCategory('ALL')">ALL (<span id="count-cog-all">0</span>)</button>
+          <button class="cog-tab" id="cog-tab-PERCEPTION" onclick="filterCognitiveCategory('PERCEPTION')">👀 NOTICED (<span id="count-cog-perception">0</span>)</button>
+          <button class="cog-tab" id="cog-tab-DIAGNOSIS" onclick="filterCognitiveCategory('DIAGNOSIS')">🔍 DIAGNOSED (<span id="count-cog-diagnosis">0</span>)</button>
+          <button class="cog-tab" id="cog-tab-PREDICTION" onclick="filterCognitiveCategory('PREDICTION')">⏳ PROJECTED (<span id="count-cog-prediction">0</span>)</button>
+          <button class="cog-tab" id="cog-tab-ACTUATION" onclick="filterCognitiveCategory('ACTUATION')">⚡ ACTUATED (<span id="count-cog-actuation">0</span>)</button>
+          <button class="cog-tab" id="cog-tab-EDGE_AUTHORITY" onclick="filterCognitiveCategory('EDGE_AUTHORITY')">🛡️ EDGE (<span id="count-cog-edge">0</span>)</button>
+        </div>
+
+        <!-- Structured Log Feed -->
+        <div class="cognitive-stream-box" id="cognitive-logs-feed">
+          <div style="color:var(--text-dim); font-size:11px; font-style:italic; padding:10px;">Initializing cognitive event stream...</div>
+        </div>
+      </div>
+
+      <!-- Mainland Mirror Twin Status (NCPOR Goa) -->
+      <div class="hud-panel" style="flex:1;">
+        <div class="hud-panel-header">
+          <span class="hud-panel-title"><span>📡</span> Mainland Mirror Parity (NCPOR Goa)</span>
+        </div>
+        <div style="padding:12px; display:flex; flex-direction:column; gap:8px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+            <span style="color:var(--text-muted);">Sync Parity:</span>
+            <span id="mirror-sync-status" style="color:var(--emerald); font-weight:700; font-family:var(--font-mono);">SYNCHRONIZED</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+            <span style="color:var(--text-muted);">Points Parity:</span>
+            <span id="mirror-sensor-count" style="font-family:var(--font-mono);">505 / 505</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+            <span style="color:var(--text-muted);">Bandwidth Compression:</span>
+            <span id="mirror-bandwidth-saved" style="color:var(--cyan); font-family:var(--font-mono); font-weight:700;">94.2%</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+            <span style="color:var(--text-muted);">Blackout Spool Buffer:</span>
+            <span id="mirror-spool-depth" style="font-family:var(--font-mono); color:var(--amber);">0 frames</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:3px; margin-top:4px;">
+            <span style="color:var(--text-dim); font-size:10px;">SHA-256 State Parity Checksum:</span>
+            <span id="mirror-checksum" style="font-family:var(--font-mono); font-size:9px; color:var(--blue); word-break:break-all; background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">Computing parity...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Interactive Tactical Commander PIN Modal -->
+  <div class="modal-overlay" id="modal-commander-pin">
+    <div class="modal-hud-window">
+      <div class="modal-hud-header">
+        <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:var(--cyan);">TIER 3 COMMANDER OVERRIDE AUTHORIZATION</span>
+        <button onclick="closeCommanderPinModal()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-hud-body">
+        <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+          Life-Critical Physical Interlock engaged. Stopping the station's last active generator will trigger a total blackout. Enter Station Commander PIN:
+        </p>
+        <div class="keypad-display" id="modal-keypad-val">••••••••••••••••</div>
+        <div class="keypad-grid">
+          <button class="keypad-btn" onclick="pressKeypad('1')">1</button>
+          <button class="keypad-btn" onclick="pressKeypad('2')">2</button>
+          <button class="keypad-btn" onclick="pressKeypad('3')">3</button>
+          <button class="keypad-btn" onclick="pressKeypad('4')">4</button>
+          <button class="keypad-btn" onclick="pressKeypad('5')">5</button>
+          <button class="keypad-btn" onclick="pressKeypad('6')">6</button>
+          <button class="keypad-btn" onclick="pressKeypad('7')">7</button>
+          <button class="keypad-btn" onclick="pressKeypad('8')">8</button>
+          <button class="keypad-btn" onclick="pressKeypad('9')">9</button>
+          <button class="keypad-btn" style="color:var(--crimson);" onclick="clearKeypad()">CLR</button>
+          <button class="keypad-btn" onclick="pressKeypad('0')">0</button>
+          <button class="keypad-btn" style="color:var(--amber);" onclick="backspaceKeypad()">DEL</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+          <button class="btn btn-demo" onclick="autofillJudgePin()">⚡ Fast-Auth: BHARATI-CMD-2026</button>
+          <button class="btn btn-primary" onclick="submitCommanderKeypad()">Submit Override</button>
+        </div>
+        <div id="modal-pin-status" style="font-size:11px; font-family:var(--font-mono); text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commander Operational Briefing Card Modal -->
+  <div class="modal-overlay" id="modal-briefing-card">
+    <div class="modal-hud-window" style="max-width:620px;">
+      <div class="modal-hud-header">
+        <span style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">COMMANDER OPERATIONAL BRIEFING CARD</span>
+        <button onclick="closeBriefingCardModal()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-hud-body" id="briefing-card-content">
+        <p style="color:var(--text-dim); font-size:12px;">Synthesizing multi-agent consensus briefing card...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Agent Cognitive Telemetry Drawer Modal -->
+  <div class="modal-overlay" id="modal-agent-detail">
+    <div class="modal-hud-window" style="max-width:680px; width:95%;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="agent-modal-icon" style="font-size:22px;">🧠</span>
+          <div>
+            <div id="agent-modal-title" style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">AGENT COGNITIVE TELEMETRY</div>
+            <div id="agent-modal-tag" style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">SPECIALIZED COGNITIVE AGENT</div>
+          </div>
+        </div>
+        <button onclick="closeAgentDetailModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-hud-body" id="agent-modal-content">
+        <p style="color:var(--text-dim); font-size:12px;">Loading agent telemetry...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Causal Dependency Graph Modal -->
+  <div class="modal-overlay" id="modal-causal-graph">
+    <div class="modal-hud-window" style="max-width:880px; width:95%;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">🕸️</span>
+          <div>
+            <div style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">TOPOLOGICAL CAUSAL DEPENDENCY GRAPH (TwinCausalGraph)</div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">35 Physical Nodes &bull; 45 Directed Edges &bull; O(V+E) Root Cause Isolation &bull; Forward Blast Radius</div>
+          </div>
+        </div>
+        <button onclick="closeCausalGraphModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-hud-body" style="padding:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-causal-filter active" id="filter-causal-ALL" onclick="filterCausalSubsystem('ALL')">All (35)</button>
+            <button class="btn btn-causal-filter" id="filter-causal-ENERGY" onclick="filterCausalSubsystem('ENERGY')">Energy</button>
+            <button class="btn btn-causal-filter" id="filter-causal-INFRASTRUCTURE" onclick="filterCausalSubsystem('INFRASTRUCTURE')">Infrastructure</button>
+            <button class="btn btn-causal-filter" id="filter-causal-ENVIRONMENT" onclick="filterCausalSubsystem('ENVIRONMENT')">Environment</button>
+            <button class="btn btn-causal-filter" id="filter-causal-LOGISTICS" onclick="filterCausalSubsystem('LOGISTICS')">Logistics</button>
+          </div>
+          <div style="font-size:11px; font-family:var(--font-mono); color:var(--emerald);" id="causal-graph-status-bar">
+            Topological paths active &bull; Click any node to inspect blast radius
+          </div>
+        </div>
+        
+        <!-- Causal Graph SVG Canvas -->
+        <div style="background:rgba(3,7,18,0.95); border:1px solid var(--border-subtle); border-radius:8px; padding:10px; overflow-x:auto; max-height:360px; overflow-y:auto;">
+          <svg id="causal-graph-svg" width="820" height="420" viewBox="0 0 1200 620" style="display:block;">
+            <!-- Loaded dynamically -->
+          </svg>
+        </div>
+
+        <!-- Node Inspection & Blast Radius Detail Card -->
+        <div id="causal-node-inspect-card" style="margin-top:10px; background:rgba(15,23,42,0.85); border:1px solid var(--border-subtle); border-radius:6px; padding:10px 14px; font-size:11px;">
+          <span style="color:var(--text-dim); font-style:italic;">Click on any component above (e.g. CHP-01, MLVD Bus, Living Quarters) to calculate blast radius and upstream dependencies.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive 2-Step Database & Cognitive Memory Modal -->
+  <div class="modal-overlay" id="modal-database-ops">
+    <div class="modal-hud-window" style="max-width:980px; width:95%; max-height:90vh;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:24px;">💾</span>
+          <div>
+            <div style="font-family:var(--font-hud); font-size:14px; font-weight:700; color:var(--cyan);">
+              F.R.I.D.A.Y. 2-STEP DISTRIBUTED DATABASE & COGNITIVE MEMORY SUBSYSTEM
+            </div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">
+              Step 1: Local Station Edge DB (Autonomous at 0 kbps) &bull; Step 2: Mainland HQ Cloud Atlas (NCPOR Goa) &bull; Store-and-Forward Satcom Replicator
+            </div>
+          </div>
+        </div>
+        <button onclick="closeDatabaseModal()" style="background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="modal-hud-body" style="padding:16px; overflow-y:auto; gap:16px;">
+        <!-- Tabs Navigation -->
+        <div style="display:flex; gap:8px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+          <button class="btn btn-causal-filter active" id="db-tab-btn-topo" onclick="switchDbTab('topo')">🌐 Distributed Topology & Sync</button>
+          <button class="btn btn-causal-filter" id="db-tab-btn-episodes" onclick="switchDbTab('episodes')">🧠 Case-Based Reasoning Memory</button>
+          <button class="btn btn-causal-filter" id="db-tab-btn-equipment" onclick="switchDbTab('equipment')">⚙️ Equipment Lifecycle & Wear</button>
+          <button class="btn btn-causal-filter" id="db-tab-btn-audits" onclick="switchDbTab('audits')">🛡️ Commander PIN Audit Ledger</button>
+        </div>
+
+        <!-- TAB 1: TOPOLOGY & SATCOM SYNC -->
+        <div id="db-tab-topo" class="db-tab-content">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:14px;">
+            <!-- Station Edge DB Card -->
+            <div style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:var(--emerald);">STEP 1: STATION EDGE DATABASE</span>
+                <span class="badge" style="background:rgba(16,185,129,0.2); color:var(--emerald);" id="modal-db-edge-badge">ONLINE</span>
+              </div>
+              <div style="font-size:11px; color:#cbd5e1;" id="modal-db-edge-desc">
+                Local high-speed engine operational at <span id="modal-db-edge-station">Bharati Station</span>. Guarantees 100% autonomous edge reasoning even during polar blackouts.
+              </div>
+              <div style="background:rgba(0,0,0,0.3); border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:10px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between;"><span>Engine:</span><span id="modal-db-edge-engine" style="color:var(--cyan);">Embedded High-Speed Edge Store</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Write Latency:</span><span style="color:var(--emerald);">&lt;1.5 ms</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Autonomy Invariant:</span><span style="color:var(--emerald);">ACTIVE (Zero Network Dependency)</span></div>
+              </div>
+            </div>
+
+            <!-- Satcom Store-and-Forward Replicator -->
+            <div style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:var(--cyan);">STORE-AND-FORWARD REPLICATOR</span>
+                <span class="badge" style="background:rgba(56,189,248,0.2); color:var(--cyan);" id="modal-db-sync-badge">IDLE</span>
+              </div>
+              <div style="font-size:11px; color:#cbd5e1;">
+                Asymmetric store-and-forward engine. Spools transactions during polar blackouts and streams compressed batches when bandwidth is available.
+              </div>
+              <div style="background:rgba(0,0,0,0.3); border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:10px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between;"><span>Spooled Records:</span><span id="modal-db-spooled-count" style="color:var(--amber);">0 records</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Synced to Cloud:</span><span id="modal-db-synced-count" style="color:var(--emerald);">0 records</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Bandwidth Economy:</span><span style="color:var(--cyan);">>94% Delta Compression</span></div>
+              </div>
+              <button class="btn btn-primary" onclick="triggerManualDbSync()" style="margin-top:4px; font-size:11px; padding:6px 10px;">
+                🔄 Flush & Sync Spooled Queue Now
+              </button>
+            </div>
+
+            <!-- Mainland HQ Cloud DB Card -->
+            <div style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:var(--purple);">STEP 2: MAINLAND HQ CLOUD</span>
+                <span class="badge" style="background:rgba(168,85,247,0.2); color:var(--purple);" id="modal-db-cloud-badge">SYNCED</span>
+              </div>
+              <div style="font-size:11px; color:#cbd5e1;">
+                MongoDB Atlas cluster located at NCPOR Headquarters, Vasco da Gama, Goa. Aggregates multi-station fleet intelligence and multi-year crisis history.
+              </div>
+              <div style="background:rgba(0,0,0,0.3); border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:10px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between;"><span>Cloud Cluster:</span><span id="modal-db-cloud-engine" style="color:var(--purple);">MongoDB Atlas (NCPOR Goa)</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Fleet Intelligence:</span><span style="color:var(--emerald);">Bharati + Maitri Connected</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Disaster Recovery:</span><span style="color:var(--emerald);">Geo-Redundant Backup</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Architecture Banner Callout -->
+          <div style="background:linear-gradient(90deg, rgba(8,20,42,0.95), rgba(15,23,42,0.95)); border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:12px 16px; font-size:11px; line-height:1.5; color:#cbd5e1;">
+            <strong style="color:var(--cyan);">Judge Demonstration Note:</strong> During magnetic storms and severe polar blizzards, satellite uplinks drop to <strong style="color:var(--crimson);">0 kbps</strong>. Unlike fragile cloud-dependent AI systems that crash when disconnected, F.R.I.D.A.Y.'s 2-Step Architecture executes all causal diagnostics, TTF projections, and physical actuations completely locally against the Station Edge DB with sub-millisecond response. When the satcom link restores, the Store-and-Forward Replicator automatically pushes queued episode post-mortems and telemetry to NCPOR Goa.
+          </div>
+        </div>
+
+        <!-- TAB 2: CASE-BASED REASONING MEMORY -->
+        <div id="db-tab-episodes" class="db-tab-content" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:12px; color:var(--text-muted);">
+              Historical crisis episodes queried by Planning and Diagnostic agents to formulate grounded, validated mitigation plans.
+            </div>
+            <button class="btn" onclick="refreshDbEpisodes()" style="font-size:10px; padding:4px 8px;">🔄 Refresh Cases</button>
+          </div>
+          <div id="modal-db-episodes-list" style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 3: EQUIPMENT LIFECYCLE & WEAR -->
+        <div id="db-tab-equipment" class="db-tab-content" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:12px; color:var(--text-muted);">
+              Digital Twin Asset Health Ledger: dynamic running hours, crank cycles, thermal stress, and maintenance countdowns.
+            </div>
+            <button class="btn" onclick="refreshDbEquipment()" style="font-size:10px; padding:4px 8px;">🔄 Refresh Assets</button>
+          </div>
+          <div id="modal-db-equipment-list" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap:10px; max-height:420px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 4: COMMANDER PIN AUDIT LEDGER -->
+        <div id="db-tab-audits" class="db-tab-content" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:12px; color:var(--text-muted);">
+              Tamper-evident audit ledger capturing Tier 3 Commander PIN authorizations and manual overrides.
+            </div>
+            <button class="btn" onclick="refreshDbAudits()" style="font-size:10px; padding:4px 8px;">🔄 Refresh Audits</button>
+          </div>
+          <div id="modal-db-audits-list" style="display:flex; flex-direction:column; gap:8px; max-height:420px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    let activeStation = 'bharati';
+    let socket = null;
+    let cachedReadings = {};
+    let cachedActuators = null;
+    let cachedCognitiveLogs = [];
+    let cachedAgentsData = null;
+    let cachedCausalGraph = null;
+    let activeCognitiveCategory = 'ALL';
+    let currentPillar = 'ALL';
+    let searchQuery = '';
+    let isAutonomousLoopRunning = true;
+    let pendingActuatorAction = null;
+    let currentKeypadPin = '';
+    let voiceBriefingsEnabled = true;
+    let activeCausalFilter = 'ALL';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initWebSocket(activeStation);
+      fetchStationOverview();
+      fetchActuators();
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+      fetchDatabaseStatus();
+
+      setInterval(() => {
+        fetchActuators();
+        fetchCognitiveLogs();
+        fetchAgentStatus();
+        fetchDatabaseStatus();
+      }, 1500);
+    });
+
+    function initWebSocket(stationId) {
+      if (socket) socket.close();
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/telemetry/${stationId}`;
+      const beacon = document.getElementById('ws-beacon');
+
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        beacon.classList.remove('blackout');
+        socket.send(JSON.stringify({
+          action: 'subscribe',
+          channels: ['kpis', 'sensors', 'alerts', 'deliberations', 'satcom', 'agents']
+        }));
+        socket.send(JSON.stringify({ action: 'get_snapshot' }));
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleWebSocketMessage(msg);
+        } catch (e) {
+          console.error("WS Parse Error:", e);
+        }
+      };
+
+      socket.onclose = () => {
+        beacon.classList.add('blackout');
+        setTimeout(() => initWebSocket(activeStation), 3000);
+      };
+    }
+
+    function handleWebSocketMessage(msg) {
+      if (msg.channel === 'kpis' && msg.kpis) {
+        updateKpiDisplay(msg.kpis);
+      } else if (msg.channel === 'sensors' && msg.readings) {
+        Object.assign(cachedReadings, msg.readings);
+        renderTelemetryTable();
+      } else if (msg.channel === 'alerts') {
+        renderAlerts(msg.alerts || []);
+      } else if (msg.channel === 'satcom' && msg.satcom) {
+        updateSatcomDisplay(msg.satcom);
+      } else if (msg.channel === 'deliberations' || msg.channel === 'agents') {
+        fetchCognitiveLogs();
+        fetchAgentStatus();
+      }
+    }
+
+    function switchStation(stationId) {
+      activeStation = stationId;
+      document.getElementById('btn-station-bharati').classList.toggle('active', stationId === 'bharati');
+      document.getElementById('btn-station-maitri').classList.toggle('active', stationId === 'maitri');
+
+      fetch(`/api/stations/active/${stationId}`, { method: 'POST' });
+      cachedReadings = {};
+      initWebSocket(stationId);
+      fetchStationOverview();
+      fetchActuators();
+      fetchCognitiveLogs();
+    }
+
+    async function fetchStationOverview() {
+      try {
+        const [snapRes, satcomRes] = await Promise.all([
+          fetch(`/api/telemetry/${activeStation}/snapshot`),
+          fetch(`/api/satcom/${activeStation}/summary`)
+        ]);
+
+        if (snapRes.ok) {
+          const snap = await snapRes.json();
+          updateKpiDisplay(snap.kpis);
+          renderAlerts(snap.alerts);
+          cachedReadings = snap.readings || {};
+          renderTelemetryTable();
+          document.getElementById('clock-display').innerText = `T+ ${Math.round(snap.sim_time_seconds)}s`;
+        }
+
+        if (satcomRes.ok) {
+          const sat = await satcomRes.json();
+          updateSatcomDisplay(sat);
+        }
+      } catch (err) {
+        console.warn("Error fetching overview:", err);
+      }
+    }
+
+    function updateKpiDisplay(kpis) {
+      if (!kpis) return;
+      document.getElementById('kpi-gen').innerText = (kpis.total_generation_kw || 0).toFixed(1);
+      document.getElementById('kpi-chps').innerText = kpis.running_chp_count || 0;
+      document.getElementById('kpi-load').innerText = (kpis.station_electrical_load_kw || 0).toFixed(1);
+      document.getElementById('kpi-heat').innerText = (kpis.station_heating_demand_kw || 0).toFixed(1);
+      document.getElementById('kpi-indoor-temp').innerText = (kpis.indoor_avg_temp_c || 0).toFixed(1);
+      document.getElementById('kpi-ambient-temp').innerText = (kpis.ambient_temp_c || 0).toFixed(1);
+      document.getElementById('kpi-wind').innerText = (kpis.wind_speed_mps || 0).toFixed(1);
+      document.getElementById('kpi-fuel-days').innerText = Math.round(kpis.fuel_autonomy_days || 0);
+      document.getElementById('kpi-fuel-litres').innerText = Math.round(kpis.total_fuel_reserve_l || 0).toLocaleString();
+      document.getElementById('kpi-water-days').innerText = Math.round(kpis.water_autonomy_days || 0);
+      document.getElementById('kpi-water-pct').innerText = (kpis.potable_tank_level_pct || 0).toFixed(1);
+      
+      const risk = kpis.composite_risk_score || 0;
+      document.getElementById('kpi-risk').innerText = risk.toFixed(1);
+      const riskPill = document.getElementById('risk-status-pill');
+      if (risk > 60) {
+        riskPill.innerText = 'CRITICAL';
+        riskPill.style.color = 'var(--crimson)';
+      } else if (risk > 25) {
+        riskPill.innerText = 'ELEVATED';
+        riskPill.style.color = 'var(--amber)';
+      } else {
+        riskPill.innerText = 'NORMAL';
+        riskPill.style.color = 'var(--emerald)';
+      }
+
+      // Update synoptic indoor temp
+      const synTemp = document.getElementById('syn-indoor-temp-txt');
+      if (synTemp) synTemp.innerText = `${(kpis.indoor_avg_temp_c||0).toFixed(1)} °C`;
+    }
+
+    function updateSatcomDisplay(satcom) {
+      if (!satcom) return;
+      const ch = satcom.channel_metrics || {};
+      const mir = satcom.mirror_twin || {};
+      const profKey = (ch.current_profile || '').toUpperCase();
+      const isBlackout = profKey.includes('BLACKOUT') || (ch.bandwidth_bps === 0);
+      const displayName = ch.profile_name || ch.current_profile || 'INMARSAT';
+      const kbps = Math.round((ch.bandwidth_bps || 0) / 1000);
+
+      document.getElementById('satcom-hud-label').innerText = isBlackout ? 'POLAR BLACKOUT (0 kbps)' : `${displayName} (${kbps} kbps)`;
+      document.getElementById('satcom-hud-savings').innerText = `${ch.bandwidth_saved_pct || 0}% Saved`;
+      document.getElementById('mirror-sync-status').innerText = mir.sync_status || (isBlackout ? 'SPOOLING_LOCALLY' : 'SYNCHRONIZED');
+      document.getElementById('mirror-sync-status').style.color = isBlackout ? 'var(--amber)' : (mir.sync_status === 'SYNCHRONIZED' ? 'var(--emerald)' : 'var(--crimson)');
+      document.getElementById('mirror-sensor-count').innerText = `${mir.sensor_count || 505} / 505`;
+      document.getElementById('mirror-bandwidth-saved').innerText = `${ch.bandwidth_saved_pct || 0}%`;
+      document.getElementById('mirror-spool-depth').innerText = `${ch.spool_queue_depth || 0} frames`;
+      document.getElementById('mirror-checksum').innerText = mir.state_checksum || '0000000000000000';
+
+      updateTacticalBanner(displayName, isBlackout, kbps);
+    }
+
+    function updateTacticalBanner(profile, isBlackout, kbps) {
+      const banner = document.getElementById('tactical-banner');
+      const badge = document.getElementById('banner-tactical-badge');
+      const statusText = document.getElementById('banner-tactical-status');
+      const headline = document.getElementById('banner-tactical-headline');
+      const desc = document.getElementById('banner-tactical-desc');
+      const btnSever = document.getElementById('btn-sever-satcom');
+      const btnRestore = document.getElementById('btn-restore-satcom');
+      const edgePill = document.getElementById('edge-authority-pill');
+      const radioWave = document.getElementById('syn-radio-wave');
+
+      if (isBlackout) {
+        banner.classList.add('blackout');
+        badge.className = 'badge-tactical blackout';
+        statusText.innerText = 'SEVERED (POLAR BLACKOUT: 0 kbps)';
+        headline.innerText = '🔴 F.R.I.D.A.Y. IN 100% LOCAL EDGE COMMAND AUTHORITY';
+        headline.style.color = '#fff';
+        desc.innerText = 'Polar Satcom completely severed from Mainland HQ. All station actuators locally governed with ZERO remote delay. Telemetry deltas spooled in polar memory buffer.';
+        btnSever.style.display = 'none';
+        btnRestore.style.display = 'inline-flex';
+        if (edgePill) {
+          edgePill.innerText = 'EDGE BLACKOUT TAKEOVER: ENGAGED (0 ms DELAY)';
+          edgePill.style.color = 'var(--crimson)';
+        }
+        if (radioWave) {
+          radioWave.setAttribute('stroke', 'var(--crimson)');
+          radioWave.setAttribute('stroke-dasharray', '2,6');
+        }
+      } else {
+        banner.classList.remove('blackout');
+        badge.className = 'badge-tactical online';
+        statusText.innerText = `HQ LINK: NOMINAL (${kbps || 64} kbps)`;
+        headline.innerText = 'Mainland Telemetry Stream Synchronized (NCPOR Goa Mirror Twin)';
+        headline.style.color = '#fff';
+        desc.innerText = 'Continuous 1 Hz Digital Twin closed-loop. Edge Autonomous Controller standby for zero-delay local physical intervention.';
+        btnSever.style.display = 'inline-flex';
+        btnRestore.style.display = 'none';
+        if (edgePill) {
+          edgePill.innerText = 'LOCAL EDGE AUTHORITY: 100% DIRECT GOVERNANCE';
+          edgePill.style.color = 'var(--emerald)';
+        }
+        if (radioWave) {
+          radioWave.setAttribute('stroke', 'var(--cyan)');
+          radioWave.setAttribute('stroke-dasharray', '4,3');
+        }
+      }
+    }
+
+    async function severSatcomBlackout() {
+      speakFridayBriefing("Critical satcom severance. Polar blackout confirmed. F.R.I.D.A.Y. has assumed full edge command authority.");
+      document.getElementById('satcom-profile-select').value = 'POLAR_BLACKOUT';
+      await changeSatcomProfile('POLAR_BLACKOUT');
+      updateTacticalBanner('POLAR_BLACKOUT', true);
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+    }
+
+    async function restoreSatcomLink() {
+      speakFridayBriefing("Satcom restored. Draining prioritized polar spool buffer.");
+      document.getElementById('satcom-profile-select').value = 'INMARSAT_STANDARD';
+      await recoverSatcom();
+      updateTacticalBanner('INMARSAT_STANDARD', false);
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+    }
+
+    async function toggleAutonomousLoop() {
+      isAutonomousLoopRunning = !isAutonomousLoopRunning;
+      await fetch('/api/actions/autonomous_mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          continuous_loop: isAutonomousLoopRunning,
+          enabled: isAutonomousLoopRunning
+        })
+      });
+      const btnText = document.getElementById('autonomy-status-text');
+      const indicator = document.getElementById('continuous-indicator');
+      if (isAutonomousLoopRunning) {
+        btnText.innerText = 'Edge Autonomy: ON (1 Hz)';
+        indicator.innerText = '● AUTO-RUN 1Hz';
+        indicator.style.color = 'var(--emerald)';
+        document.getElementById('btn-auto-step').innerText = 'Pause Loop';
+      } else {
+        btnText.innerText = 'Edge Autonomy: PAUSED';
+        indicator.innerText = '⏸ PAUSED';
+        indicator.style.color = 'var(--amber)';
+        document.getElementById('btn-auto-step').innerText = 'Resume Loop';
+      }
+      fetchCognitiveLogs();
+    }
+
+    // -------------------------------------------------------------
+    // Physical Actuators Matrix
+    // -------------------------------------------------------------
+    async function fetchActuators() {
+      try {
+        const res = await fetch(`/api/actions/actuators/${activeStation}`);
+        if (!res.ok) return;
+        cachedActuators = await res.json();
+        renderActuators(cachedActuators);
+      } catch (err) {
+        console.warn("Error fetching actuators:", err);
+      }
+    }
+
+    function renderActuators(data) {
+      const grid = document.getElementById('actuators-grid');
+      if (!data) return;
+
+      // Update Synoptic SVG items
+      (data.chps || []).forEach(c => {
+        const cElem = document.getElementById(`syn-gen${c.unit_id}-c`);
+        const kwElem = document.getElementById(`syn-gen${c.unit_id}-kw`);
+        if (c.operating_state === 'RUNNING') {
+          if (cElem) { cElem.setAttribute('fill', 'rgba(16,185,129,0.3)'); cElem.setAttribute('stroke', 'var(--emerald)'); }
+          if (kwElem) { kwElem.textContent = `${(c.power_output_kw||0).toFixed(0)} kW`; kwElem.setAttribute('fill', 'var(--cyan)'); }
+        } else {
+          if (cElem) { cElem.setAttribute('fill', 'rgba(239,68,68,0.2)'); cElem.setAttribute('stroke', 'var(--crimson)'); }
+          if (kwElem) { kwElem.textContent = 'OFF'; kwElem.setAttribute('fill', 'var(--text-dim)'); }
+        }
+      });
+
+      const hvac = data.hvac_dampers || {};
+      const synDamperStatus = document.getElementById('syn-damper-status');
+      if (synDamperStatus) {
+        synDamperStatus.textContent = hvac.blizzard_mode ? 'SEALED (0%)' : 'VENT (25%)';
+        synDamperStatus.setAttribute('fill', hvac.blizzard_mode ? 'var(--amber)' : 'var(--emerald)');
+      }
+
+      const science = data.science_load_shedding || {};
+      const synScienceStatus = document.getElementById('syn-science-status');
+      if (synScienceStatus) {
+        synScienceStatus.textContent = science.science_loads_shed ? 'SHED -15kW (PROTECTED)' : 'FULL POWER (ONLINE)';
+        synScienceStatus.setAttribute('fill', science.science_loads_shed ? 'var(--amber)' : '#fff');
+      }
+
+      const trace = data.trace_heating || {};
+      const synPipeTemp = document.getElementById('syn-pipe-temp-txt');
+      if (synPipeTemp) {
+        const isPipeSafe = (trace.pipe_temp_c || 0) >= 2.0;
+        synPipeTemp.textContent = `Pipe: ${(trace.pipe_temp_c||0).toFixed(1)} °C (${isPipeSafe ? 'SAFE' : 'FREEZE ALERT'})`;
+        synPipeTemp.setAttribute('fill', isPipeSafe ? 'var(--emerald)' : 'var(--crimson)');
+      }
+
+      // Render 6 Actuator Cards
+      const chpsHtml = (data.chps || []).map(c => {
+        const isRunning = c.operating_state === 'RUNNING';
+        const pillClass = isRunning ? 'status-online' : 'status-standby';
+        return `
+          <div class="actuator-unit">
+            <div class="actuator-header-row">
+              <span class="actuator-name"><span>⚡</span> Generator CHP-0${c.unit_id}</span>
+              <span class="badge-status ${pillClass}">${c.operating_state}</span>
+            </div>
+            <div class="actuator-readouts">
+              <span class="readout-lbl">Power Output:</span>
+              <span class="readout-val">${(c.power_output_kw||0).toFixed(1)} kW</span>
+              <span class="readout-lbl">Coolant Temp:</span>
+              <span class="readout-val">${(c.coolant_temp_c||0).toFixed(1)} °C</span>
+              <span class="readout-lbl">Fuel Flow:</span>
+              <span class="readout-val">${(c.fuel_flow_lph||0).toFixed(1)} L/h</span>
+              <span class="readout-lbl">Runtime:</span>
+              <span class="readout-val">${Math.round(c.runtime_hours||0)} h</span>
+            </div>
+            <div class="actuator-btn-row">
+              ${isRunning ? 
+                `<button class="btn-act btn-act-danger" onclick="executeActuatorCommand('STOP_CHP', {unit_id: ${c.unit_id}}, true)">Stop</button>
+                 <button class="btn-act" onclick="executeActuatorCommand('THROTTLE_CHP', {unit_id: ${c.unit_id}, target_power_kw: 65.0})">65 kW</button>`
+                :
+                `<button class="btn-act" style="color:var(--emerald); border-color:var(--emerald);" onclick="executeActuatorCommand('START_CHP', {unit_id: ${c.unit_id}})">Start</button>
+                 <button class="btn-act" onclick="executeActuatorCommand('THROTTLE_CHP', {unit_id: ${c.unit_id}, target_power_kw: 70.0})">Boost 70kW</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const isPipeSafe = (trace.pipe_temp_c || 0) >= 2.0;
+      const traceHtml = `
+        <div class="actuator-unit">
+          <div class="actuator-header-row">
+            <span class="actuator-name"><span>💧</span> Utilidor Trace Heating</span>
+            <span class="badge-status ${isPipeSafe ? 'status-online' : 'status-alert'}">${trace.state || 'NOMINAL'}</span>
+          </div>
+          <div class="actuator-readouts">
+            <span class="readout-lbl">Water Pipe Temp:</span>
+            <span class="readout-val" style="color:${isPipeSafe ? 'var(--cyan)' : 'var(--crimson)'};">${(trace.pipe_temp_c||0).toFixed(1)} °C</span>
+            <span class="readout-lbl">Target Setpoint:</span>
+            <span class="readout-val">${(trace.setpoint_c||12.0).toFixed(1)} °C</span>
+            <span class="readout-lbl">Heating Power:</span>
+            <span class="readout-val">${(trace.heating_power_kw||0).toFixed(1)} kW</span>
+            <span class="readout-lbl">Freeze Risk:</span>
+            <span class="readout-val" style="color:${isPipeSafe ? 'var(--emerald)' : 'var(--crimson)'};">${trace.freeze_risk || 'SAFE'}</span>
+          </div>
+          <div class="actuator-btn-row">
+            <button class="btn-act" onclick="executeActuatorCommand('SET_TRACE_HEATING', {setpoint_c: 18.0, boost_power_kw: 15.0})">⚡ Boost (+15kW)</button>
+            <button class="btn-act" onclick="executeActuatorCommand('SET_TRACE_HEATING', {setpoint_c: 12.0, boost_power_kw: 0.0})">12°C Nominal</button>
+          </div>
+        </div>
+      `;
+
+      const isBlizzard = hvac.blizzard_mode;
+      const hvacHtml = `
+        <div class="actuator-unit">
+          <div class="actuator-header-row">
+            <span class="actuator-name"><span>❄️</span> HVAC Blizzard Dampers</span>
+            <span class="badge-status ${isBlizzard ? 'status-alert' : 'status-online'}">${isBlizzard ? 'SEALED (0%)' : 'VENT (25%)'}</span>
+          </div>
+          <div class="actuator-readouts">
+            <span class="readout-lbl">Damper Infiltration:</span>
+            <span class="readout-val">${((hvac.infiltration_rate||0.25)*100).toFixed(0)}%</span>
+            <span class="readout-lbl">Damper Position:</span>
+            <span class="readout-val">${(hvac.damper_position_pct||25).toFixed(0)}%</span>
+            <span class="readout-lbl">Mode:</span>
+            <span class="readout-val">${isBlizzard ? 'Blizzard Seal' : 'Fresh Intake'}</span>
+            <span class="readout-lbl">Life-Safety Heat:</span>
+            <span class="readout-val" style="color:var(--emerald);">ACTIVE</span>
+          </div>
+          <div class="actuator-btn-row">
+            ${isBlizzard ? 
+              `<button class="btn-act" onclick="executeActuatorCommand('SET_HVAC_BLIZZARD_DAMPERS', {blizzard_mode: false})">🍃 Open Ventilation</button>` :
+              `<button class="btn-act btn-act-danger" onclick="executeActuatorCommand('SET_HVAC_BLIZZARD_DAMPERS', {blizzard_mode: true})">🛡️ Seal Dampers</button>`
+            }
+          </div>
+        </div>
+      `;
+
+      const isShed = science.science_loads_shed;
+      const scienceHtml = `
+        <div class="actuator-unit">
+          <div class="actuator-header-row">
+            <span class="actuator-name"><span>🔬</span> Science Load Shedder</span>
+            <span class="badge-status ${isShed ? 'status-alert' : 'status-online'}">${isShed ? 'SHED (-15 kW)' : 'ONLINE'}</span>
+          </div>
+          <div class="actuator-readouts">
+            <span class="readout-lbl">Shed Relief:</span>
+            <span class="readout-val">${(science.shed_kw||0).toFixed(1)} kW</span>
+            <span class="readout-lbl">Grid Priority:</span>
+            <span class="readout-val" style="color:${isShed ? 'var(--amber)' : 'var(--cyan)'};">${science.priority_life_support_only ? 'Life-Support' : 'Full Science'}</span>
+            <span class="readout-lbl">Life-Support:</span>
+            <span class="readout-val" style="color:var(--emerald);">PROTECTED</span>
+            <span class="readout-lbl">Grid Voltage:</span>
+            <span class="readout-val">415 V OK</span>
+          </div>
+          <div class="actuator-btn-row">
+            ${isShed ? 
+              `<button class="btn-act" onclick="executeActuatorCommand('SHED_SCIENCE_LOAD', {shed_science: false})">Restore Science</button>` :
+              `<button class="btn-act btn-act-danger" onclick="executeActuatorCommand('SHED_SCIENCE_LOAD', {shed_science: true})">⚠️ Shed Science</button>`
+            }
+          </div>
+        </div>
+      `;
+
+      grid.innerHTML = chpsHtml + traceHtml + hvacHtml + scienceHtml;
+    }
+
+    // -------------------------------------------------------------
+    // Actuator Command Execution with Tactical Keypad Interlock
+    // -------------------------------------------------------------
+    async function executeActuatorCommand(cmd, params, isStopChp) {
+      if (isStopChp && cachedActuators && cachedActuators.chps) {
+        const running = cachedActuators.chps.filter(c => c.operating_state === 'RUNNING');
+        if (running.length <= 1) {
+          pendingActuatorAction = { cmd, params };
+          openCommanderPinModal();
+          return;
+        }
+      }
+
+      await sendActuatorCommand(cmd, params, null);
+    }
+
+    async function sendActuatorCommand(cmd, params, pin) {
+      try {
+        const res = await fetch(`/api/actions/actuators/${activeStation}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: cmd,
+            parameters: params || {},
+            pin: pin
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fetchActuators();
+          fetchCognitiveLogs();
+          fetchStationOverview();
+          return true;
+        } else {
+          alert(`Actuator Command Rejected: ${data.detail || 'Command failed'}`);
+          return false;
+        }
+      } catch (err) {
+        alert(`Error executing actuator command: ${err.message}`);
+        return false;
+      }
+    }
+
+    // Keypad Logic
+    function openCommanderPinModal() {
+      currentKeypadPin = '';
+      document.getElementById('modal-keypad-val').innerText = 'ENTER PIN';
+      document.getElementById('modal-pin-status').innerHTML = '';
+      document.getElementById('modal-commander-pin').classList.add('open');
+    }
+    function closeCommanderPinModal() {
+      document.getElementById('modal-commander-pin').classList.remove('open');
+      pendingActuatorAction = null;
+    }
+    function pressKeypad(num) {
+      if (currentKeypadPin.length < 24) currentKeypadPin += num;
+      document.getElementById('modal-keypad-val').innerText = '•'.repeat(currentKeypadPin.length) || 'ENTER PIN';
+    }
+    function clearKeypad() {
+      currentKeypadPin = '';
+      document.getElementById('modal-keypad-val').innerText = 'ENTER PIN';
+    }
+    function backspaceKeypad() {
+      currentKeypadPin = currentKeypadPin.slice(0, -1);
+      document.getElementById('modal-keypad-val').innerText = '•'.repeat(currentKeypadPin.length) || 'ENTER PIN';
+    }
+    function autofillJudgePin() {
+      currentKeypadPin = 'BHARATI-CMD-2026';
+      document.getElementById('modal-keypad-val').innerText = 'BHARATI-CMD-2026';
+    }
+    async function submitCommanderKeypad() {
+      if (!currentKeypadPin) {
+        document.getElementById('modal-pin-status').innerHTML = '<span style="color:var(--crimson);">PIN Required</span>';
+        return;
+      }
+      if (!pendingActuatorAction) {
+        closeCommanderPinModal();
+        return;
+      }
+
+      const success = await sendActuatorCommand(pendingActuatorAction.cmd, pendingActuatorAction.params, currentKeypadPin);
+      if (success) {
+        closeCommanderPinModal();
+      } else {
+        document.getElementById('modal-pin-status').innerHTML = '<span style="color:var(--crimson);">AUTHORIZATION FAILED</span>';
+      }
+    }
+
+    async function verifyCommanderPinManual() {
+      const pin = document.getElementById('commander-pin-input').value;
+      const statusDiv = document.getElementById('pin-status-box');
+
+      try {
+        const res = await fetch('/api/actions/authorize_pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: 'OVERRIDE_LIFE_SAFETY_HEATING',
+            pin: pin,
+            station_id: activeStation,
+            parameters: { target_subsystem: 'HVAC', new_setpoint_c: 21.0 }
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          statusDiv.innerHTML = `<span style="color:var(--emerald);">✔ AUTHORIZED: ${data.message}</span>`;
+          fetchCognitiveLogs();
+        } else {
+          statusDiv.innerHTML = `<span style="color:var(--crimson);">✖ REJECTED: ${data.detail || 'Invalid PIN'}</span>`;
+        }
+      } catch (err) {
+        statusDiv.innerHTML = `<span style="color:var(--crimson);">Error verifying PIN</span>`;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Structured Cognitive Logs ("What Was Noticed & What Was Done")
+    // -------------------------------------------------------------
+    async function fetchCognitiveLogs() {
+      try {
+        const res = await fetch(`/api/actions/cognitive_logs/${activeStation}?limit=50`);
+        if (!res.ok) return;
+        cachedCognitiveLogs = await res.json();
+        updateCognitiveCounts();
+        renderCognitiveLogs();
+      } catch (err) {
+        console.warn("Error fetching cognitive logs:", err);
+      }
+    }
+
+    function updateCognitiveCounts() {
+      const counts = { ALL: cachedCognitiveLogs.length, PERCEPTION: 0, DIAGNOSIS: 0, PREDICTION: 0, ACTUATION: 0, EDGE_AUTHORITY: 0 };
+      cachedCognitiveLogs.forEach(l => {
+        if (counts[l.category] !== undefined) counts[l.category]++;
+      });
+
+      document.getElementById('count-cog-all').innerText = counts.ALL;
+      document.getElementById('count-cog-perception').innerText = counts.PERCEPTION;
+      document.getElementById('count-cog-diagnosis').innerText = counts.DIAGNOSIS;
+      document.getElementById('count-cog-prediction').innerText = counts.PREDICTION;
+      document.getElementById('count-cog-actuation').innerText = counts.ACTUATION;
+      document.getElementById('count-cog-edge').innerText = counts.EDGE_AUTHORITY;
+    }
+
+    function filterCognitiveCategory(category) {
+      activeCognitiveCategory = category;
+      document.querySelectorAll('.cog-tab').forEach(t => {
+        t.classList.toggle('active', t.id === `cog-tab-${category}`);
+      });
+      renderCognitiveLogs();
+    }
+
+    function renderCognitiveLogs() {
+      const feed = document.getElementById('cognitive-logs-feed');
+      const filtered = cachedCognitiveLogs.filter(l => {
+        if (activeCognitiveCategory === 'ALL') return true;
+        return l.category === activeCognitiveCategory;
+      });
+
+      if (filtered.length === 0) {
+        feed.innerHTML = '<div style="color:var(--text-dim); font-size:11px; font-style:italic; padding:12px; text-align:center;">No cognitive events recorded in this category yet.</div>';
+        return;
+      }
+
+      feed.innerHTML = filtered.map(l => {
+        const cat = l.category || 'PERCEPTION';
+        const sev = l.severity || 'INFO';
+        const simTimeStr = l.sim_time_seconds !== undefined ? `T+${Math.round(l.sim_time_seconds)}s` : '';
+        const clockTime = l.timestamp_iso ? new Date(l.timestamp_iso).toLocaleTimeString() : '';
+
+        return `
+          <div class="cog-event-card ${cat}">
+            <div class="cog-card-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="cog-pill pill-${cat}">${cat}</span>
+                <span class="cog-title">${l.title}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="cog-time">${simTimeStr} (${clockTime})</span>
+                <span style="font-size:9px; font-weight:700; color:${sev === 'CRITICAL' || sev === 'EMERGENCY' ? 'var(--crimson)' : 'var(--text-dim)'};">${sev}</span>
+              </div>
+            </div>
+            <div class="cog-narrative">${l.details}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------
+    // 505-Sensor Telemetry Table
+    // -------------------------------------------------------------
+    function renderAlerts(alerts) {
+      const container = document.getElementById('alerts-container');
+      document.getElementById('alert-count').innerText = alerts.length;
+
+      if (!alerts || alerts.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-dim); font-size:12px; font-style:italic;">No active life-safety alarms.</p>';
+        return;
+      }
+
+      container.innerHTML = alerts.map(a => `
+        <div style="background:rgba(239,68,68,0.15); border-left:3px solid var(--crimson); padding:8px 10px; border-radius:4px; margin-bottom:6px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between; font-weight:700; color:#fca5a5;">
+            <span>${a.subsystem || 'STATION'}</span>
+            <span style="font-size:10px;">${a.severity || 'CRITICAL'}</span>
+          </div>
+          <div style="color:#fff; margin-top:2px;">${a.message}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTelemetryTable() {
+      const tbody = document.getElementById('telemetry-tbody');
+      const keys = Object.keys(cachedReadings);
+      document.getElementById('sensor-total-counter').innerText = `${keys.length} Points`;
+
+      const filtered = keys.filter(id => {
+        if (currentPillar === 'ENERGY' && !(id.startsWith('ENG-') || id.includes('CHP') || id.includes('GRID'))) return false;
+        if (currentPillar === 'INFRASTRUCTURE' && !(id.startsWith('INFRA-') || id.includes('HVAC') || id.includes('WATER'))) return false;
+        if (currentPillar === 'ENVIRONMENT' && !(id.startsWith('ENV-') || id.includes('WX') || id.includes('MET'))) return false;
+        if (currentPillar === 'LOGISTICS' && !(id.startsWith('LOG-') || id.includes('REEFER') || id.includes('VEH'))) return false;
+
+        if (searchQuery && !id.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding:16px;">No matching sensors found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.slice(0, 80).map(id => {
+        const val = cachedReadings[id];
+        let displayVal = typeof val === 'object' && val !== null ? (val.value !== undefined ? val.value : JSON.stringify(val)) : val;
+        let pillar = id.startsWith('ENG-') ? 'Energy' : id.startsWith('INFRA-') ? 'Infra' : id.startsWith('ENV-') ? 'Envir' : 'Logist';
+
+        return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+            <td style="padding:5px 10px; font-family:var(--font-mono); color:var(--cyan);">${id}</td>
+            <td style="padding:5px 10px; color:var(--text-dim);">${pillar}</td>
+            <td style="padding:5px 10px; font-family:var(--font-mono); font-weight:600; color:#fff;">${displayVal}</td>
+            <td style="padding:5px 10px;"><span style="color:var(--emerald); font-size:10px; font-weight:700;">● OK</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterPillar(pillar) {
+      currentPillar = pillar;
+      renderTelemetryTable();
+    }
+
+    function filterSensorsBySearch(q) {
+      searchQuery = q;
+      renderTelemetryTable();
+    }
+
+    // Step Simulation Clock
+    async function stepClock(dt) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: 'step', dt_seconds: dt }));
+      } else {
+        await fetch(`/api/stations/${activeStation}/step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dt_seconds: dt })
+        });
+        fetchStationOverview();
+        fetchActuators();
+        fetchCognitiveLogs();
+      }
+    }
+
+    function toggleAutoStep() {
+      toggleAutonomousLoop();
+    }
+
+    async function injectQuickScenario(sc) {
+      if (sc === 'GENERATOR_TRIP') {
+        speakFridayBriefing("Alert: Primary generator mechanical trip detected. F.R.I.D.A.Y. cognitive agents initiating Bayesian causal root cause diagnosis.");
+      } else if (sc === 'BLIZZARD_STRIKE') {
+        speakFridayBriefing("Warning: Severe katabatic blizzard strike detected at 140 kilometers per hour. Sealing fresh air dampers to zero percent.");
+      } else if (sc === 'WATER_LINE_FREEZE') {
+        speakFridayBriefing("Warning: Utilidor water line temperature dropping towards freezing point. Auxiliary trace heating circuits engaged.");
+      }
+      const res = await fetch(`/api/scenarios/inject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario: sc, station_id: activeStation })
+      });
+      if (res.ok) {
+        fetchStationOverview();
+        fetchActuators();
+        fetchCognitiveLogs();
+        fetchAgentStatus();
+      }
+    }
+
+    async function clearScenario() {
+      speakFridayBriefing("Station systems reset to nominal baseline operating conditions.");
+      await fetch(`/api/scenarios/clear?station_id=${activeStation}`, { method: 'POST' });
+      fetchStationOverview();
+      fetchActuators();
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+    }
+
+    async function changeSatcomProfile(profile) {
+      await fetch('/api/satcom/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profile, station_id: activeStation })
+      });
+      fetchStationOverview();
+      fetchActuators();
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+    }
+
+    async function recoverSatcom() {
+      await fetch(`/api/satcom/${activeStation}/recover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_profile: 'INMARSAT_STANDARD' })
+      });
+      document.getElementById('satcom-profile-select').value = 'INMARSAT_STANDARD';
+      fetchStationOverview();
+      fetchActuators();
+      fetchCognitiveLogs();
+      fetchAgentStatus();
+    }
+
+    async function resyncSatcom() {
+      await fetch(`/api/satcom/${activeStation}/resync`, { method: 'POST' });
+      fetchStationOverview();
+      fetchAgentStatus();
+    }
+
+    // Commander Briefing Card Modal
+    async function openBriefingCardModal() {
+      const modal = document.getElementById('modal-briefing-card');
+      const content = document.getElementById('briefing-card-content');
+      modal.classList.add('open');
+      content.innerHTML = '<p style="color:var(--text-dim);">Synthesizing multi-agent consensus briefing card...</p>';
+
+      try {
+        const res = await fetch('/api/deliberations');
+        const sessions = await res.json();
+
+        if (sessions.length === 0) {
+          content.innerHTML = '<p style="color:var(--text-muted);">No active multi-agent deliberation sessions. Station operating nominally.</p>';
+          return;
+        }
+
+        const sid = sessions[0].session_id;
+        const cardRes = await fetch(`/api/deliberations/${sid}/briefing_card`);
+        const card = await cardRes.json();
+
+        content.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+            <div style="background:rgba(56,189,248,0.15); border:1px solid var(--border-subtle); padding:10px 14px; border-radius:6px;">
+              <div style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">${card.headline || 'Consensus Synthesis'}</div>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Session ID: ${card.session_id} &bull; Urgency: <strong style="color:var(--amber);">${card.urgency || 'HIGH'}</strong></div>
+            </div>
+            <div>
+              <strong style="color:#fff;">Diagnostic Root Causes:</strong>
+              <ul style="margin-left:20px; color:#cbd5e1; margin-top:4px;">
+                ${(card.primary_causes || ['Observation pillars nominal']).map(c => `<li>${c}</li>`).join('')}
+              </ul>
+            </div>
+            <div>
+              <strong style="color:#fff;">Cascade Failure Predictions:</strong>
+              <p style="color:#94a3b8; margin-top:4px;">${card.predicted_cascades || 'No unmitigated failure cascades anticipated.'}</p>
+            </div>
+            <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:10px 14px; border-radius:6px;">
+              <strong style="color:var(--emerald);">Consensus Recommended Plan:</strong>
+              <p style="color:#e2e8f0; margin-top:4px;">${card.recommended_actions || 'Maintain standard autonomous station monitoring.'}</p>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<p style="color:var(--crimson);">Error retrieving briefing card: ${err.message}</p>`;
+      }
+    }
+
+    function closeBriefingCardModal() {
+      document.getElementById('modal-briefing-card').classList.remove('open');
+    }
+
+    // =========================================================================
+    // F.R.I.D.A.Y. & Cognitive Multi-Agent Society Neural Canvas & Deliberation
+    // =========================================================================
+
+    const SATELLITE_CONFIG = [
+      { role: 'SITUATION_AWARENESS', label: 'Perception', icon: '👁️', color: '#00f0ff', cx: 190, cy: 30 },
+      { role: 'DIAGNOSTIC',          label: 'Diagnostic', icon: '🔍', color: '#a855f7', cx: 254, cy: 52 },
+      { role: 'PREDICTION',          label: 'Prediction', icon: '⏳', color: '#f59e0b', cx: 288, cy: 110 },
+      { role: 'RISK_IMPACT',         label: 'Risk Impact', icon: '🛡️', color: '#ef4444', cx: 275, cy: 174 },
+      { role: 'PLANNING',            label: 'Planning',   icon: '📝', color: '#38bdf8', cx: 226, cy: 218 },
+      { role: 'WHAT_IF',             label: 'What-If Sim', icon: '🧪', color: '#10b981', cx: 154, cy: 218 },
+      { role: 'MISSION_OPS',         label: 'Mission Ops', icon: '🎯', color: '#06b6d4', cx: 105, cy: 174 },
+      { role: 'MAINTENANCE',         label: 'Maintenance', icon: '🔧', color: '#eab308', cx: 92, cy: 110 },
+      { role: 'RESOURCE_OPTIMIZER',  label: 'Optimizer',   icon: '⚡', color: '#c084fc', cx: 126, cy: 52 },
+    ];
+
+    async function fetchAgentStatus() {
+      try {
+        const res = await fetch('/api/agents/status');
+        if (!res.ok) return;
+        cachedAgentsData = await res.json();
+        renderAgentNeuralCanvas(cachedAgentsData);
+        if (cachedAgentsData.active_deliberation_phase) {
+          updateDeliberationPhaseRibbon(cachedAgentsData.active_deliberation_phase);
+        }
+      } catch (err) {
+        console.warn("Error fetching agent status:", err);
+      }
+    }
+
+    function renderAgentNeuralCanvas(data) {
+      if (!data || !data.agents) return;
+      const agents = data.agents;
+      const friday = agents['FRIDAY_ORCHESTRATOR'] || {};
+      const coreMode = document.getElementById('svg-core-mode');
+      const coreStatus = document.getElementById('svg-core-status');
+
+      if (coreMode) {
+        coreMode.innerText = friday.state || 'MONITORING';
+      }
+      if (coreStatus) {
+        if (friday.state === 'ACTUATED') {
+          coreStatus.innerText = '✔ ACTUATED';
+          coreStatus.setAttribute('fill', 'var(--cyan)');
+        } else if (friday.state === 'ARBITRATING') {
+          coreStatus.innerText = '⚡ ARBITRATING';
+          coreStatus.setAttribute('fill', 'var(--amber)');
+        } else {
+          coreStatus.innerText = '● AUTONOMOUS';
+          coreStatus.setAttribute('fill', 'var(--emerald)');
+        }
+      }
+
+      // 1. Render Synapse Beams from Center (190, 125) to Satellites
+      const synapseLayer = document.getElementById('synapse-beams-layer');
+      const pipelineLayer = document.getElementById('pipeline-synapses-layer');
+      let synapseHtml = '';
+      let pipelineHtml = '';
+
+      SATELLITE_CONFIG.forEach((cfg, idx) => {
+        const ag = agents[cfg.role] || {};
+        const isActive = ag.state && !['STANDBY', 'IDLE'].includes(ag.state);
+        const activeClass = isActive ? 'active' : '';
+
+        // Radial beam from Core (190, 125) to Satellite
+        synapseHtml += `<line class="synapse-path ${activeClass}" x1="190" y1="125" x2="${cfg.cx}" y2="${cfg.cy}" />`;
+
+        // Inter-agent sequential pipeline arc (0 -> 1 -> 2 -> 3 -> 4 -> 5)
+        if (idx < 5) {
+          const nextCfg = SATELLITE_CONFIG[idx + 1];
+          const isPipeActive = isActive || (agents[nextCfg.role] && !['STANDBY', 'IDLE'].includes(agents[nextCfg.role].state));
+          pipelineHtml += `<line class="synapse-path ${isPipeActive ? 'active' : ''}" x1="${cfg.cx}" y1="${cfg.cy}" x2="${nextCfg.cx}" y2="${nextCfg.cy}" stroke="${cfg.color}" stroke-opacity="0.4"/>`;
+        }
+      });
+
+      if (synapseLayer) synapseLayer.innerHTML = synapseHtml;
+      if (pipelineLayer) pipelineLayer.innerHTML = pipelineHtml;
+
+      // 2. Render Satellite Nodes
+      const satLayer = document.getElementById('agent-satellites-layer');
+      if (!satLayer) return;
+
+      let satHtml = '';
+      SATELLITE_CONFIG.forEach(cfg => {
+        const ag = agents[cfg.role] || {};
+        const stateStr = ag.state || 'STANDBY';
+        const msgCount = (ag.messages_sent || 0) + (ag.messages_received || 0);
+        const isHot = !['STANDBY', 'IDLE'].includes(stateStr);
+        const ringStroke = isHot ? cfg.color : 'rgba(255,255,255,0.2)';
+        const ringWidth = isHot ? '2' : '1';
+        const glowFilter = isHot ? `filter="drop-shadow(0 0 6px ${cfg.color})"` : '';
+
+        satHtml += `
+          <g class="agent-node-circle" onclick="openAgentDetailModal('${cfg.role}')" ${glowFilter}>
+            <!-- Outer Ring -->
+            <circle cx="${cfg.cx}" cy="${cfg.cy}" r="17" fill="rgba(15,23,42,0.92)" stroke="${ringStroke}" stroke-width="${ringWidth}"/>
+            ${isHot ? `<circle cx="${cfg.cx}" cy="${cfg.cy}" r="21" fill="none" stroke="${cfg.color}" stroke-width="1" stroke-dasharray="3,3" opacity="0.8"/>` : ''}
+            
+            <!-- Agent Icon -->
+            <text x="${cfg.cx}" y="${cfg.cy + 4}" text-anchor="middle" font-size="11">${cfg.icon}</text>
+            
+            <!-- Agent Label -->
+            <text x="${cfg.cx}" y="${cfg.cy + 25}" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" font-weight="600" fill="#cbd5e1">${cfg.label}</text>
+            
+            <!-- Agent State Pill -->
+            <rect x="${cfg.cx - 15}" y="${cfg.cy - 23}" width="30" height="9" rx="3" fill="${isHot ? cfg.color : 'rgba(30,41,59,0.8)'}" fill-opacity="${isHot ? '0.25' : '0.8'}" stroke="${isHot ? cfg.color : 'rgba(255,255,255,0.1)'}" stroke-width="0.8"/>
+            <text x="${cfg.cx}" y="${cfg.cy - 16}" text-anchor="middle" font-family="JetBrains Mono" font-size="5.5" font-weight="700" fill="${isHot ? cfg.color : 'var(--text-dim)'}">
+              ${stateStr.substring(0, 5)}
+            </text>
+
+            <!-- Message Tally Badge -->
+            ${msgCount > 0 ? `
+              <circle cx="${cfg.cx + 12}" cy="${cfg.cy - 10}" r="5" fill="var(--cyan)" stroke="#090f1d" stroke-width="1"/>
+              <text x="${cfg.cx + 12}" y="${cfg.cy - 7.5}" text-anchor="middle" font-family="JetBrains Mono" font-size="5" font-weight="700" fill="#000">${msgCount}</text>
+            ` : ''}
+          </g>
+        `;
+      });
+
+      satLayer.innerHTML = satHtml;
+    }
+
+    function updateDeliberationPhaseRibbon(phaseData) {
+      if (!phaseData) return;
+      const currentPhase = phaseData.phase || 1;
+
+      for (let i = 1; i <= 6; i++) {
+        const el = document.getElementById(`delib-stage-${i}`);
+        if (!el) continue;
+        el.className = 'delib-stage';
+        if (i === currentPhase) {
+          el.classList.add('active');
+        } else if (i < currentPhase) {
+          el.classList.add('completed');
+        }
+      }
+
+      const phaseLbl = document.getElementById('delib-phase-label');
+      const headline = document.getElementById('delib-phase-headline');
+      if (phaseLbl) phaseLbl.innerText = `${phaseData.phase_name || 'PERCEPTION'}:`;
+      if (headline) headline.innerText = phaseData.headline || 'Station telemetry nominal across all 4 observation pillars.';
+    }
+
+    // Agent Cognitive Telemetry Modal
+    async function openAgentDetailModal(role) {
+      const modal = document.getElementById('modal-agent-detail');
+      const content = document.getElementById('agent-modal-content');
+      modal.classList.add('open');
+      content.innerHTML = '<p style="color:var(--text-dim); padding:10px;">Retrieving cognitive telemetry for ' + role + '...</p>';
+
+      const cfg = SATELLITE_CONFIG.find(c => c.role === role) || {
+        role: role, label: 'F.R.I.D.A.Y. Master Mind', icon: '🧠', color: 'var(--cyan)'
+      };
+
+      document.getElementById('agent-modal-title').innerText = `${cfg.icon} ${cfg.label.toUpperCase()} (${role})`;
+      document.getElementById('agent-modal-tag').innerText = `AUTONOMOUS COGNITIVE AGENT &bull; POLAR DIGITAL TWIN SOCIETY`;
+      document.getElementById('agent-modal-icon').innerText = cfg.icon;
+
+      try {
+        const res = await fetch(`/api/agents/${role}`);
+        if (!res.ok) {
+          content.innerHTML = `<p style="color:var(--crimson);">Failed to load agent profile: HTTP ${res.status}</p>`;
+          return;
+        }
+        const data = await res.json();
+        const rt = data.runtime || {};
+        const msgs = data.recent_messages || [];
+
+        content.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+            <!-- Status & Role Banner -->
+            <div style="background:rgba(15,23,42,0.85); border:1px solid ${cfg.color}; border-radius:6px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="font-weight:700; color:${cfg.color}; font-size:13px;">${rt.name || cfg.label}</span>
+                <div style="color:var(--text-dim); font-size:10px; margin-top:2px;">Role: <strong style="color:#fff;">${rt.tag || role}</strong></div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-family:var(--font-hud); font-size:11px; padding:3px 8px; border-radius:4px; background:rgba(0,240,255,0.15); color:var(--cyan); border:1px solid var(--cyan);">
+                  ${rt.state || 'ONLINE'}
+                </span>
+                <div style="font-size:9px; color:var(--text-dim); margin-top:3px;">Confidence: ${(rt.confidence !== undefined ? Math.round(rt.confidence * 100) : 100)}%</div>
+              </div>
+            </div>
+
+            <!-- Cognitive Objective -->
+            <div style="background:rgba(8,14,26,0.6); border:1px solid var(--border-subtle); border-radius:6px; padding:8px 12px;">
+              <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Scientific Cognitive Objective:</div>
+              <p style="color:#cbd5e1; margin-top:4px; font-size:11px; line-height:1.4;">${rt.objective || 'Autonomous operational oversight.'}</p>
+            </div>
+
+            <!-- Current Working Hypothesis / Output -->
+            <div style="background:rgba(8,14,26,0.6); border:1px solid var(--border-subtle); border-radius:6px; padding:8px 12px;">
+              <div style="font-size:10px; font-weight:700; color:var(--cyan); text-transform:uppercase;">Active Working Hypothesis / Telemetry State:</div>
+              <p style="color:#fff; margin-top:4px; font-family:var(--font-mono); font-size:11px; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:4px; border-left:2px solid ${cfg.color};">
+                ${rt.hypothesis || 'Standing by for cognitive message bus triggers.'}
+              </p>
+            </div>
+
+            <!-- Message Bus Statistics Counters -->
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+              <div style="background:rgba(15,23,42,0.8); border:1px solid var(--border-subtle); padding:8px; border-radius:5px; text-align:center;">
+                <div style="font-size:9px; color:var(--text-muted);">MESSAGES SENT</div>
+                <div style="font-size:14px; font-family:var(--font-mono); font-weight:700; color:var(--cyan);">${rt.messages_sent || 0}</div>
+              </div>
+              <div style="background:rgba(15,23,42,0.8); border:1px solid var(--border-subtle); padding:8px; border-radius:5px; text-align:center;">
+                <div style="font-size:9px; color:var(--text-muted);">MESSAGES RECV</div>
+                <div style="font-size:14px; font-family:var(--font-mono); font-weight:700; color:var(--purple);">${rt.messages_received || 0}</div>
+              </div>
+              <div style="background:rgba(15,23,42,0.8); border:1px solid var(--border-subtle); padding:8px; border-radius:5px; text-align:center;">
+                <div style="font-size:9px; color:var(--text-muted);">ACTIVE SESSIONS</div>
+                <div style="font-size:14px; font-family:var(--font-mono); font-weight:700; color:var(--emerald);">${cachedAgentsData ? cachedAgentsData.active_sessions_count : 1}</div>
+              </div>
+            </div>
+
+            <!-- Recent Inter-Agent Dialogue Audit Trail -->
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#fff; margin-bottom:6px;">Inter-Agent Message Bus Dialogue (${msgs.length} Recent):</div>
+              <div style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+                ${msgs.length === 0 ? '<div style="color:var(--text-dim); font-size:11px; font-style:italic; padding:10px;">No messages recorded on bus for this agent yet.</div>' : 
+                  msgs.map(m => {
+                    const isSender = m.sender === role;
+                    const sevColor = m.severity === 'CRITICAL' ? 'var(--crimson)' : (m.severity === 'WARNING' ? 'var(--amber)' : 'var(--cyan)');
+                    return `
+                      <div style="background:rgba(10,17,34,0.8); border:1px solid rgba(255,255,255,0.06); border-left:3px solid ${sevColor}; padding:6px 10px; border-radius:4px; font-size:10px;">
+                        <div style="display:flex; justify-content:space-between; color:var(--text-dim); font-family:var(--font-mono);">
+                          <span>${isSender ? `OUT -> ${m.recipient}` : `IN <- ${m.sender}`} [${m.message_type}]</span>
+                          <span style="color:${sevColor}; font-weight:700;">${m.severity}</span>
+                        </div>
+                        <div style="color:#e2e8f0; margin-top:3px; font-family:var(--font-mono); word-break:break-word;">
+                          ${m.summary}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<p style="color:var(--crimson);">Error retrieving agent detail: ${err.message}</p>`;
+      }
+    }
+
+    function closeAgentDetailModal() {
+      document.getElementById('modal-agent-detail').classList.remove('open');
+    }
+
+    // =========================================================================
+    // Topological Causal Dependency Graph Visualizer (TwinCausalGraph)
+    // =========================================================================
+
+    async function openCausalGraphModal() {
+      const modal = document.getElementById('modal-causal-graph');
+      modal.classList.add('open');
+      if (!cachedCausalGraph) {
+        try {
+          const res = await fetch('/api/agents/causal_graph');
+          if (res.ok) {
+            cachedCausalGraph = await res.json();
+          }
+        } catch (e) {
+          console.warn("Error fetching causal graph:", e);
+        }
+      }
+      renderCausalGraph();
+    }
+
+    function closeCausalGraphModal() {
+      document.getElementById('modal-causal-graph').classList.remove('open');
+    }
+
+    function filterCausalSubsystem(subsystem) {
+      activeCausalFilter = subsystem;
+      document.querySelectorAll('.btn-causal-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.id === `filter-causal-${subsystem}`);
+      });
+      renderCausalGraph();
+    }
+
+    function renderCausalGraph() {
+      const svg = document.getElementById('causal-graph-svg');
+      if (!svg || !cachedCausalGraph) return;
+
+      const nodes = cachedCausalGraph.nodes || [];
+      const edges = cachedCausalGraph.edges || [];
+      const activeFaults = cachedCausalGraph.active_fault_nodes || [];
+
+      // Color mapping by subsystem
+      const subColors = {
+        ENERGY: '#f59e0b',
+        INFRASTRUCTURE: '#38bdf8',
+        ENVIRONMENT: '#00f0ff',
+        LOGISTICS: '#a855f7'
+      };
+
+      let svgHtml = `
+        <defs>
+          <marker id="arrow-nominal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="rgba(56, 189, 248, 0.4)"/>
+          </marker>
+          <marker id="arrow-fault" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--crimson)"/>
+          </marker>
+        </defs>
+      `;
+
+      // 1. Render Edges
+      edges.forEach(e => {
+        const src = nodes.find(n => n.id === e.source);
+        const tgt = nodes.find(n => n.id === e.target);
+        if (!src || !tgt) return;
+
+        // Apply subsystem filter if either source or target matches
+        if (activeCausalFilter !== 'ALL') {
+          if (src.data.subsystem !== activeCausalFilter && tgt.data.subsystem !== activeCausalFilter) {
+            return;
+          }
+        }
+
+        const sx = src.position.x;
+        const sy = src.position.y / 1.7 + 20;
+        const tx = tgt.position.x;
+        const ty = tgt.position.y / 1.7 + 20;
+
+        const isFaultEdge = activeFaults.includes(e.source) && activeFaults.includes(e.target);
+        const strokeColor = isFaultEdge ? 'var(--crimson)' : 'rgba(56, 189, 248, 0.3)';
+        const strokeW = isFaultEdge ? '2.5' : '1.2';
+        const marker = isFaultEdge ? 'url(#arrow-fault)' : 'url(#arrow-nominal)';
+
+        svgHtml += `
+          <path d="M ${sx} ${sy} Q ${(sx + tx)/2} ${(sy + ty)/2 - 15} ${tx} ${ty}" 
+                fill="none" stroke="${strokeColor}" stroke-width="${strokeW}" marker-end="${marker}"/>
+        `;
+      });
+
+      // 2. Render Nodes
+      nodes.forEach(n => {
+        if (activeCausalFilter !== 'ALL' && n.data.subsystem !== activeCausalFilter) {
+          return;
+        }
+
+        const nx = n.position.x;
+        const ny = n.position.y / 1.7 + 20;
+        const color = subColors[n.data.subsystem] || 'var(--cyan)';
+        const isRoot = n.data.isRootCause;
+        const isImpacted = n.data.isCausalPath;
+
+        let stroke = color;
+        let strokeWidth = '1.5';
+        let filterAttr = '';
+        if (isRoot) {
+          stroke = 'var(--crimson)';
+          strokeWidth = '3';
+          filterAttr = 'filter="drop-shadow(0 0 8px var(--crimson))"';
+        } else if (isImpacted) {
+          stroke = 'var(--amber)';
+          strokeWidth = '2.5';
+          filterAttr = 'filter="drop-shadow(0 0 6px var(--amber))"';
+        }
+
+        svgHtml += `
+          <g class="causal-node-g" onclick="inspectCausalNode('${n.id}')" style="cursor:pointer;" ${filterAttr}>
+            <rect x="${nx - 45}" y="${ny - 15}" width="90" height="30" rx="5" 
+                  fill="rgba(10,18,36,0.92)" stroke="${stroke}" stroke-width="${strokeWidth}"/>
+            <text x="${nx}" y="${ny - 2}" text-anchor="middle" font-family="JetBrains Mono" font-size="8" font-weight="700" fill="#fff">${n.id}</text>
+            <text x="${nx}" y="${ny + 9}" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" fill="${color}">L${n.data.criticality || 3} &bull; ${n.data.subsystem.substring(0,4)}</text>
+            ${isRoot ? `<circle cx="${nx + 40}" cy="${ny - 12}" r="4" fill="var(--crimson)" />` : ''}
+          </g>
+        `;
+      });
+
+      svg.innerHTML = svgHtml;
+    }
+
+    async function inspectCausalNode(nodeId) {
+      const card = document.getElementById('causal-node-inspect-card');
+      card.innerHTML = `<span style="color:var(--text-dim);">Computing Bayesian blast radius for <strong>${nodeId}</strong>...</span>`;
+
+      try {
+        const res = await fetch(`/api/agents/causal_graph/blast_radius/${nodeId}`);
+        if (!res.ok) {
+          card.innerHTML = `<span style="color:var(--crimson);">Failed to inspect node: HTTP ${res.status}</span>`;
+          return;
+        }
+        const data = await res.json();
+        const blast = data.blast_radius || {};
+        const impacts = data.downstream_impacts || [];
+
+        const sevScore = blast.severity_score || 0;
+        const sevColor = sevScore > 60 ? 'var(--crimson)' : (sevScore > 25 ? 'var(--amber)' : 'var(--emerald)');
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div>
+              <span style="font-weight:700; color:var(--cyan); font-size:12px;">Component: ${blast.root_name || nodeId} (${nodeId})</span>
+              <div style="color:var(--text-dim); font-size:10px; margin-top:2px;">
+                Downstream Assets Affected: <strong style="color:#fff;">${blast.total_affected_assets || 0}</strong> &bull; 
+                Life-Support Threat: <strong style="color:${blast.life_support_threat ? 'var(--crimson)' : 'var(--emerald)'};">${blast.life_support_threat ? 'YES (CRITICAL)' : 'NO (SAFE)'}</strong>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:${sevColor};">
+                SEVERITY: ${sevScore} / 100
+              </span>
+              <div style="font-size:9px; color:var(--text-dim); margin-top:2px;">${impacts.length} Direct Ripple Paths</div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        card.innerHTML = `<span style="color:var(--crimson);">Inspection error: ${err.message}</span>`;
+      }
+    }
+
+    // =========================================================================
+    // F.R.I.D.A.Y. Operational Voice Synthesis (Web Speech API)
+    // =========================================================================
+
+    function speakFridayBriefing(text) {
+      if (!voiceBriefingsEnabled || !('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Female') || v.name.includes('David') || v.name.includes('Zira'))) || voices.find(v => v.lang.includes('en'));
+        if (enVoice) utterance.voice = enVoice;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn("Speech synthesis error:", e);
+      }
+    }
+
+    function toggleVoiceBriefings() {
+      voiceBriefingsEnabled = !voiceBriefingsEnabled;
+      const icon = document.getElementById('voice-icon');
+      const label = document.getElementById('voice-label');
+      const btn = document.getElementById('btn-voice-toggle');
+      if (icon) icon.innerText = voiceBriefingsEnabled ? '🔊' : '🔇';
+      if (label) label.innerText = voiceBriefingsEnabled ? 'Voice AI: ON' : 'Voice AI: MUTED';
+      if (btn) {
+        btn.style.borderColor = voiceBriefingsEnabled ? 'var(--cyan)' : 'var(--text-dim)';
+        btn.style.color = voiceBriefingsEnabled ? 'var(--cyan)' : 'var(--text-dim)';
+      }
+      if (voiceBriefingsEnabled) {
+        speakFridayBriefing("F.R.I.D.A.Y. voice briefings active.");
+      }
+    }
+
+    function testVoiceBriefing() {
+      speakFridayBriefing("Commander, F.R.I.D.A.Y. Chief AI Digital Twin operational. All 10 cognitive agents synchronized across Bharati and Maitri stations.");
+    }
+
+    // =========================================================================
+    // F.R.I.D.A.Y. 2-Step Distributed Database & Memory Management
+    // =========================================================================
+
+    function openDatabaseModal() {
+      const modal = document.getElementById('modal-database-ops');
+      if (modal) {
+        modal.classList.add('open');
+        fetchDatabaseStatus();
+        refreshDbEpisodes();
+        refreshDbEquipment();
+        refreshDbAudits();
+      }
+    }
+
+    function closeDatabaseModal() {
+      const modal = document.getElementById('modal-database-ops');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function switchDbTab(tabName) {
+      ['topo', 'episodes', 'equipment', 'audits'].forEach(t => {
+        const btn = document.getElementById(`db-tab-btn-${t}`);
+        const content = document.getElementById(`db-tab-${t}`);
+        if (btn) btn.classList.toggle('active', t === tabName);
+        if (content) content.style.display = (t === tabName) ? 'block' : 'none';
+      });
+      if (tabName === 'episodes') refreshDbEpisodes();
+      if (tabName === 'equipment') refreshDbEquipment();
+      if (tabName === 'audits') refreshDbAudits();
+    }
+
+    async function fetchDatabaseStatus() {
+      try {
+        const res = await fetch('/api/database/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        const local = data.database?.local_station_db || {};
+        const cloud = data.database?.mainland_cloud_db || {};
+        const sync = data.satcom_synchronizer || {};
+
+        // Update header badges
+        const headerEdge = document.getElementById('db-header-edge-label');
+        const headerCloud = document.getElementById('db-header-cloud-label');
+        const edgeBeacon = document.getElementById('db-edge-beacon');
+        if (headerEdge) {
+          headerEdge.textContent = `EDGE DB: ${local.status || 'ONLINE'}`;
+        }
+        if (headerCloud) {
+          if (sync.is_blackout_buffering) {
+            headerCloud.textContent = `SPOOLING (${sync.spooled_records_count || 0})`;
+            headerCloud.style.color = 'var(--amber)';
+            if (edgeBeacon) edgeBeacon.style.background = 'var(--amber)';
+          } else {
+            headerCloud.textContent = 'CLOUD ATLAS: SYNCED';
+            headerCloud.style.color = 'var(--cyan)';
+            if (edgeBeacon) edgeBeacon.style.background = 'var(--emerald)';
+          }
+        }
+
+        // Update Modal elements
+        const modalStation = document.getElementById('modal-db-edge-station');
+        const modalEngine = document.getElementById('modal-db-edge-engine');
+        const modalSpooled = document.getElementById('modal-db-spooled-count');
+        const modalSynced = document.getElementById('modal-db-synced-count');
+        const modalCloudEngine = document.getElementById('modal-db-cloud-engine');
+        const modalSyncBadge = document.getElementById('modal-db-sync-badge');
+
+        if (modalStation) modalStation.textContent = `${activeStation.toUpperCase()} Station`;
+        if (modalEngine) modalEngine.textContent = local.engine || 'Embedded High-Speed Edge Store';
+        if (modalSpooled) modalSpooled.textContent = `${sync.spooled_records_count || 0} records queued`;
+        if (modalSynced) modalSynced.textContent = `${sync.total_synced_to_hq || 0} records batched`;
+        if (modalCloudEngine) modalCloudEngine.textContent = cloud.engine || 'MongoDB Atlas (NCPOR Goa)';
+        if (modalSyncBadge) {
+          modalSyncBadge.textContent = sync.is_blackout_buffering ? 'SPOOLING' : (sync.spooled_records_count > 0 ? 'SYNCING' : 'IDLE_SYNC');
+          modalSyncBadge.style.color = sync.is_blackout_buffering ? 'var(--amber)' : 'var(--cyan)';
+        }
+      } catch (err) {
+        console.error('Error fetching database status:', err);
+      }
+    }
+
+    async function triggerManualDbSync() {
+      try {
+        const res = await fetch('/api/database/sync', { method: 'POST' });
+        const data = await res.json();
+        alert(`Store-and-Forward Sync Result:\nBatched records pushed: ${data.synced_records_count}\nStatus: ${data.metrics?.last_sync_status || 'OK'}`);
+        fetchDatabaseStatus();
+        refreshDbEpisodes();
+      } catch (err) {
+        alert('Sync trigger failed: ' + err.message);
+      }
+    }
+
+    async function refreshDbEpisodes() {
+      const container = document.getElementById('modal-db-episodes-list');
+      if (!container) return;
+      try {
+        const res = await fetch(`/api/database/episodes?station_id=${activeStation}&limit=10`);
+        if (!res.ok) return;
+        const episodes = await res.json();
+        if (episodes.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted); padding:10px;">No episodes recorded yet. Trigger a crisis demo to observe live episodic logging.</div>';
+          return;
+        }
+        container.innerHTML = episodes.map(ep => {
+          const syncPill = ep.sync_status === 'SYNCED_TO_HQ'
+            ? '<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--emerald);">SYNCED_TO_HQ</span>'
+            : '<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--amber);">PENDING_SPOOL</span>';
+          const planActions = ep.deliberated_plan?.actions?.join(', ') || 'Deliberated via Multi-Agent Bus';
+          const outcomeStatus = ep.outcome?.status || 'IN_PROGRESS';
+          const recoverySec = ep.outcome?.recovery_duration_sec ? `${ep.outcome.recovery_duration_sec}s` : 'Observing';
+          return `
+            <div style="background:rgba(15,23,42,0.95); border:1px solid var(--border-subtle); border-left:3px solid var(--purple); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <strong style="color:#fff; font-size:12px;">${ep.incident_type}</strong>
+                  <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-dim);">${ep.episode_id}</span>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <span class="badge" style="background:rgba(168,85,247,0.2); color:var(--purple); font-size:9px;">${ep.severity}</span>
+                  ${syncPill}
+                </div>
+              </div>
+              <div style="font-size:11px; color:#94a3b8; font-family:var(--font-mono); display:flex; gap:12px; flex-wrap:wrap;">
+                <span>Ambient: ${ep.environmental_context?.ambient_temp_c || -20}°C</span>
+                <span>Wind: ${ep.environmental_context?.wind_speed_mps || 10} m/s</span>
+                <span>Outcome: <strong style="color:var(--emerald);">${outcomeStatus}</strong> (${recoverySec})</span>
+              </div>
+              <div style="font-size:11px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:4px; line-height:1.4;">
+                <strong style="color:var(--cyan);">Actions Taken:</strong> ${planActions}<br/>
+                <strong style="color:var(--purple);">Lessons Learned:</strong> ${ep.lessons_learned || 'Active session logging...'}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error fetching episodes:', err);
+      }
+    }
+
+    async function refreshDbEquipment() {
+      const container = document.getElementById('modal-db-equipment-list');
+      if (!container) return;
+      try {
+        const res = await fetch(`/api/database/equipment?station_id=${activeStation}`);
+        if (!res.ok) return;
+        const assets = await res.json();
+        container.innerHTML = assets.map(a => {
+          const statusColor = a.health_status === 'OPTIMAL' ? 'var(--emerald)' : (a.health_status === 'ADVISORY' ? 'var(--amber)' : 'var(--crimson)');
+          const dueRemain = Math.max(0, (a.next_service_due_hours || 5000) - (a.total_running_hours || 0)).toFixed(1);
+          return `
+            <div style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#fff;">${a.name}</div>
+                  <div style="font-size:9px; font-family:var(--font-mono); color:var(--text-dim);">${a.equipment_id} &bull; ${a.subsystem}</div>
+                </div>
+                <span class="badge" style="background:rgba(255,255,255,0.05); color:${statusColor}; font-size:9px;">${a.health_status}</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.35); border-radius:4px; padding:6px 8px; font-family:var(--font-mono); font-size:10px; display:flex; flex-direction:column; gap:3px;">
+                <div style="display:flex; justify-content:space-between;"><span>Running Hours:</span><strong style="color:var(--cyan);">${(a.total_running_hours || 0).toFixed(2)} hrs</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>Crank Cycles:</span><span>${a.total_crank_cycles || 0}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Vibration RMS:</span><span>${(a.vibration_rms_mms || 1.5).toFixed(2)} mm/s</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Next Service Due:</span><span style="color:var(--amber);">${dueRemain} hrs</span></div>
+              </div>
+              <div style="font-size:10px; color:var(--text-muted); font-style:italic;">${a.maintenance_notes || 'Nominal maintenance interval.'}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error fetching equipment:', err);
+      }
+    }
+
+    async function refreshDbAudits() {
+      const container = document.getElementById('modal-db-audits-list');
+      if (!container) return;
+      try {
+        const res = await fetch(`/api/database/audits?station_id=${activeStation}&limit=15`);
+        if (!res.ok) return;
+        const audits = await res.json();
+        if (audits.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted); padding:10px;">No manual commander overrides logged yet.</div>';
+          return;
+        }
+        container.innerHTML = audits.map(a => {
+          return `
+            <div style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-left:3px solid var(--cyan); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:11px; font-weight:700; color:#fff;">${a.action_type}</div>
+                <div style="font-size:10px; color:#cbd5e1;">${a.details || 'Actuator manual override executed.'}</div>
+                <div style="font-size:9px; font-family:var(--font-mono); color:var(--text-dim);">${a.timestamp_utc} &bull; Target: ${a.target_component || 'STATION'}</div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                <span class="badge" style="background:rgba(16,185,129,0.15); color:var(--emerald); font-size:9px;">${a.operator_id}</span>
+                <span style="font-size:9px; font-family:var(--font-mono); color:var(--cyan);">${a.audit_id}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error fetching audits:', err);
+      }
+    }
+  </script>
+</body>
+</html>

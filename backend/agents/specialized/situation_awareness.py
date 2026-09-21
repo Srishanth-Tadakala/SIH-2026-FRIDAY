@@ -149,6 +149,7 @@ class SituationAwarenessAgent(BaseSpecializedAgent):
         # 3. Energy Generation & Blackout Threat Monitoring
         # ---------------------------------------------------------------------
         running_chps = kpis.get("running_chp_count", 0)
+        chp1_power = float(readings.get("BHARATI.CHP.01.POWER", readings.get("sensor_chp1_kw", 0.0)).value if hasattr(readings.get("BHARATI.CHP.01.POWER", readings.get("sensor_chp1_kw", 0.0)), "value") else (readings.get("BHARATI.CHP.01.POWER", 0.0) or 0.0))
         if running_chps == 0:
             record = self._build_anomaly(
                 anomaly_key="TOTAL_STATION_BLACKOUT",
@@ -161,6 +162,21 @@ class SituationAwarenessAgent(BaseSpecializedAgent):
                 summary="CRITICAL EMERGENCY: All CHP generators offline. Station relying on battery UPS.",
                 roc=0.0,
                 correlated=["BHARATI.CHP.02.POWER", "BHARATI.CHP.03.POWER", "BHARATI.UPS.01.LOAD_PERCENT"],
+                sim_time=sim_time,
+            )
+            detected.append(record)
+        elif chp1_power <= 0.1 and snapshot.active_scenario == "GENERATOR_TRIP":
+            record = self._build_anomaly(
+                anomaly_key="CHP_01_MECHANICAL_TRIP",
+                anomaly_type="GENERATOR_MECHANICAL_FAULT",
+                subsystem="ENERGY",
+                sensor_id="BHARATI.CHP.01.POWER",
+                value=chp1_power,
+                threshold=15.0,
+                severity=SeverityLevel.CRITICAL,
+                summary="Primary generator CHP-01 tripped offline with active electrical fault.",
+                roc=0.0,
+                correlated=["BHARATI.CHP.01.COOLANT_TEMP", "BHARATI.CHP.02.POWER"],
                 sim_time=sim_time,
             )
             detected.append(record)

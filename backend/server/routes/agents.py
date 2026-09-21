@@ -3,11 +3,17 @@
 Part of SIH 2026 Project SIH26060: F.R.I.D.A.Y.
 Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations.
 
-Inspects the 10 cognitive agents, agent internal status, and message bus statistics.
+Provides:
+- Operational status, runtime activity, and hypotheses for all 10 cognitive agents.
+- Message bus throughput and subscription metrics.
+- Topological Causal Dependency Graph export (35 nodes, 45 edges).
+- On-demand Causal Blast Radius calculation.
+- Detailed agent memory, objectives, and recent dialogue audit trail.
 """
 
 from __future__ import annotations
 
+import time
 from typing import Any
 from fastapi import APIRouter, HTTPException
 
@@ -19,75 +25,9 @@ router = APIRouter(prefix="/api/agents", tags=["Agents"])
 
 @router.get("/status")
 def get_agents_status() -> dict[str, Any]:
-    """Retrieve operational status for all 10 cognitive agents in the society."""
+    """Retrieve dynamic operational status for all 10 cognitive agents in the society."""
     state = get_server_state()
-    orch_status = state.orchestrator.get_cognitive_status()
-
-    # Collect individual agent statuses
-    agents_info: dict[str, Any] = {
-        "FRIDAY_ORCHESTRATOR": {
-            "role": "FRIDAY_ORCHESTRATOR",
-            "status": "ONLINE_ACTIVE",
-            "active_session_id": state.orchestrator._active_session_id,
-            "briefing_cards_count": len(state.orchestrator._briefing_cards),
-            "processed_messages_count": len(state.orchestrator._processed_messages),
-            "supervised_actions_count": len(state.orchestrator.get_pending_supervised_actions()),
-        },
-        "SITUATION_AWARENESS": {
-            "role": "SITUATION_AWARENESS",
-            "status": "ONLINE_ACTIVE",
-            "active_anomalies": len(state.situation_awareness._active_anomalies),
-            "anomaly_keys": list(state.situation_awareness._active_anomalies.keys()),
-        },
-        "DIAGNOSTIC": {
-            "role": "DIAGNOSTIC",
-            "status": "ONLINE_ACTIVE",
-            "has_latest_diagnosis": getattr(state.diagnostic, "_latest_diagnosis", None) is not None,
-        },
-        "PREDICTION": {
-            "role": "PREDICTION",
-            "status": "ONLINE_ACTIVE",
-            "has_latest_projection": getattr(state.prediction, "_latest_projection", None) is not None,
-        },
-        "RISK_IMPACT": {
-            "role": "RISK_IMPACT",
-            "status": "ONLINE_ACTIVE",
-            "has_latest_assessment": getattr(state.risk_impact, "_latest_assessment", None) is not None,
-        },
-        "PLANNING": {
-            "role": "PLANNING",
-            "status": "ONLINE_ACTIVE",
-            "has_latest_plan": getattr(state.planning, "_latest_plan", None) is not None,
-        },
-        "WHAT_IF": {
-            "role": "WHAT_IF",
-            "status": "ONLINE_ACTIVE",
-            "has_latest_simulation": getattr(state.what_if, "_latest_verdict", None) is not None,
-        },
-        "MISSION_OPS": {
-            "role": "MISSION_OPS",
-            "status": "ONLINE_ACTIVE",
-            "has_assessment": getattr(state.mission_ops, "_latest_assessment", None) is not None,
-        },
-        "MAINTENANCE": {
-            "role": "MAINTENANCE",
-            "status": "ONLINE_ACTIVE",
-            "has_report": getattr(state.maintenance, "_latest_report", None) is not None,
-        },
-        "RESOURCE_OPTIMIZER": {
-            "role": "RESOURCE_OPTIMIZER",
-            "status": "ONLINE_ACTIVE",
-            "has_plan": getattr(state.resource_optimizer, "_latest_plan", None) is not None,
-        },
-    }
-
-    return {
-        "orchestrator_status": "ONLINE_ACTIVE",
-        "total_agents": 10,
-        "agents": agents_info,
-        "bus_message_count": len(state.bus.get_history()),
-        "active_deliberation_sessions": len(state.bus.get_active_sessions()),
-    }
+    return state.get_agent_society_status()
 
 
 @router.get("/bus/stats")
@@ -97,7 +37,7 @@ def get_bus_statistics() -> dict[str, Any]:
     history = state.bus.get_history()
     active_sessions = state.bus.get_active_sessions()
 
-    # Breakdown by message type
+    # Breakdown by message type and sender
     type_counts: dict[str, int] = {}
     sender_counts: dict[str, int] = {}
     for m in history:
@@ -112,12 +52,71 @@ def get_bus_statistics() -> dict[str, Any]:
         "active_session_ids": [s.session_id for s in active_sessions],
         "message_counts_by_type": type_counts,
         "message_counts_by_sender": sender_counts,
+        "active_deliberation_phase": state.active_deliberation_phase,
+    }
+
+
+@router.get("/causal_graph")
+def get_causal_graph() -> dict[str, Any]:
+    """Retrieve complete topological causal dependency graph for station digital twin.
+    
+    Includes 35 nodes, 45 directed physical edges, 2D layout coordinates,
+    subsystems, criticality levels, and active root-cause status tags.
+    """
+    state = get_server_state()
+    topology = state.graph.export_react_flow_topology()
+
+    # Identify currently diagnosed root-cause or active symptom nodes
+    active_nodes: set[str] = set()
+    latest_causes = []
+    active_sessions = state.bus.get_active_sessions()
+    for s in active_sessions:
+        for rc in s.root_causes:
+            r_id = rc.get("root_cause_node_id")
+            if r_id:
+                active_nodes.add(r_id)
+                latest_causes.append(r_id)
+            for path_node in rc.get("causal_chain", []):
+                active_nodes.add(path_node)
+
+    # Decorate nodes with active anomaly indicators
+    for n in topology["nodes"]:
+        n_id = n["id"]
+        is_root = n_id in latest_causes
+        is_involved = n_id in active_nodes
+        n["data"]["isRootCause"] = is_root
+        n["data"]["isCausalPath"] = is_involved
+        n["data"]["status"] = "CRITICAL_FAULT" if is_root else "IMPACTED" if is_involved else "NOMINAL"
+
+    return {
+        "station_id": state.active_station_id,
+        "total_nodes": len(topology["nodes"]),
+        "total_edges": len(topology["edges"]),
+        "nodes": topology["nodes"],
+        "edges": topology["edges"],
+        "active_fault_nodes": list(active_nodes),
+    }
+
+
+@router.get("/causal_graph/blast_radius/{node_id}")
+def get_node_blast_radius(node_id: str) -> dict[str, Any]:
+    """Calculate forward cascading failure blast radius and severity for any station node."""
+    state = get_server_state()
+    if node_id not in state.graph._nodes:
+        raise HTTPException(status_code=404, detail=f"Causal node '{node_id}' not found in station topology.")
+
+    blast = state.graph.calculate_blast_radius(node_id)
+    impacts = state.graph.get_downstream_impacts(node_id, max_depth=6)
+    return {
+        "node_id": node_id,
+        "blast_radius": blast,
+        "downstream_impacts": impacts,
     }
 
 
 @router.get("/{agent_role}")
 def get_agent_detail(agent_role: str) -> dict[str, Any]:
-    """Retrieve detailed state and message memory for a specific cognitive agent."""
+    """Retrieve detailed runtime state, objective, and message audit trail for a specific cognitive agent."""
     state = get_server_state()
     role_str = agent_role.upper()
     try:
@@ -128,40 +127,31 @@ def get_agent_detail(agent_role: str) -> dict[str, Any]:
             detail=f"Unknown agent role '{agent_role}'. Valid roles: {[r.value for r in AgentRole]}",
         )
 
-    # Find agent by role
-    agent_map = {
-        AgentRole.FRIDAY_ORCHESTRATOR: state.orchestrator,
-        AgentRole.SITUATION_AWARENESS: state.situation_awareness,
-        AgentRole.DIAGNOSTIC: state.diagnostic,
-        AgentRole.PREDICTION: state.prediction,
-        AgentRole.RISK_IMPACT: state.risk_impact,
-        AgentRole.PLANNING: state.planning,
-        AgentRole.WHAT_IF: state.what_if,
-        AgentRole.MISSION_OPS: state.mission_ops,
-        AgentRole.MAINTENANCE: state.maintenance,
-        AgentRole.RESOURCE_OPTIMIZER: state.resource_optimizer,
-    }
+    # Agent runtime state profile
+    runtime_info = state.agent_runtime_states.get(role.value, {})
 
-    agent = agent_map.get(role)
-    if not agent:
-        raise HTTPException(status_code=404, detail=f"Agent '{agent_role}' not found.")
-
-    recent_messages = [
-        {
-            "message_id": m.message_id,
-            "sender": m.sender.value if hasattr(m.sender, "value") else str(m.sender),
-            "recipient": m.recipient.value if hasattr(m.recipient, "value") else str(m.recipient),
-            "message_type": m.message_type.value if hasattr(m.message_type, "value") else str(m.message_type),
-            "severity": m.severity.value if hasattr(m.severity, "value") else str(m.severity),
-            "timestamp": m.timestamp,
-        }
-        for m in state.bus.get_history()
-        if m.sender == role or m.recipient == role or m.recipient == "BROADCAST"
-    ][-10:]
+    # Extract recent dialogue messages with full payload summary
+    recent_messages = []
+    for m in reversed(state.bus.get_history()):
+        if m.sender == role or m.recipient == role or m.recipient == "BROADCAST":
+            recent_messages.append({
+                "message_id": m.message_id,
+                "session_id": m.session_id,
+                "sender": m.sender.value if hasattr(m.sender, "value") else str(m.sender),
+                "recipient": m.recipient.value if hasattr(m.recipient, "value") else str(m.recipient),
+                "message_type": m.message_type.value if hasattr(m.message_type, "value") else str(m.message_type),
+                "severity": m.severity.value if hasattr(m.severity, "value") else str(m.severity),
+                "confidence": round(float(m.confidence), 2),
+                "timestamp": m.timestamp,
+                "summary": m.payload.get("summary") or m.payload.get("title") or m.payload.get("explanation") or str(m.payload)[:120],
+                "payload": m.payload,
+            })
+            if len(recent_messages) >= 12:
+                break
 
     return {
         "role": role.value,
-        "status": "ONLINE_ACTIVE",
+        "runtime": runtime_info,
         "recent_messages_count": len(recent_messages),
         "recent_messages": recent_messages,
     }

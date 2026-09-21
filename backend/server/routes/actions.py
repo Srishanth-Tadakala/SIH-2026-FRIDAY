@@ -143,3 +143,94 @@ def authorize_tier3_pin(payload: PinAuthorizationPayload) -> dict[str, Any]:
         "audit_message": "Commander authorization verified. Tier 3 interlock unlocked.",
         "executed_action": executed_action,
     }
+
+
+class ActuatorCommandPayload(BaseModel):
+    """Payload for commanding physical station actuators."""
+    command: str = Field(..., description="START_CHP, STOP_CHP, SET_TRACE_HEATING, SET_BLIZZARD_DAMPERS, TOGGLE_SCIENCE_LOAD_SHED")
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    pin: str | None = Field(default=None, description="Optional Commander PIN for life-critical actions")
+
+
+class AutonomousModePayload(BaseModel):
+    """Payload for configuring edge autonomous closed-loop governor."""
+    autonomous_enabled: bool | None = Field(default=None, description="Enable or disable autonomous AI closed-loop control")
+    continuous_running: bool | None = Field(default=None, description="Start or pause continuous 1 Hz simulation clock")
+    speed: float | None = Field(default=None, description="Simulation speed factor: 1.0, 2.0, 5.0")
+
+
+@router.get("/actuators/{station_id}")
+def get_station_actuators(station_id: str) -> dict[str, Any]:
+    """Fetch live operational states for all physical station actuators."""
+    state = get_server_state()
+    try:
+        return state.get_actuator_state(station_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/actuators/{station_id}")
+def execute_actuator_command(station_id: str, payload: ActuatorCommandPayload) -> dict[str, Any]:
+    """Command physical station actuators directly or with supervisor authorization."""
+    state = get_server_state()
+    try:
+        return state.set_actuator_command(
+            station_id=station_id,
+            command=payload.command,
+            parameters=payload.parameters,
+            pin=payload.pin,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get("/cognitive_logs/{station_id}")
+def get_cognitive_logs(
+    station_id: str,
+    category: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Retrieve real-time cognitive perception and actuation logs ('What Was Noticed & What Was Done')."""
+    state = get_server_state()
+    return state.get_cognitive_logs(station_id=station_id, category=category, limit=limit)
+
+
+@router.post("/autonomous_mode")
+def configure_autonomous_mode(payload: AutonomousModePayload) -> dict[str, Any]:
+    """Configure closed-loop autonomous AI governor and continuous simulation loop."""
+    state = get_server_state()
+    if payload.autonomous_enabled is not None:
+        state.autonomous_mode_enabled = payload.autonomous_enabled
+        state.log_cognitive_event(
+            category="EDGE_AUTHORITY",
+            title=f"Autonomous Closed-Loop AI: {'ENABLED' if payload.autonomous_enabled else 'SUSPENDED'}",
+            details=f"F.R.I.D.A.Y. edge closed-loop governor set to {payload.autonomous_enabled}.",
+            severity="INFO",
+        )
+    if payload.continuous_running is not None:
+        if payload.continuous_running:
+            state.start_continuous_loop()
+        else:
+            state.stop_continuous_loop()
+    if payload.speed is not None:
+        state.continuous_speed = max(0.1, min(10.0, payload.speed))
+
+    return {
+        "autonomous_enabled": state.autonomous_mode_enabled,
+        "continuous_running": state.is_continuous_loop_running,
+        "speed": state.continuous_speed,
+        "edge_blackout_mode": state.orchestrator.edge_blackout_mode,
+    }
+
+
+@router.get("/edge_status/{station_id}")
+def get_edge_status(station_id: str) -> dict[str, Any]:
+    """Fetch Polar Blackout edge command authority metrics and queue backlog."""
+    state = get_server_state()
+    try:
+        act_state = state.get_actuator_state(station_id)
+        return act_state["edge_status"]
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

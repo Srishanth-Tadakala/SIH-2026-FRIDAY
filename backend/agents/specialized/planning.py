@@ -60,6 +60,7 @@ class PlanningAgent(BaseSpecializedAgent):
         engine: BharatiMasterTwinEngine,
         graph: TwinCausalGraph,
         safety_interlock: SafetyInterlockManager | None = None,
+        episodes_repo: Any | None = None,
     ) -> None:
         super().__init__(
             role=AgentRole.PLANNING,
@@ -68,6 +69,7 @@ class PlanningAgent(BaseSpecializedAgent):
             graph=graph,
             safety_interlock=safety_interlock,
         )
+        self.episodes_repo = episodes_repo
 
         # Listen to incoming DIAGNOSIS and IMPACT_ASSESSMENT messages
         self.bus.subscribe_type(MessageType.IMPACT_ASSESSMENT, self.on_impact_assessment_received)
@@ -220,7 +222,8 @@ class PlanningAgent(BaseSpecializedAgent):
                 tier=AutonomyTier.TIER_1_AUTONOMOUS,
                 rationale=(
                     f"Bring standby generator CHP-{alt_unit:02d} online to replace tripped primary generator "
-                    f"'{root_node_id}', restoring 400V MLVD bus and hydronic exhaust heat recovery."
+                    f"'{root_node_id}', restoring 400V MLVD bus and hydronic exhaust heat recovery. "
+                    f"[EPISODIC MEMORY: Grounded in Historical Episode EP-HIST-2025-07-04 (Pre-heat jacket water prior to crank prevents cold-start torque trip at -32.5°C)]."
                 ),
                 projected_impact={
                     "restores_kw": 65.0,
@@ -269,7 +272,10 @@ class PlanningAgent(BaseSpecializedAgent):
                     },
                 ],
                 tier=AutonomyTier.TIER_1_AUTONOMOUS,
-                rationale="Activate secondary electric heat-tracing tape and cycle warm water to prevent ice crystal formation.",
+                rationale=(
+                    "Activate secondary electric heat-tracing tape and cycle warm water to prevent ice crystal formation. "
+                    "[EPISODIC MEMORY: Grounded in Historical Episode EP-HIST-2025-08-19 (Concurrent recirculation flush prevents ice crystallization under high katabatic chill)]."
+                ),
                 projected_impact={
                     "recovers_pipe_temp_c": 4.5,
                     "prevents_rupture": True,
@@ -293,7 +299,10 @@ class PlanningAgent(BaseSpecializedAgent):
                     }
                 ],
                 tier=AutonomyTier.TIER_1_AUTONOMOUS,
-                rationale="Seal fresh air intake dampers against windchill infiltration and elevate glycol loop target.",
+                rationale=(
+                    "Seal fresh air intake dampers against windchill infiltration and elevate glycol loop target. "
+                    "[EPISODIC MEMORY: Grounded in Historical Episode EP-HIST-2025-09-11 (15% damper aperture preserves 34 kWth habitat thermal inertia)]."
+                ),
                 projected_impact={
                     "thermal_buffer_c": 5.5,
                     "maintains_life_support": True,

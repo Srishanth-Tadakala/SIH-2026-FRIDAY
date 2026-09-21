@@ -9,16 +9,20 @@ cognitive agent inspection, crisis scenario injection, and tiered command execut
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
+import os
 import time
 from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .routes.actions import router as actions_router
 from .routes.agents import router as agents_router
+from .routes.database import router as database_router
 from .routes.deliberations import router as deliberations_router
 from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
@@ -30,11 +34,23 @@ from .state import get_server_state
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Lifespan context manager initializing digital twin state on startup."""
+    """Lifespan context manager initializing digital twin state and continuous autonomy loop."""
     state = get_server_state(seed=42)
     # Perform initial calibration step
     state.step(dt_seconds=0.0)
+    # Initialize 2-step distributed database subsystem and satcom sync worker
+    await state.initialize_database()
+    # Start continuous autonomous station governor loop (1 Hz)
+    loop_task = asyncio.create_task(state.run_continuous_loop())
     yield
+    # Graceful shutdown
+    state.is_continuous_loop_running = False
+    state.db_sync_worker.stop()
+    loop_task.cancel()
+    try:
+        await loop_task
+    except (asyncio.CancelledError, Exception):
+        pass
 
 
 def create_app() -> FastAPI:
@@ -67,8 +83,22 @@ def create_app() -> FastAPI:
     app.include_router(deliberations_router)
     app.include_router(actions_router)
     app.include_router(scenarios_router)
+    app.include_router(database_router)
 
-    @app.get("/", tags=["System"])
+    # Static files & Testing UI
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    @app.get("/", response_class=HTMLResponse, tags=["Testing UI"])
+    @app.get("/ui", response_class=HTMLResponse, tags=["Testing UI"])
+    def serve_testing_ui() -> Any:
+        """Serve the interactive F.R.I.D.A.Y. Polar Digital Twin Testing Cockpit."""
+        index_file = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return HTMLResponse("<h1>F.R.I.D.A.Y. Testing UI</h1><p>index.html not found</p>")
+
     @app.get("/api/health", tags=["System"])
     def health_check() -> dict[str, Any]:
         """System health and operational readiness probe."""

@@ -88,6 +88,13 @@ def inject_scenario(req: ScenarioInjectRequest) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.post("/inject/{station_id}")
+def inject_scenario_with_station(station_id: str, req: ScenarioInjectRequest) -> dict[str, Any]:
+    """Inject scenario into specific station provided via URL path."""
+    req.station_id = station_id
+    return inject_scenario(req)
+
+
 @router.post("/clear")
 def clear_scenario(req: ScenarioClearRequest | None = None) -> dict[str, Any]:
     """Reset station to nominal baseline and restore healthy telemetry."""
@@ -107,3 +114,11 @@ def clear_scenario(req: ScenarioClearRequest | None = None) -> dict[str, Any]:
         }
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/clear/{station_id}")
+def clear_scenario_with_station(station_id: str, req: ScenarioClearRequest | None = None) -> dict[str, Any]:
+    """Reset specific station provided via URL path to nominal baseline."""
+    req = req or ScenarioClearRequest(station_id=station_id)
+    req.station_id = station_id
+    return clear_scenario(req)
