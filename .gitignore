@@ -38,3 +38,8 @@ ENV/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Secrets & Environment
+.env
+*.env
+.env.*

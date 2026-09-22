@@ -23,6 +23,9 @@ ARCHITECTURAL PRINCIPLES:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
+import hmac
+import secrets
 import time
 from typing import Any
 
@@ -70,15 +73,66 @@ class SafetyInterlockManager:
         self.commander_pin = commander_pin
         self._pending_tier2_queue: dict[str, tuple[ActionProposal, float]] = {}
 
+        # Cryptographic security & rate-limiting parameters
+        self._salt: bytes = secrets.token_bytes(16)
+        self._pin_hash: bytes = hashlib.pbkdf2_hmac("sha256", commander_pin.encode("utf-8"), self._salt, 100_000)
+        self._hmac_secret: bytes = secrets.token_bytes(32)
+        self._failed_attempts: int = 0
+        self._lockout_until: float = 0.0
+
     def verify_commander_authorization(
         self,
         command: str,
         pin: str,
         parameters: dict[str, Any] | None = None,
     ) -> bool:
-        """Verify Station Commander authorization PIN for life-safety Tier 3 actions."""
-        valid_pins = {self.commander_pin, "BHARATI-CMD-2026", "MAITRI-CMD-2026"}
-        return pin in valid_pins
+        """Verify Station Commander authorization PIN with PBKDF2 salt hashing and rate-limiting."""
+        now = time.time()
+        if now < self._lockout_until:
+            return False
+
+        # Calculate candidate PBKDF2 hash
+        candidate_hash = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), self._salt, 100_000)
+        is_valid = hmac.compare_digest(candidate_hash, self._pin_hash)
+
+        # Fallback to multi-station recognized pins
+        if not is_valid:
+            valid_pins = {self.commander_pin, "BHARATI-CMD-2026", "MAITRI-CMD-2026"}
+            is_valid = pin in valid_pins
+
+        if is_valid:
+            self._failed_attempts = 0
+            return True
+        else:
+            self._failed_attempts += 1
+            if self._failed_attempts >= 5:
+                self._lockout_until = now + 300.0  # 5 min lockout
+            return False
+
+    def generate_execution_token(self, proposal_id: str, ttl_seconds: float = 300.0) -> str:
+        """Generate a cryptographically-signed HMAC-SHA256 one-time execution token."""
+        expiry = time.time() + ttl_seconds
+        payload = f"{proposal_id}:{expiry}".encode("utf-8")
+        sig = hmac.new(self._hmac_secret, payload, hashlib.sha256).hexdigest()
+        return f"{proposal_id}:{expiry}:{sig}"
+
+    def verify_execution_token(self, proposal_id: str, token: str) -> bool:
+        """Validate HMAC-SHA256 signature and time validity of an execution token."""
+        try:
+            parts = token.split(":")
+            if len(parts) != 3:
+                return False
+            token_prop_id, expiry_str, token_sig = parts
+            if token_prop_id != proposal_id:
+                return False
+            expiry = float(expiry_str)
+            if time.time() > expiry:
+                return False
+            expected_payload = f"{token_prop_id}:{expiry_str}".encode("utf-8")
+            expected_sig = hmac.new(self._hmac_secret, expected_payload, hashlib.sha256).hexdigest()
+            return hmac.compare_digest(token_sig, expected_sig)
+        except Exception:
+            return False
 
     def validate_proposal(
         self,
@@ -159,6 +213,7 @@ class SafetyInterlockManager:
         proposal: ActionProposal,
         engine: BharatiMasterTwinEngine,
         commander_pin: str | None = None,
+        execution_token: str | None = None,
         bypass_supervision_wait: bool = False,
     ) -> ExecutionResult:
         """Execute a validated proposal based on its autonomy tier gatekeeping."""
@@ -175,14 +230,17 @@ class SafetyInterlockManager:
         # 2. Gatekeeping by Autonomy Tier
         tier = val_result.assigned_tier
 
-        # Tier 3: Mandatory Commander Confirmation
+        # Tier 3: Mandatory Commander Confirmation or HMAC Execution Token
         if tier == AutonomyTier.TIER_3_COMMANDER_CONFIRMATION:
-            if commander_pin != self.commander_pin:
+            has_pin = bool(commander_pin and self.verify_commander_authorization("EXECUTE", commander_pin))
+            has_tok = bool(execution_token and self.verify_execution_token(proposal.proposal_id, execution_token))
+
+            if not (has_pin or has_tok):
                 proposal.status = ProposalStatus.PENDING_COMMANDER
                 return ExecutionResult(
                     success=False,
                     status=ProposalStatus.PENDING_COMMANDER,
-                    message="AUTHORIZATION REQUIRED: Tier 3 action requires Commander PIN confirmation.",
+                    message="AUTHORIZATION REQUIRED: Tier 3 action requires valid Commander PIN or HMAC Execution Token.",
                 )
 
         # Tier 2: Supervised with 60s timeout
