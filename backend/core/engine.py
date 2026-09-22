@@ -227,6 +227,30 @@ class BharatiMasterTwinEngine:
         """Return the complete dictionary of current readings for all 505 sensors."""
         return dict(self._cached_readings)
 
+    def inject_sensor_override(self, sensor_id: str, value: Any, quality: str = "GOOD") -> bool:
+        """Inject or override an external hardware SCADA/PLC reading into the twin cache."""
+        if sensor_id in self._cached_readings:
+            reading = self._cached_readings[sensor_id]
+            if hasattr(reading, "value"):
+                try:
+                    reading.value = float(value) if isinstance(value, (int, float, str)) and str(value).replace(".", "", 1).replace("-", "", 1).isdigit() else value
+                except Exception:
+                    reading.value = value
+            elif isinstance(reading, dict):
+                reading["value"] = value
+                reading["quality"] = quality
+            else:
+                self._cached_readings[sensor_id] = value
+            return True
+        else:
+            self._cached_readings[sensor_id] = {
+                "sensor_id": sensor_id,
+                "value": value,
+                "quality": quality,
+                "timestamp_iso": self.clock.isoformat(),
+            }
+            return True
+
     def inject_scenario(self, scenario: MasterScenario | str, **params: Any) -> None:
         """Inject a station-wide physical disturbance scenario across all pillars."""
         sc = MasterScenario(scenario) if isinstance(scenario, str) else scenario
