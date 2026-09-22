@@ -37,6 +37,7 @@ from ..framework.models import (
     MessageType,
     SeverityLevel,
 )
+from ..framework.groq_brain import GroqBrainEngine
 
 
 @dataclass
@@ -564,6 +565,22 @@ class DiagnosticAgent(BaseSpecializedAgent):
         """Formulate a concise engineering narrative describing the failure propagation."""
         chain_str = " -> ".join(causal_chain)
         condition = evidence.get("condition", "abnormal operational parameters")
+
+        groq_brain = GroqBrainEngine.get_instance()
+        if groq_brain.is_live_available():
+            try:
+                res = groq_brain.run_sync(
+                    groq_brain.reason_diagnosis(
+                        symptom_node_id=symptom_name,
+                        upstream_candidates=[{"cause_node_id": n} for n in causal_chain],
+                        telemetry_snapshot={"evidence": evidence},
+                        weather={},
+                    )
+                )
+                if res and res.get("explanation"):
+                    return str(res["explanation"])
+            except Exception:
+                pass
 
         if is_env:
             return (
