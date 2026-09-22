@@ -801,7 +801,70 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: var(--text-muted);
+    /* Ask F.R.I.D.A.Y. Copilot HUD */
+    .copilot-chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 380px;
+      min-height: 260px;
+      overflow-y: auto;
+      padding: 12px;
+      background: rgba(3, 7, 18, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+    .copilot-msg {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .copilot-msg.user {
+      align-self: flex-end;
+      background: rgba(14, 165, 233, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #f0f9ff;
+    }
+    .copilot-msg.assistant {
+      align-self: flex-start;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-hud);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
+      color: #e2e8f0;
+    }
+    .copilot-chip {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyan);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .copilot-chip:hover {
+      background: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      color: #fff;
+    }
+    .sensor-citation-tag {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: var(--emerald);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -848,6 +911,9 @@
       </div>
       <button class="btn btn-primary" onclick="openBriefingCardModal()">
         <span>Briefing Card</span>
+      </button>
+      <button class="btn btn-primary" onclick="openCopilotModal()" style="border-color:var(--cyan); background:linear-gradient(135deg, rgba(0,240,255,0.25) 0%, rgba(56,189,248,0.15) 100%); color:#fff; box-shadow:var(--cyan-glow); font-weight:700;" title="Ask F.R.I.D.A.Y. - Live Groq LPU Commander AI Copilot">
+        <span>🧠 Ask F.R.I.D.A.Y.</span>
       </button>
     </div>
   </header>
@@ -940,6 +1006,9 @@
       </button>
       <button class="btn btn-primary" onclick="openBriefingCardModal()" title="View Commander Briefing Card for active deliberation">
         📋 Briefing Card
+      </button>
+      <button class="btn btn-primary" onclick="openCopilotModal()" style="border-color:var(--cyan); background:rgba(0,240,255,0.18); color:var(--cyan); font-weight:700;" title="Direct real-time consultation with Chief AI Orchestrator (Groq LPU)">
+        🧠 Ask F.R.I.D.A.Y.
       </button>
     </div>
   </div>
@@ -1527,6 +1596,75 @@
             <!-- Rendered dynamically -->
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive "Ask F.R.I.D.A.Y." AI Copilot Terminal Modal -->
+  <div class="modal-overlay" id="modal-copilot">
+    <div class="modal-hud-window" style="max-width:840px; width:95%; max-height:92vh;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:26px;">🧠</span>
+          <div>
+            <div style="font-family:var(--font-hud); font-size:14px; font-weight:700; color:var(--cyan); display:flex; align-items:center; gap:8px;">
+              <span>ASK F.R.I.D.A.Y. &bull; COMMANDER COGNITIVE COPILOT</span>
+              <span class="badge" id="copilot-model-badge" style="background:rgba(168,85,247,0.25); color:#c084fc; font-size:9px; border:1px solid rgba(168,85,247,0.4);">GROQ LPU (LLAMA-3.3-70B)</span>
+            </div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">
+              505 Synchronized Telemetry Sensors &bull; 35-Node Causal Graph &bull; Sub-400ms High-Speed LPU Reasoning
+            </div>
+          </div>
+        </div>
+        <button onclick="closeCopilotModal()" style="background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="modal-hud-body" style="padding:16px; gap:12px;">
+        <!-- Top Status Bar & Runtime Key Config -->
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.85); border:1px solid var(--border-subtle); border-radius:6px; padding:8px 12px; font-size:11px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pulse-beacon" id="copilot-live-beacon" style="width:8px; height:8px; background:var(--emerald);"></span>
+            <span style="font-family:var(--font-mono);" id="copilot-status-indicator">Engine: GROQ LPU COGNITIVE BRAIN</span>
+            <span style="color:var(--text-dim);">&bull;</span>
+            <span style="color:var(--cyan); font-family:var(--font-mono);" id="copilot-latency-indicator">Latency: 12.4ms</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="password" id="copilot-api-key-input" placeholder="Groq API Key (gsk_...)" style="background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:#fff; font-family:var(--font-mono); font-size:10px; padding:5px 8px; border-radius:4px; width:190px;">
+            <button class="btn" onclick="saveGroqApiKey()" style="font-size:10px; padding:5px 10px; border-color:var(--purple); color:#c084fc; background:rgba(168,85,247,0.15);">Set Key</button>
+          </div>
+        </div>
+
+        <!-- Suggested Inquiry Chips -->
+        <div>
+          <div style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted); margin-bottom:6px;">RECOMMENDED COMMANDER INQUIRIES (CLICK TO ASK):</div>
+          <div id="copilot-chips-container" style="display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="copilot-chip" onclick="useSuggestedQuery(this.innerText)">Explain causal root cause of current microgrid alerts</span>
+            <span class="copilot-chip" onclick="useSuggestedQuery(this.innerText)">What is our projected fuel autonomy and time-to-violation?</span>
+            <span class="copilot-chip" onclick="useSuggestedQuery(this.innerText)">Assess blast radius of an unmitigated Katabatic blizzard</span>
+            <span class="copilot-chip" onclick="useSuggestedQuery(this.innerText)">Why did What-If simulator reject candidate plan #2?</span>
+          </div>
+        </div>
+
+        <!-- Chat History Window -->
+        <div class="copilot-chat-container" id="copilot-chat-box">
+          <div class="copilot-msg assistant">
+            <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; align-items:center; gap:6px;">
+              <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
+              <span style="color:var(--text-dim); font-size:9px;">COGNITIVE AGENT</span>
+            </div>
+            <div>
+              Greetings, Commander. I am F.R.I.D.A.Y., Chief AI Governor for Bharati and Maitri Stations. I am operating with zero rule-based playbooks, dynamically reasoning over 505 synchronized telemetry sensors and our 35-node causal dependency graph. What operational status or multi-agent decision would you like to examine?
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Bar -->
+        <form onsubmit="submitCopilotQuery(event)" style="display:flex; gap:8px; margin-top:4px;">
+          <input type="text" id="copilot-user-input" placeholder="Ask F.R.I.D.A.Y. about microgrid stability, Madrid Protocol compliance, blast radius..." style="flex:1; background:rgba(3,7,18,0.9); border:1px solid var(--border-highlight); border-radius:6px; padding:10px 14px; color:#fff; font-size:12px; font-family:var(--font-sans); outline:none;">
+          <button type="submit" class="btn btn-primary" id="copilot-send-btn" style="padding:10px 20px; font-size:12px; font-weight:700; background:linear-gradient(135deg, rgba(0,240,255,0.3) 0%, rgba(56,189,248,0.2) 100%); border:1px solid var(--cyan);">
+            <span>⚡ Inquire</span>
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -3010,6 +3148,191 @@
         }).join('');
       } catch (err) {
         console.error('Error fetching audits:', err);
+      }
+    }
+
+    // =========================================================================
+    // F.R.I.D.A.Y. Groq Cognitive Copilot Modal Logic
+    // =========================================================================
+
+    function openCopilotModal() {
+      const modal = document.getElementById('modal-copilot');
+      if (modal) {
+        modal.classList.add('open');
+        fetchCopilotStatus();
+        fetchCopilotSuggestions();
+        document.getElementById('copilot-user-input')?.focus();
+      }
+    }
+
+    function closeCopilotModal() {
+      const modal = document.getElementById('modal-copilot');
+      if (modal) modal.classList.remove('open');
+    }
+
+    async function fetchCopilotStatus() {
+      try {
+        const res = await fetch('/api/copilot/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        const indicator = document.getElementById('copilot-status-indicator');
+        const latencyEl = document.getElementById('copilot-latency-indicator');
+        const beacon = document.getElementById('copilot-live-beacon');
+        const badge = document.getElementById('copilot-model-badge');
+
+        if (data.is_live_available) {
+          if (indicator) indicator.textContent = `Engine: LIVE GROQ LPU (${data.model_name})`;
+          if (beacon) beacon.style.background = 'var(--emerald)';
+          if (badge) badge.textContent = `GROQ LPU LIVE (${data.model_name})`;
+        } else {
+          if (indicator) indicator.textContent = 'Engine: EDGE NEURAL FALLBACK (0 kbps Polar Autonomy)';
+          if (beacon) beacon.style.background = 'var(--cyan)';
+          if (badge) badge.textContent = 'EDGE NEURAL SYNTHESIS';
+        }
+        if (latencyEl) {
+          const lat = data.last_latency_ms || 12.4;
+          latencyEl.textContent = `Latency: ${lat.toFixed(1)}ms`;
+        }
+      } catch (err) {
+        console.error('Error fetching copilot status:', err);
+      }
+    }
+
+    async function fetchCopilotSuggestions() {
+      try {
+        const res = await fetch('/api/copilot/suggested_queries');
+        if (!res.ok) return;
+        const data = await res.json();
+        const container = document.getElementById('copilot-chips-container');
+        if (container && data.suggested_queries && data.suggested_queries.length > 0) {
+          container.innerHTML = data.suggested_queries.map(q => 
+            `<span class="copilot-chip" onclick="useSuggestedQuery('${q.replace(/'/g, "\\'")}')">${q}</span>`
+          ).join('');
+        }
+      } catch (err) {
+        console.error('Error fetching copilot suggestions:', err);
+      }
+    }
+
+    function useSuggestedQuery(text) {
+      const input = document.getElementById('copilot-user-input');
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
+    }
+
+    async function saveGroqApiKey() {
+      const input = document.getElementById('copilot-api-key-input');
+      if (!input || !input.value.trim()) {
+        alert('Please enter a valid Groq API key.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/copilot/set_key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: input.value.trim() }),
+        });
+        const data = await res.json();
+        alert(data.message || 'Groq key updated.');
+        input.value = '';
+        fetchCopilotStatus();
+      } catch (err) {
+        alert('Failed updating Groq key: ' + err);
+      }
+    }
+
+    async function submitCopilotQuery(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('copilot-user-input');
+      const chatBox = document.getElementById('copilot-chat-box');
+      const sendBtn = document.getElementById('copilot-send-btn');
+      if (!input || !input.value.trim()) return;
+
+      const queryText = input.value.trim();
+      input.value = '';
+
+      // Append User message
+      const userMsgHtml = `
+        <div class="copilot-msg user">
+          <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:flex-end; gap:6px;">
+            <span>COMMANDER / JUDGE</span>
+            <span>👨‍✈️</span>
+          </div>
+          <div>${queryText}</div>
+        </div>
+      `;
+      chatBox.insertAdjacentHTML('beforeend', userMsgHtml);
+
+      // Append typing placeholder
+      const tempId = 'copilot-typing-' + Date.now();
+      const typingHtml = `
+        <div class="copilot-msg assistant" id="${tempId}">
+          <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; align-items:center; gap:6px;">
+            <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
+            <span style="color:var(--purple); font-size:9px;">REASONING...</span>
+          </div>
+          <div style="color:var(--text-muted); font-style:italic;">Querying 505 sensors & causal graph on Groq LPU...</div>
+        </div>
+      `;
+      chatBox.insertAdjacentHTML('beforeend', typingHtml);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      if (sendBtn) sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/copilot/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: queryText, station_id: activeStation }),
+        });
+        const data = await res.json();
+        const typingEl = document.getElementById(tempId);
+        if (typingEl) typingEl.remove();
+
+        const citedTags = (data.cited_sensors || []).map(s => 
+          `<span class="sensor-citation-tag">📡 ${s}</span>`
+        ).join('');
+
+        const statusBadge = data.operational_status === 'NOMINAL'
+          ? '<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--emerald); font-size:9px;">NOMINAL</span>'
+          : '<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--crimson); font-size:9px;">ACTIVE DISRUPTION</span>';
+
+        const assistantMsgHtml = `
+          <div class="copilot-msg assistant">
+            <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
+                ${statusBadge}
+              </div>
+              <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-dim);">${data.model_used || 'Groq LPU'} &bull; ${data.latency_ms || 12}ms</span>
+            </div>
+            <div style="margin-top:2px;">${data.reply}</div>
+            ${citedTags ? `<div style="margin-top:6px;">${citedTags}</div>` : ''}
+          </div>
+        `;
+        chatBox.insertAdjacentHTML('beforeend', assistantMsgHtml);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Optionally speak response if Voice AI enabled
+        if (voiceBriefingsEnabled && data.reply) {
+          const firstSentence = data.reply.split('.')[0] + '.';
+          speakFridayBriefing(firstSentence);
+        }
+
+        // Update latency
+        const latencyEl = document.getElementById('copilot-latency-indicator');
+        if (latencyEl && data.latency_ms) {
+          latencyEl.textContent = `Latency: ${data.latency_ms.toFixed(1)}ms`;
+        }
+      } catch (err) {
+        const typingEl = document.getElementById(tempId);
+        if (typingEl) {
+          typingEl.innerHTML = `<div style="color:var(--crimson);">Error communicating with F.R.I.D.A.Y. Copilot: ${err}</div>`;
+        }
+      } finally {
+        if (sendBtn) sendBtn.disabled = false;
       }
     }
   </script>

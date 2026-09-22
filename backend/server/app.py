@@ -22,12 +22,14 @@ from fastapi.staticfiles import StaticFiles
 
 from .routes.actions import router as actions_router
 from .routes.agents import router as agents_router
+from .routes.copilot import router as copilot_router
 from .routes.database import router as database_router
 from .routes.deliberations import router as deliberations_router
 from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
 from .routes.stations import router as stations_router
 from .routes.telemetry import router as telemetry_router
+from .routes.telemetry_ingest import router as telemetry_ingest_router
 from .routes.ws import router as ws_router
 from .state import get_server_state
 
@@ -77,6 +79,7 @@ def create_app() -> FastAPI:
     # Register API Routers
     app.include_router(stations_router)
     app.include_router(telemetry_router)
+    app.include_router(telemetry_ingest_router)
     app.include_router(satcom_router)
     app.include_router(ws_router)
     app.include_router(agents_router)
@@ -84,6 +87,7 @@ def create_app() -> FastAPI:
     app.include_router(actions_router)
     app.include_router(scenarios_router)
     app.include_router(database_router)
+    app.include_router(copilot_router)
 
     # Static files & Testing UI
     static_dir = os.path.join(os.path.dirname(__file__), "static")
