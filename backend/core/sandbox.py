@@ -154,7 +154,7 @@ class TwinSandbox:
         min_battery_soc = float("inf")
 
         for step_idx in range(steps):
-            self._engine.step(dt_seconds)
+            self._engine.step_physics_only(dt_seconds)
             kpis = self._engine.get_station_kpis()
 
             t_hours = round(((step_idx + 1) * dt_seconds) / 3600.0, 3)
@@ -198,6 +198,9 @@ class TwinSandbox:
         traj.max_indoor_temp_c = round(max_temp, 2)
         traj.min_battery_soc_pct = round(min_battery_soc, 1)
         traj.final_autonomy_days = kpis["fuel_autonomy_days"]
+
+        # Refresh cached readings once at simulation conclusion
+        self._engine._refresh_all_readings()
 
         return traj
 

@@ -18,6 +18,7 @@ Tests:
 11. Fast-Forward Simulation & Candidate Plan Delta Evaluation
 """
 
+import threading
 import pytest
 
 from backend.core.causal_graph import (
@@ -151,6 +152,81 @@ class TestTwinCoreEngine:
         assert kpis["total_fuel_reserve_l"] > 200000.0  # Bulk farm holds >200k L
         assert 15.0 <= kpis["indoor_avg_temp_c"] <= 25.0
 
+    def test_scenario_injection_arbitrary_kwargs(self, engine: BharatiMasterTwinEngine) -> None:
+        """Verify scenario injection safely accepts arbitrary/extra kwargs without TypeError."""
+        # 1. Water line freeze with extra kwargs
+        engine.inject_scenario(
+            MasterScenario.WATER_LINE_FREEZE,
+            pipe_temp_c=-6.5,
+            unexpected_param="test_payload",
+            extra_flag=True,
+        )
+        assert engine.infra_registry.physics.pipelines.water01_pipe_temp_c == -6.5
+
+        # 2. Generator trip with unit_id and extra kwargs
+        engine.inject_scenario(
+            MasterScenario.GENERATOR_TRIP,
+            unit_id=2,
+            reason="Simulated bearing vibration",
+        )
+        assert engine.energy_registry.physics.chps[1].operating_state == "MAINTENANCE"
+
+        # 3. Blizzard strike with extra kwargs
+        engine.inject_scenario(
+            MasterScenario.BLIZZARD_STRIKE,
+            wind_speed_mps=42.0,
+            temp_c=-35.0,
+            unrecognized_kwarg=999,
+        )
+        assert engine.env_registry.physics.weather.wind_speed_mps == 42.0
+
+        # 4. Normal reset with extra kwargs
+        engine.inject_scenario(MasterScenario.NORMAL, reset_override=True)
+        assert engine.active_scenario == MasterScenario.NORMAL
+
+    def test_engine_thread_safety_concurrent_access(self, engine: BharatiMasterTwinEngine) -> None:
+        """Verify thread-safety of engine telemetry reads and simulation steps under multi-threaded concurrency."""
+        errors: list[Exception] = []
+
+        def stepper() -> None:
+            for _ in range(25):
+                try:
+                    engine.step(0.5)
+                except Exception as e:
+                    errors.append(e)
+
+        def reader() -> None:
+            for _ in range(25):
+                try:
+                    _ = engine.get_all_readings()
+                    _ = engine.get_sensor_reading("ENV-WX-TEMP")
+                    _ = engine.get_snapshot()
+                except Exception as e:
+                    errors.append(e)
+
+        def overrider() -> None:
+            for i in range(25):
+                try:
+                    engine.inject_sensor_override("ENV-WX-TEMP", -20.0 + (i % 5))
+                except Exception as e:
+                    errors.append(e)
+
+        threads = [
+            threading.Thread(target=stepper),
+            threading.Thread(target=stepper),
+            threading.Thread(target=reader),
+            threading.Thread(target=reader),
+            threading.Thread(target=overrider),
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(errors) == 0, f"Thread safety errors encountered: {errors}"
+
+
 
 class TestTwinCausalGraph:
     """Test suite for TwinCausalGraph."""
@@ -262,3 +338,22 @@ class TestTwinSandbox:
         assert delta.duration_hours == 1.0
         assert delta.is_safe is True
         assert "PASSED" in delta.safety_assessment
+
+    def test_step_physics_only_and_sandbox_fork(self, engine: BharatiMasterTwinEngine) -> None:
+        """Verify step_physics_only advances coupled physics and sandbox forks cleanly without lock errors."""
+        # 1. step_physics_only advances clock
+        initial_time = engine.clock.elapsed_seconds
+        engine.step_physics_only(10.0)
+        assert engine.clock.elapsed_seconds == initial_time + 10.0
+
+        # 2. Fork sandbox (verifies __deepcopy__ copies RLock without pickling errors)
+        sb = TwinSandbox.fork(engine)
+        assert sb.engine is not engine
+        assert sb.engine.clock.elapsed_seconds == engine.clock.elapsed_seconds
+
+        # 3. Accelerated fast-forward runs cleanly
+        traj = sb.run_fast_forward(duration_seconds=600.0, dt_seconds=60.0)
+        assert traj.step_count == 10
+        assert len(traj.indoor_temp_c) == 10
+        assert sb.engine.get_all_readings()["ENV-WX-TEMP"] is not None
+
