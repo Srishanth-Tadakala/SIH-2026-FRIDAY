@@ -72,6 +72,7 @@ class SafetyInterlockManager:
     def __init__(self, commander_pin: str = COMMANDER_DEFAULT_PIN) -> None:
         self.commander_pin = commander_pin
         self._pending_tier2_queue: dict[str, tuple[ActionProposal, float]] = {}
+        self._pending_tier3_queue: dict[str, ActionProposal] = {}
 
         # Cryptographic security & rate-limiting parameters
         self._salt: bytes = secrets.token_bytes(16)
@@ -237,11 +238,14 @@ class SafetyInterlockManager:
 
             if not (has_pin or has_tok):
                 proposal.status = ProposalStatus.PENDING_COMMANDER
+                self._pending_tier3_queue[proposal.proposal_id] = proposal
                 return ExecutionResult(
                     success=False,
                     status=ProposalStatus.PENDING_COMMANDER,
                     message="AUTHORIZATION REQUIRED: Tier 3 action requires valid Commander PIN or HMAC Execution Token.",
                 )
+            else:
+                self._pending_tier3_queue.pop(proposal.proposal_id, None)
 
         # Tier 2: Supervised with 60s timeout
         elif tier == AutonomyTier.TIER_2_SUPERVISED and not bypass_supervision_wait:
@@ -319,5 +323,41 @@ class SafetyInterlockManager:
         """Cancel an action held in the Tier 2 supervised review queue."""
         if proposal_id in self._pending_tier2_queue:
             del self._pending_tier2_queue[proposal_id]
+            return True
+        return False
+
+    def get_pending_tier3_actions(self) -> list[dict[str, Any]]:
+        """List all actions currently queued awaiting Commander PIN confirmation."""
+        return [
+            {
+                "action_id": pid,
+                "proposal": prop.to_dict(),
+                "status": "PENDING_COMMANDER",
+            }
+            for pid, prop in self._pending_tier3_queue.items()
+        ]
+
+    def authorize_and_execute_tier3(
+        self,
+        proposal_id: str,
+        engine: BharatiMasterTwinEngine,
+        commander_pin: str | None = None,
+        execution_token: str | None = None,
+    ) -> ExecutionResult | None:
+        """Authorize and immediately execute a held Tier 3 proposal upon presentation of credentials."""
+        if proposal_id in self._pending_tier3_queue:
+            prop = self._pending_tier3_queue[proposal_id]
+            return self.execute_action(
+                proposal=prop,
+                engine=engine,
+                commander_pin=commander_pin,
+                execution_token=execution_token,
+            )
+        return None
+
+    def cancel_tier3_action(self, proposal_id: str) -> bool:
+        """Cancel and remove an action held in the Tier 3 confirmation queue."""
+        if proposal_id in self._pending_tier3_queue:
+            del self._pending_tier3_queue[proposal_id]
             return True
         return False

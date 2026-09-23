@@ -448,12 +448,14 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
         proposal: ActionProposal,
         bypass_supervision: bool = False,
         commander_pin: str | None = None,
+        execution_token: str | None = None,
     ) -> ExecutionResult:
         """Directly execute an individual action proposal through the Safety Interlock Manager."""
         return self.safety_interlock.execute_action(
             proposal=proposal,
             engine=self.engine,
             commander_pin=commander_pin,
+            execution_token=execution_token,
             bypass_supervision_wait=bypass_supervision,
         )
 
@@ -487,6 +489,28 @@ class FridayMasterOrchestrator(BaseSpecializedAgent):
             del self.safety_interlock._pending_tier2_queue[action_id]
             return True
         return False
+
+    def get_pending_tier3_actions(self) -> list[dict[str, Any]]:
+        """List all Tier 3 proposals held pending Commander PIN confirmation."""
+        return self.safety_interlock.get_pending_tier3_actions()
+
+    def authorize_and_execute_tier3(
+        self,
+        action_id: str,
+        commander_pin: str | None = None,
+        execution_token: str | None = None,
+    ) -> ExecutionResult | None:
+        """Execute a held Tier 3 action upon presentation of valid Commander credentials."""
+        return self.safety_interlock.authorize_and_execute_tier3(
+            proposal_id=action_id,
+            engine=self.engine,
+            commander_pin=commander_pin,
+            execution_token=execution_token,
+        )
+
+    def cancel_tier3_action(self, action_id: str) -> bool:
+        """Operator veto: cancel and remove a pending Tier 3 action from the queue."""
+        return self.safety_interlock.cancel_tier3_action(action_id)
 
     # -------------------------------------------------------------------------
     # Command & Query Handling

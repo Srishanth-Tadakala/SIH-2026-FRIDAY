@@ -30,6 +30,8 @@ class ActionProposalPayload(BaseModel):
     resource_cost: float = Field(default=0.1, ge=0.0, le=1.0)
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
     bypass_supervision: bool = False
+    commander_pin: str | None = Field(default=None, description="Station Commander PIN for immediate Tier 3 authorization")
+    execution_token: str | None = Field(default=None, description="HMAC-SHA256 signed execution token")
 
 
 class PinAuthorizationPayload(BaseModel):
@@ -69,7 +71,10 @@ def execute_action(payload: ActionProposalPayload) -> dict[str, Any]:
     )
 
     result = state.orchestrator.execute_proposal(
-        proposal, bypass_supervision=payload.bypass_supervision
+        proposal,
+        bypass_supervision=payload.bypass_supervision,
+        commander_pin=payload.commander_pin,
+        execution_token=payload.execution_token,
     )
     res_dict = result.to_dict()
     res_dict["autonomy_tier"] = "TIER_1" if tier == AutonomyTier.TIER_1_AUTONOMOUS else ("TIER_2" if tier == AutonomyTier.TIER_2_SUPERVISED else "TIER_3")
@@ -83,6 +88,13 @@ def list_pending_supervised_actions() -> list[dict[str, Any]]:
     """List all actions currently queued in the Tier 2 supervised countdown review window."""
     state = get_server_state()
     return state.orchestrator.get_pending_supervised_actions()
+
+
+@router.get("/pending_tier3")
+def list_pending_tier3_actions() -> list[dict[str, Any]]:
+    """List all Tier 3 actions held awaiting Commander PIN confirmation."""
+    state = get_server_state()
+    return state.orchestrator.get_pending_tier3_actions()
 
 
 @router.post("/supervised/{action_id}/bypass")
@@ -111,6 +123,20 @@ def cancel_supervised_action(action_id: str) -> dict[str, Any]:
     }
 
 
+@router.post("/tier3/{action_id}/cancel")
+def cancel_tier3_action(action_id: str) -> dict[str, Any]:
+    """Operator veto: cancels a pending Tier 3 action awaiting Commander confirmation."""
+    state = get_server_state()
+    success = state.orchestrator.cancel_tier3_action(action_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Tier 3 action '{action_id}' not found or already executed.")
+    return {
+        "status": "SUCCESS",
+        "action_id": action_id,
+        "message": f"Tier 3 action '{action_id}' successfully cancelled and removed from queue.",
+    }
+
+
 @router.post("/authorize_pin")
 def authorize_tier3_pin(payload: PinAuthorizationPayload) -> dict[str, Any]:
     """Verify Station Commander PIN for life-safety Tier 3 actions and execute if authenticated."""
@@ -129,10 +155,12 @@ def authorize_tier3_pin(payload: PinAuthorizationPayload) -> dict[str, Any]:
             detail="INVALID_PIN: Station Commander PIN verification failed. Action rejected and logged.",
         )
 
-    # If action_id provided, execute the pending action
+    # If action_id provided, execute the pending action (Tier 3 first, then Tier 2 fallback)
     executed_action = None
     if payload.action_id:
-        res = state.orchestrator.bypass_supervised_action(payload.action_id)
+        res = state.orchestrator.authorize_and_execute_tier3(payload.action_id, commander_pin=payload.pin)
+        if not res:
+            res = state.orchestrator.bypass_supervised_action(payload.action_id)
         if res:
             executed_action = res.to_dict()
 
