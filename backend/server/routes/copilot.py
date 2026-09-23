@@ -53,8 +53,14 @@ async def copilot_chat(request: CopilotChatRequest) -> dict[str, Any]:
     recent_episodes: list[dict[str, Any]] = []
     if hasattr(server_state, "episodes_repo") and server_state.episodes_repo:
         try:
-            recent_episodes = server_state.episodes_repo.get_all(limit=3)
-        except Exception:
+            records = await server_state.episodes_repo.get_recent_episodes(
+                station_id=request.station_id, limit=3
+            )
+            recent_episodes = [
+                ep.to_dict() if hasattr(ep, "to_dict") else dict(ep) for ep in records
+            ]
+        except Exception as e:
+            logger.warning("Failed retrieving episodic memory for copilot: %s", e)
             recent_episodes = []
 
     res = await brain.reason_copilot_chat(

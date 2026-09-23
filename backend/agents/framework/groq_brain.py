@@ -16,6 +16,7 @@ ARCHITECTURAL PRINCIPLES:
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import os
@@ -36,6 +37,17 @@ class GroqBrainEngine:
     """Unified Groq LPU cognitive brain serving all 10 agents and the Commander Copilot."""
 
     _instance: GroqBrainEngine | None = None
+    _shared_sync_executor: ThreadPoolExecutor | None = None
+
+    @classmethod
+    def _get_sync_executor(cls) -> ThreadPoolExecutor:
+        """Lazily initialize a shared thread pool for synchronous reasoning tasks."""
+        if cls._shared_sync_executor is None:
+            cls._shared_sync_executor = ThreadPoolExecutor(
+                max_workers=8,
+                thread_name_prefix="groq_brain_worker",
+            )
+        return cls._shared_sync_executor
 
     def __init__(self, api_key: str | None = None) -> None:
         self.api_key: str | None = api_key or os.getenv("GROQ_API_KEY")
@@ -85,7 +97,6 @@ class GroqBrainEngine:
         Works both when called outside any event loop (e.g. CLI/tests) and inside
         an active running event loop (e.g. FastAPI/Uvicorn) without event loop blocking or deadlocks.
         """
-        import concurrent.futures
         try:
             try:
                 loop = asyncio.get_running_loop()
@@ -95,9 +106,9 @@ class GroqBrainEngine:
             if loop is None:
                 return asyncio.run(coro)
             else:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                    future = pool.submit(asyncio.run, coro)
-                    return future.result(timeout=timeout)
+                executor = self._get_sync_executor()
+                future = executor.submit(asyncio.run, coro)
+                return future.result(timeout=timeout)
         except Exception as e:
             logger.warning("run_sync execution error or timeout: %s", e)
             return None
@@ -555,13 +566,25 @@ class GroqBrainEngine:
         # Dynamic Edge Neural Fallback
         chp_kw = kpis.get("total_generation_kw", 130.0)
         living_temp = kpis.get("indoor_temp_c", 19.5)
+        precedent_text = ""
+        if recent_episodes:
+            first_ep = recent_episodes[0]
+            inc_type = first_ep.get("incident_type", "historical precedent")
+            lesson = first_ep.get("lessons_learned") or (
+                first_ep.get("outcome", {}).get("notes") if isinstance(first_ep.get("outcome"), dict) else None
+            ) or "Prioritize thermal stability and microgrid balance."
+            precedent_text = f" Grounded on expedition precedent for {inc_type}: '{lesson}'."
+
+        reply = (
+            f"Commander, F.R.I.D.A.Y. is actively governing {station_id.upper()} Station. "
+            f"Microgrid output is stable at {chp_kw:.1f} kW, and living zone temperature is {living_temp:.1f}°C. "
+            f"All 10 cognitive agents are synchronized across the local edge bus. "
+            f"In response to your query regarding '{user_message}': life-support guardrails are intact with zero constraint violations."
+            + precedent_text
+        )
+
         return {
-            "reply": (
-                f"Commander, F.R.I.D.A.Y. is actively governing {station_id.upper()} Station. "
-                f"Microgrid output is stable at {chp_kw:.1f} kW, and living zone temperature is {living_temp:.1f}°C. "
-                f"All 10 cognitive agents are synchronized across the local edge bus. "
-                f"In response to your query regarding '{user_message}': life-support guardrails are intact with zero constraint violations."
-            ),
+            "reply": reply,
             "cited_sensors": ["sensor_chp1_kw", "sensor_living_temp"],
             "suggested_followups": [
                 "What is our projected fuel endurance at current burn rate?",

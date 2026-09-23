@@ -175,3 +175,38 @@ class TestCopilotAndSCADAIngest:
         # 3. Attempt with valid HMAC execution token -> succeeds
         res_token_auth = mgr.execute_action(proposal, engine, execution_token=token)
         assert res_token_auth.success is True
+
+    @pytest.mark.asyncio
+    async def test_copilot_grounded_episodic_memory_integration(self) -> None:
+        """Verify Copilot queries episodic memory and incorporates historical precedent."""
+        from backend.server.state import get_server_state
+        state = get_server_state(seed=42)
+        await state.initialize_database()
+
+        app = create_app()
+        client = TestClient(app)
+        res = client.post(
+            "/api/copilot/chat",
+            json={
+                "message": "What is our contingency if generator 1 fails?",
+                "station_id": "bharati",
+            },
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "SUCCESS"
+        assert "precedent" in data["reply"].lower() or "grounded" in data["reply"].lower()
+
+    def test_groq_shared_sync_executor(self) -> None:
+        """Verify GroqBrainEngine reuses a shared ThreadPoolExecutor without thread churn."""
+        executor1 = GroqBrainEngine._get_sync_executor()
+        executor2 = GroqBrainEngine._get_sync_executor()
+        assert executor1 is executor2
+        assert executor1._max_workers == 8
+
+        brain = GroqBrainEngine()
+        async def dummy_coro():
+            return "ok"
+        result = brain.run_sync(dummy_coro())
+        assert result == "ok"
+

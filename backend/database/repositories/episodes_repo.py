@@ -253,6 +253,9 @@ class EpisodesRepository:
                 pass
         return results
 
+    # Defensive backward-compatible alias
+    get_all = get_recent_episodes
+
     async def get_pending_sync_episodes(self, limit: int = 10) -> list[dict[str, Any]]:
         """Retrieve episodes awaiting satcom synchronization to Mainland HQ."""
         return await self.db.find_records(
