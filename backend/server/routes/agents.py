@@ -16,11 +16,41 @@ from __future__ import annotations
 import time
 from typing import Any
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
+from backend.agents.framework.groq_brain import GroqBrainEngine
 from backend.agents.framework.models import AgentRole
 from ..state import get_server_state
 
 router = APIRouter(prefix="/api/agents", tags=["Agents"])
+
+
+class SetGroqKeyRequest(BaseModel):
+    api_key: str = Field(..., description="Groq API key (starts with gsk_)", min_length=10)
+
+
+@router.post("/set_groq_key")
+def set_agent_groq_key(request: SetGroqKeyRequest) -> dict[str, Any]:
+    """Dynamically register or update the Groq API key for all 10 cognitive agents at runtime."""
+    brain = GroqBrainEngine.get_instance()
+    is_live = brain.set_api_key(request.api_key)
+    return {
+        "status": "SUCCESS",
+        "is_live_available": is_live,
+        "model_name": brain.model_name,
+        "message": (
+            "Live Groq LPU dynamic reasoning active across all 10 agents."
+            if is_live
+            else "Groq API key registered; edge neural fallback active until live handshake succeeds."
+        ),
+    }
+
+
+@router.get("/groq_status")
+def get_agents_groq_status() -> dict[str, Any]:
+    """Retrieve Groq LPU engine status, model details, inference count, and latency metrics."""
+    brain = GroqBrainEngine.get_instance()
+    return brain.get_groq_status()
 
 
 @router.get("/status")

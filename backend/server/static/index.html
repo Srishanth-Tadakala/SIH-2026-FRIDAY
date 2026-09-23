@@ -3222,20 +3222,84 @@
       }
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderMarkdownHud(raw) {
+      if (!raw) return '';
+      let md = escapeHtml(raw);
+
+      // 1. Executive Status Badge: **[OPERATIONAL STATUS: ...]**
+      md = md.replace(/\*\*\[OPERATIONAL STATUS: (.*?)\]\*\*/g, function(match, statusText) {
+        const isNominal = statusText.includes('NOMINAL');
+        const bg = isNominal ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.2)';
+        const color = isNominal ? 'var(--emerald)' : 'var(--crimson)';
+        const border = isNominal ? 'rgba(16,185,129,0.45)' : 'rgba(239,68,68,0.45)';
+        return `<div style="background:${bg}; border:1px solid ${border}; border-radius:6px; padding:6px 12px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-hud); font-size:11px; font-weight:700; color:${color}; letter-spacing:0.5px; box-shadow:0 0 10px ${border};">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pulse-beacon" style="background:${color}; width:8px; height:8px;"></span>
+            <span>STATUS: ${statusText}</span>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-dim); text-transform:uppercase;">DEFENSE-GRADE COGNITION</span>
+        </div>`;
+      });
+
+      // 2. Section Headers: ### Title
+      md = md.replace(/^### (.*?)$/gm, function(match, title) {
+        return `<div style="margin-top:12px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span style="font-family:var(--font-hud); font-size:12px; font-weight:700; color:var(--cyan); letter-spacing:0.5px;">${title}</span>
+          <div style="flex:1; height:1px; background:linear-gradient(90deg, rgba(0,240,255,0.4), transparent);"></div>
+        </div>`;
+      });
+
+      // 3. Inline code metric pills: `code`
+      md = md.replace(/`([^`]+)`/g, function(match, code) {
+        return `<code style="background:rgba(0,240,255,0.12); color:var(--cyan); border:1px solid rgba(0,240,255,0.3); border-radius:4px; padding:1px 6px; font-family:var(--font-mono); font-size:11px; font-weight:600;">${code}</code>`;
+      });
+
+      // 4. Bold text: **text**
+      md = md.replace(/\*\*([^*]+)\*\*/g, function(match, text) {
+        return `<strong style="color:#fff; font-weight:700;">${text}</strong>`;
+      });
+
+      // 5. Bullet items: - item or * item
+      md = md.replace(/^[*-] (.*?)$/gm, function(match, item) {
+        return `<div style="display:flex; align-items:flex-start; gap:8px; margin:3px 0 3px 6px; font-size:11.5px; line-height:1.45;">
+          <span style="color:var(--cyan); font-weight:bold;">&rsaquo;</span>
+          <div>${item}</div>
+        </div>`;
+      });
+
+      // 6. Double newlines to paragraph spacing
+      md = md.replace(/\n\n+/g, '<div style="height:8px;"></div>');
+      // Single newlines to breaks
+      md = md.replace(/\n/g, '<br/>');
+
+      return md;
+    }
+
     async function saveGroqApiKey() {
       const input = document.getElementById('copilot-api-key-input');
       if (!input || !input.value.trim()) {
-        alert('Please enter a valid Groq API key.');
+        alert('Please enter a valid Groq API key (starts with gsk_).');
         return;
       }
+      const keyVal = input.value.trim();
       try {
-        const res = await fetch('/api/copilot/set_key', {
+        const res = await fetch('/api/agents/set_groq_key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api_key: input.value.trim() }),
+          body: JSON.stringify({ api_key: keyVal }),
         });
         const data = await res.json();
-        alert(data.message || 'Groq key updated.');
+        alert(data.message || 'Groq key dynamically registered across all 10 agents.');
         input.value = '';
         fetchCopilotStatus();
       } catch (err) {
@@ -3260,7 +3324,7 @@
             <span>COMMANDER / JUDGE</span>
             <span>👨‍✈️</span>
           </div>
-          <div>${queryText}</div>
+          <div>${escapeHtml(queryText)}</div>
         </div>
       `;
       chatBox.insertAdjacentHTML('beforeend', userMsgHtml);
@@ -3292,24 +3356,36 @@
         if (typingEl) typingEl.remove();
 
         const citedTags = (data.cited_sensors || []).map(s => 
-          `<span class="sensor-citation-tag">📡 ${s}</span>`
+          `<span class="sensor-citation-tag">📡 ${escapeHtml(s)}</span>`
         ).join('');
 
         const statusBadge = data.operational_status === 'NOMINAL'
           ? '<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--emerald); font-size:9px;">NOMINAL</span>'
-          : '<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--crimson); font-size:9px;">ACTIVE DISRUPTION</span>';
+          : '<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--crimson); font-size:9px;">ACTIVE DEFENSE</span>';
+
+        const formattedBody = renderMarkdownHud(data.reply);
+
+        const followupsHtml = (data.suggested_followups && data.suggested_followups.length > 0)
+          ? `<div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+              <div style="font-size:9px; font-family:var(--font-mono); color:var(--text-muted); margin-bottom:5px; text-transform:uppercase;">Suggested Follow-Ups:</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${data.suggested_followups.map(f => `<span class="copilot-chip" onclick="useSuggestedQuery('${f.replace(/'/g, "\\'")}')">${escapeHtml(f)}</span>`).join('')}
+              </div>
+            </div>`
+          : '';
 
         const assistantMsgHtml = `
           <div class="copilot-msg assistant">
-            <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
                 ${statusBadge}
               </div>
-              <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-dim);">${data.model_used || 'Groq LPU'} &bull; ${data.latency_ms || 12}ms</span>
+              <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-dim);">${escapeHtml(data.model_used || 'Groq LPU')} &bull; ${(data.latency_ms || 12).toFixed(1)}ms</span>
             </div>
-            <div style="margin-top:2px;">${data.reply}</div>
-            ${citedTags ? `<div style="margin-top:6px;">${citedTags}</div>` : ''}
+            <div style="margin-top:2px;">${formattedBody}</div>
+            ${citedTags ? `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.08);">${citedTags}</div>` : ''}
+            ${followupsHtml}
           </div>
         `;
         chatBox.insertAdjacentHTML('beforeend', assistantMsgHtml);
@@ -3329,12 +3405,13 @@
       } catch (err) {
         const typingEl = document.getElementById(tempId);
         if (typingEl) {
-          typingEl.innerHTML = `<div style="color:var(--crimson);">Error communicating with F.R.I.D.A.Y. Copilot: ${err}</div>`;
+          typingEl.innerHTML = `<div style="color:var(--crimson);">Error communicating with F.R.I.D.A.Y. Copilot: ${escapeHtml(err.message || String(err))}</div>`;
         }
       } finally {
         if (sendBtn) sendBtn.disabled = false;
       }
     }
+
   </script>
 </body>
 </html>

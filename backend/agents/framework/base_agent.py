@@ -72,6 +72,19 @@ class BaseSpecializedAgent(ABC):
         confidence: float = 1.0,
     ) -> AgentMessage:
         """Helper to create and dispatch a typed message to the bus."""
+        # Ensure payload has an expressive human-readable summary for audit trail & UI
+        if "summary" not in payload:
+            if "title" in payload:
+                payload["summary"] = payload["title"]
+            elif "explanation" in payload:
+                payload["summary"] = payload["explanation"]
+            elif "description" in payload:
+                payload["summary"] = payload["description"]
+            elif "message" in payload:
+                payload["summary"] = payload["message"]
+            elif "dialogue_text" in payload:
+                payload["summary"] = payload["dialogue_text"]
+
         msg = AgentMessage(
             sender=self.role,
             recipient=recipient,
