@@ -11,6 +11,7 @@ Provides:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -57,9 +58,13 @@ async def telemetry_websocket_endpoint(
             await manager.handle_client_message(session, msg, state)
 
     except WebSocketDisconnect:
-        await manager.disconnect(session)
+        pass
+    except asyncio.CancelledError:
+        logger.debug(f"WebSocket streaming connection cancelled ({session.client_id}).")
+        raise
     except Exception as e:
         logger.debug(f"WebSocket connection terminated ({session.client_id}): {e}")
+    finally:
         await manager.disconnect(session)
 
 

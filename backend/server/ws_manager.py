@@ -299,45 +299,62 @@ class TelemetryWebSocketManager:
         readings = snapshot.readings if hasattr(snapshot, "readings") else {}
         sim_time = snapshot.sim_time_seconds if hasattr(snapshot, "sim_time_seconds") else 0.0
 
+        dead_sessions: list[WebSocketClientSession] = []
         for session in sessions:
             sub = session.subscription
+            alive = True
 
             # 1. Broadcast KPIs Channel
             if WebSocketChannel.KPIS.value in sub.channels:
-                await session.send_json_safe({
+                alive = await session.send_json_safe({
                     "channel": WebSocketChannel.KPIS.value,
                     "station_id": sid,
                     "sim_time_seconds": sim_time,
                     "kpis": kpis,
                 })
+                if not alive:
+                    dead_sessions.append(session)
+                    continue
 
             # 2. Broadcast Sensors Channel
             if WebSocketChannel.SENSORS.value in sub.channels:
                 filtered_readings = self._filter_readings_for_client(session, readings)
-                await session.send_json_safe({
+                alive = await session.send_json_safe({
                     "channel": WebSocketChannel.SENSORS.value,
                     "station_id": sid,
                     "sim_time_seconds": sim_time,
                     "channel_count": len(filtered_readings),
                     "readings": filtered_readings,
                 })
+                if not alive:
+                    dead_sessions.append(session)
+                    continue
 
             # 3. Broadcast Alerts Channel
             if WebSocketChannel.ALERTS.value in sub.channels and alerts:
-                await session.send_json_safe({
+                alive = await session.send_json_safe({
                     "channel": WebSocketChannel.ALERTS.value,
                     "station_id": sid,
                     "alert_count": len(alerts),
                     "alerts": alerts,
                 })
+                if not alive:
+                    dead_sessions.append(session)
+                    continue
 
             # 4. Broadcast Satcom Channel
             if WebSocketChannel.SATCOM.value in sub.channels and satcom_summary:
-                await session.send_json_safe({
+                alive = await session.send_json_safe({
                     "channel": WebSocketChannel.SATCOM.value,
                     "station_id": sid,
                     "satcom": satcom_summary,
                 })
+                if not alive:
+                    dead_sessions.append(session)
+                    continue
+
+        for dead in dead_sessions:
+            await self.disconnect(dead)
 
     async def broadcast_deliberation_event(
         self,
@@ -349,14 +366,20 @@ class TelemetryWebSocketManager:
         if sid not in self._clients:
             return
 
+        dead_sessions: list[WebSocketClientSession] = []
         for session in list(self._clients[sid].values()):
             if WebSocketChannel.DELIBERATIONS.value in session.subscription.channels:
-                await session.send_json_safe({
+                ok = await session.send_json_safe({
                     "channel": WebSocketChannel.DELIBERATIONS.value,
                     "station_id": sid,
                     "timestamp": time.time(),
                     "event": event_data,
                 })
+                if not ok:
+                    dead_sessions.append(session)
+
+        for dead in dead_sessions:
+            await self.disconnect(dead)
 
     async def broadcast_alarm(
         self,
@@ -368,13 +391,19 @@ class TelemetryWebSocketManager:
         if sid not in self._clients:
             return
 
+        dead_sessions: list[WebSocketClientSession] = []
         for session in list(self._clients[sid].values()):
             if WebSocketChannel.ALERTS.value in session.subscription.channels:
-                await session.send_json_safe({
+                ok = await session.send_json_safe({
                     "channel": WebSocketChannel.ALERTS.value,
                     "station_id": sid,
                     "alarm": alarm,
                 })
+                if not ok:
+                    dead_sessions.append(session)
+
+        for dead in dead_sessions:
+            await self.disconnect(dead)
 
     def get_stats(self) -> dict[str, Any]:
         """Aggregate active WebSocket streaming connection telemetry."""
