@@ -38,20 +38,25 @@ from backend.core.engine import (
     MasterTwinSnapshot,
 )
 from backend.database import (
+    DatabaseManager,
     get_database_manager,
+    CopilotChatRecord,
     DialogueRecord,
     EpisodeRecord,
     EquipmentLifecycleRecord,
     OperatorAuditRecord,
+    StationStateSyncRecord,
     TelemetryTimeSeriesRecord,
     SyncStatus,
 )
 from backend.database.repositories import (
-    EpisodesRepository,
-    DialogueRepository,
-    EquipmentRepository,
-    TelemetryRepository,
     AuditRepository,
+    CopilotRepository,
+    DialogueRepository,
+    EpisodesRepository,
+    EquipmentRepository,
+    StateSyncRepository,
+    TelemetryRepository,
 )
 from backend.database.sync_worker import SatcomDatabaseSyncWorker
 
@@ -87,6 +92,8 @@ class ServerState:
         self.equipment_repo = EquipmentRepository(self.db_manager)
         self.telemetry_repo = TelemetryRepository(self.db_manager)
         self.audit_repo = AuditRepository(self.db_manager)
+        self.copilot_repo = CopilotRepository(self.db_manager)
+        self.state_sync_repo = StateSyncRepository(self.db_manager)
         self._current_episode_id: str | None = None
         self._current_episode_sim_start: float = 0.0
 
@@ -1320,5 +1327,6 @@ def get_server_state(seed: int = 42) -> ServerState:
 def reset_server_state(seed: int = 42) -> ServerState:
     """Reset the global server state (primarily for test fixtures)."""
     global _state_instance
+    DatabaseManager.reset_instance()
     _state_instance = ServerState(seed=seed)
     return _state_instance

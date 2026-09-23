@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
+import json
 import logging
 import os
 import time
@@ -36,24 +37,60 @@ except ImportError:
 
 
 class EmbeddedDocumentStore:
-    """High-performance, in-memory and embedded local document store.
+    """High-performance, file-backed embedded local document store.
     
     Provides an async MongoDB-compatible interface when MongoDB is offline,
-    ensuring 100% functionality during automated tests or standalone execution.
+    ensuring 100% functionality and persistence across server reboots, tests,
+    and standalone executions.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, persist_path: str | None = None, storage_dir: str | None = None) -> None:
         self.name = name
+        if storage_dir:
+            self.persist_path = os.path.join(storage_dir, f"{name}.json")
+        else:
+            base_dir = os.getenv("FRIDAY_EDGE_STORAGE_DIR") or os.path.join(os.getcwd(), "data", "edge_storage")
+            self.persist_path = persist_path or os.getenv(
+                f"FRIDAY_{name.upper()}_PATH",
+                os.path.join(base_dir, f"{name}.json"),
+            )
         self._collections: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._lock = asyncio.Lock()
+        self._load_from_disk()
+
+    def _load_from_disk(self) -> None:
+        """Load stored collections from disk if file exists."""
+        try:
+            if os.path.exists(self.persist_path):
+                with open(self.persist_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        for col_name, docs in data.items():
+                            if isinstance(docs, list):
+                                self._collections[col_name] = docs
+                        logger.info("Loaded %d collections from persistent edge store %s", len(self._collections), self.persist_path)
+        except Exception as e:
+            logger.warning("Could not load embedded store from %s: %s", self.persist_path, e)
+
+    def _save_to_disk(self) -> None:
+        """Persist collections to disk atomically."""
+        try:
+            os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
+            tmp_path = f"{self.persist_path}.tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(dict(self._collections), f, indent=2, default=str)
+            os.replace(tmp_path, self.persist_path)
+        except Exception as e:
+            logger.warning("Could not persist embedded store to %s: %s", self.persist_path, e)
 
     async def insert_one(self, collection_name: str, document: dict[str, Any]) -> str:
-        """Insert a document into the embedded collection."""
+        """Insert a document into the embedded collection and flush to disk."""
         async with self._lock:
             doc_copy = dict(document)
             if "_id" not in doc_copy:
                 doc_copy["_id"] = f"DOC-{len(self._collections[collection_name]) + 1}"
             self._collections[collection_name].append(doc_copy)
+            self._save_to_disk()
             return doc_copy["_id"]
 
     async def find(
@@ -113,7 +150,7 @@ class EmbeddedDocumentStore:
         update_dict: dict[str, Any],
         upsert: bool = False,
     ) -> bool:
-        """Update or upsert a document."""
+        """Update or upsert a document and flush to disk."""
         async with self._lock:
             docs = self._collections[collection_name]
             for d in docs:
@@ -124,6 +161,7 @@ class EmbeddedDocumentStore:
                         d.update(update_dict["$set"])
                     else:
                         d.update(update_dict)
+                    self._save_to_disk()
                     return True
 
             if upsert:
@@ -135,9 +173,31 @@ class EmbeddedDocumentStore:
                 if "_id" not in new_doc:
                     new_doc["_id"] = f"DOC-{len(docs) + 1}"
                 docs.append(new_doc)
+                self._save_to_disk()
                 return True
 
             return False
+
+    async def delete_many(
+        self, collection_name: str, filter_dict: dict[str, Any] | None = None
+    ) -> int:
+        """Delete matching documents from collection and flush to disk."""
+        async with self._lock:
+            if not filter_dict:
+                count = len(self._collections[collection_name])
+                self._collections[collection_name] = []
+                self._save_to_disk()
+                return count
+
+            initial_count = len(self._collections[collection_name])
+            self._collections[collection_name] = [
+                d for d in self._collections[collection_name]
+                if not all(d.get(k) == v for k, v in filter_dict.items())
+            ]
+            deleted = initial_count - len(self._collections[collection_name])
+            if deleted > 0:
+                self._save_to_disk()
+            return deleted
 
     async def count_documents(
         self, collection_name: str, filter_dict: dict[str, Any] | None = None
@@ -179,6 +239,11 @@ class DatabaseManager:
         if cls._instance is None:
             cls._instance = DatabaseManager()
         return cls._instance
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset singleton DatabaseManager instance."""
+        cls._instance = None
 
     async def probe_connections(self) -> dict[str, Any]:
         """Asynchronously probe and initialize database connections."""
@@ -313,6 +378,15 @@ class DatabaseManager:
         if self.is_local_mongo_connected and self.local_db is not None:
             return await self.local_db[collection_name].count_documents(filter_dict or {})
         return await self.embedded_store.count_documents(collection_name, filter_dict)
+
+    async def delete_records(
+        self, collection_name: str, filter_dict: dict[str, Any] | None = None
+    ) -> int:
+        """Delete records from Local Station Database."""
+        if self.is_local_mongo_connected and self.local_db is not None:
+            res = await self.local_db[collection_name].delete_many(filter_dict or {})
+            return res.deleted_count
+        return await self.embedded_store.delete_many(collection_name, filter_dict)
 
     # -------------------------------------------------------------------------
     # Mainland Cloud Replication Interface

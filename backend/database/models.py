@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
+import time
 from typing import Any
 import uuid
 
@@ -173,6 +174,46 @@ class CloudFleetIntelligenceRecord(BaseModel):
     active_expedition: str = Field(default="44th Indian Antarctic Expedition")
     total_episodes_recorded: int = Field(default=0)
     fleet_sops: list[dict[str, Any]] = Field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+
+
+class CopilotChatRecord(BaseModel):
+    """Persistent chat message exchange between Commander/Judge and F.R.I.D.A.Y."""
+    chat_id: str = Field(default_factory=lambda: f"CHAT-{uuid.uuid4().hex[:8].upper()}")
+    station_id: str = Field(default="bharati")
+    session_id: str | None = Field(default=None)
+    role: str = Field(..., description="'user' or 'assistant'")
+    message: str = Field(...)
+    cited_sensors: list[str] = Field(default_factory=list)
+    suggested_followups: list[str] = Field(default_factory=list)
+    operational_status: str = Field(default="NOMINAL")
+    model_used: str = Field(default="llama-3.3-70b-versatile")
+    latency_ms: float = Field(default=0.0)
+    timestamp_iso: str = Field(default_factory=generate_utc_now)
+    timestamp_unix: float = Field(default_factory=time.time)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+
+
+class StationStateSyncRecord(BaseModel):
+    """Persistent state sync package representing the complete operational cockpit state."""
+    sync_id: str = Field(default="STATE_SYNC_PRIMARY")
+    station_id: str = Field(default="bharati")
+    operator_id: str = Field(default="STATION_COMMANDER")
+    operator_name: str = Field(default="Cmdr. T. Srishanth")
+    authenticated: bool = Field(default=True)
+    active_tab: str = Field(default="topo")
+    autonomous_mode: bool = Field(default=True)
+    voice_enabled: bool = Field(default=True)
+    cognitive_category: str = Field(default="ALL")
+    pillar_filter: str = Field(default="ALL")
+    active_scenario: str = Field(default="NORMAL")
+    preferences: dict[str, Any] = Field(default_factory=dict)
+    last_synced_utc: str = Field(default_factory=generate_utc_now)
+    last_synced_unix: float = Field(default_factory=time.time)
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump()

@@ -5,9 +5,11 @@ Digital Platform for Efficient Remote Management of Indian Antarctic Research St
 """
 
 from .audit_repo import AuditRepository
+from .copilot_repo import CopilotRepository
 from .dialogue_repo import DialogueRepository
 from .episodes_repo import EpisodesRepository
 from .equipment_repo import EquipmentRepository
+from .state_sync_repo import StateSyncRepository
 from .telemetry_repo import TelemetryRepository
 
 __all__ = [
@@ -16,4 +18,6 @@ __all__ = [
     "EquipmentRepository",
     "TelemetryRepository",
     "AuditRepository",
+    "CopilotRepository",
+    "StateSyncRepository",
 ]

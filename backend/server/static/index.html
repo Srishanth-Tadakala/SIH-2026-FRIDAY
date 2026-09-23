@@ -892,8 +892,20 @@
       </button>
     </div>
 
-    <!-- Telemetry Link & Satcom HUD -->
+    <!-- Telemetry Link, Operator Auth & Satcom HUD -->
     <div class="deck-group">
+      <!-- Operator Session Profile Badge -->
+      <div class="satcom-hud" id="operator-session-badge" style="cursor:pointer; border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.08);" onclick="openOperatorLoginModal()" title="Operator Authentication & State Session Profile">
+        <span class="pulse-beacon" id="operator-beacon" style="background:var(--emerald);"></span>
+        <span id="operator-label" style="font-weight:700; color:var(--emerald);">👨‍✈️ CDR. T. SRISHANTH</span>
+        <span style="color:var(--text-dim);">&bull;</span>
+        <span id="operator-status-tag" style="color:var(--cyan); font-weight:600; font-size:9px;">AUTH SYNCED</span>
+      </div>
+      <!-- Instant State Sync Button -->
+      <button class="btn" onclick="triggerManualSync()" id="btn-manual-sync" style="background:rgba(0,240,255,0.12); border-color:var(--cyan); color:var(--cyan); font-weight:700; padding:5px 10px;" title="Instantly force full state & disk synchronization with station storage">
+        <span>⚡ SYNC NOW</span>
+        <span id="sync-time-indicator" style="font-size:9px; color:var(--text-muted); margin-left:3px;">(0s)</span>
+      </button>
       <div class="satcom-hud" style="cursor:pointer;" onclick="openDatabaseModal()" title="Inspect 2-Step Distributed Database, Case Memory & Asset Wear">
         <span class="pulse-beacon" id="db-edge-beacon" style="background:var(--emerald);"></span>
         <span id="db-header-edge-label" style="font-weight:600;">EDGE DB: ONLINE</span>
@@ -1616,7 +1628,11 @@
             </div>
           </div>
         </div>
-        <button onclick="closeCopilotModal()" style="background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="copilot-history-count" class="badge" style="background:rgba(56,189,248,0.2); color:var(--cyan); font-size:9px;">0 MSGS SAVED</span>
+          <button onclick="clearCopilotHistory()" class="btn" style="padding:3px 8px; font-size:10px; border-color:var(--crimson); color:var(--crimson); background:rgba(239,68,68,0.15);" title="Clear saved Copilot conversation history from Edge Document Store">🗑️ Clear Chat</button>
+          <button onclick="closeCopilotModal()" style="background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+        </div>
       </div>
 
       <div class="modal-hud-body" style="padding:16px; gap:12px;">
@@ -1666,6 +1682,38 @@
           </button>
         </form>
       </div>
+  </div>
+
+  <!-- Operator Authentication & Station Session Profile Modal -->
+  <div class="modal-overlay" id="modal-operator-login">
+    <div class="modal-hud-window" style="max-width:440px;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px;">👨‍✈️</span>
+          <span style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">STATION OPERATOR SESSION</span>
+        </div>
+        <button onclick="closeOperatorLoginModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-hud-body">
+        <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+          Authenticate with Station Commander credentials to synchronize cockpit state, active tabs, autonomous parameters, and defense audits across refreshes.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="font-size:10px; font-family:var(--font-mono); color:var(--text-dim);">OPERATOR IDENTIFIER</label>
+          <input type="text" id="login-op-id" value="CDR-T-SRISHANTH" style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:5px; padding:8px 10px; color:#fff; font-family:var(--font-mono); font-size:12px; outline:none;">
+
+          <label style="font-size:10px; font-family:var(--font-mono); color:var(--text-dim);">OPERATOR FULL NAME / CALLSIGN</label>
+          <input type="text" id="login-op-name" value="CDR. T. SRISHANTH" style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:5px; padding:8px 10px; color:#fff; font-family:var(--font-mono); font-size:12px; outline:none;">
+
+          <label style="font-size:10px; font-family:var(--font-mono); color:var(--text-dim);">COMMANDER PIN</label>
+          <input type="password" id="login-op-pin" value="BHARATI-CMD-2026" style="background:rgba(15,23,42,0.9); border:1px solid var(--border-subtle); border-radius:5px; padding:8px 10px; color:#fff; font-family:var(--font-mono); font-size:12px; outline:none;">
+        </div>
+        <div id="login-status-box" style="font-size:11px; font-family:var(--font-mono); min-height:16px;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn" onclick="performOperatorLogout()" style="border-color:var(--crimson); color:var(--crimson); background:rgba(239,68,68,0.1);">Log Out</button>
+          <button class="btn btn-primary" onclick="performOperatorLogin()">Authenticate & Sync</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1680,14 +1728,26 @@
     let cachedCausalGraph = null;
     let activeCognitiveCategory = 'ALL';
     let currentPillar = 'ALL';
+    let currentDbTab = 'topo';
     let searchQuery = '';
     let isAutonomousLoopRunning = true;
     let pendingActuatorAction = null;
     let currentKeypadPin = '';
     let voiceBriefingsEnabled = true;
     let activeCausalFilter = 'ALL';
+    let lastSyncTimestamp = Date.now();
+    let currentOperator = {
+      operator_id: 'CDR-T-SRISHANTH',
+      operator_name: 'CDR. T. SRISHANTH',
+      authenticated: true,
+      last_sync_unix: Date.now() / 1000
+    };
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+      // 1. Restore synchronized cockpit state & Copilot history from Edge Database
+      await syncFullPlatformState(true);
+
+      // 2. Initialize live telemetry streaming and baseline pulls
       initWebSocket(activeStation);
       fetchStationOverview();
       fetchActuators();
@@ -1695,12 +1755,19 @@
       fetchAgentStatus();
       fetchDatabaseStatus();
 
+      // 3. High-frequency digital twin telemetry refresh loop
       setInterval(() => {
         fetchActuators();
         fetchCognitiveLogs();
         fetchAgentStatus();
         fetchDatabaseStatus();
+        updateSyncTimeIndicator();
       }, 1500);
+
+      // 4. Background Sync Health Check (every 5 seconds)
+      setInterval(() => {
+        updateSyncTimeIndicator();
+      }, 5000);
     });
 
     function initWebSocket(stationId) {
@@ -1752,7 +1819,7 @@
       }
     }
 
-    function switchStation(stationId) {
+    function switchStation(stationId, shouldSync = true) {
       activeStation = stationId;
       document.getElementById('btn-station-bharati').classList.toggle('active', stationId === 'bharati');
       document.getElementById('btn-station-maitri').classList.toggle('active', stationId === 'maitri');
@@ -1763,6 +1830,10 @@
       fetchStationOverview();
       fetchActuators();
       fetchCognitiveLogs();
+      loadCopilotHistory();
+      if (shouldSync) {
+        savePlatformStateToServer();
+      }
     }
 
     async function fetchStationOverview() {
@@ -1934,6 +2005,7 @@
         document.getElementById('btn-auto-step').innerText = 'Resume Loop';
       }
       fetchCognitiveLogs();
+      savePlatformStateToServer();
     }
 
     // -------------------------------------------------------------
@@ -2246,12 +2318,15 @@
       document.getElementById('count-cog-edge').innerText = counts.EDGE_AUTHORITY;
     }
 
-    function filterCognitiveCategory(category) {
+    function filterCognitiveCategory(category, shouldSync = true) {
       activeCognitiveCategory = category;
       document.querySelectorAll('.cog-tab').forEach(t => {
         t.classList.toggle('active', t.id === `cog-tab-${category}`);
       });
       renderCognitiveLogs();
+      if (shouldSync) {
+        savePlatformStateToServer();
+      }
     }
 
     function renderCognitiveLogs() {
@@ -2349,9 +2424,12 @@
       }).join('');
     }
 
-    function filterPillar(pillar) {
+    function filterPillar(pillar, shouldSync = true) {
       currentPillar = pillar;
       renderTelemetryTable();
+      if (shouldSync) {
+        savePlatformStateToServer();
+      }
     }
 
     function filterSensorsBySearch(q) {
@@ -2939,6 +3017,7 @@
       if (voiceBriefingsEnabled) {
         speakFridayBriefing("F.R.I.D.A.Y. voice briefings active.");
       }
+      savePlatformStateToServer();
     }
 
     function testVoiceBriefing() {
@@ -2965,7 +3044,8 @@
       if (modal) modal.classList.remove('open');
     }
 
-    function switchDbTab(tabName) {
+    function switchDbTab(tabName, shouldSync = true) {
+      currentDbTab = tabName;
       ['topo', 'episodes', 'equipment', 'audits'].forEach(t => {
         const btn = document.getElementById(`db-tab-btn-${t}`);
         const content = document.getElementById(`db-tab-${t}`);
@@ -2975,6 +3055,9 @@
       if (tabName === 'episodes') refreshDbEpisodes();
       if (tabName === 'equipment') refreshDbEquipment();
       if (tabName === 'audits') refreshDbAudits();
+      if (shouldSync) {
+        savePlatformStateToServer();
+      }
     }
 
     async function fetchDatabaseStatus() {
@@ -3161,6 +3244,7 @@
         modal.classList.add('open');
         fetchCopilotStatus();
         fetchCopilotSuggestions();
+        loadCopilotHistory();
         document.getElementById('copilot-user-input')?.focus();
       }
     }
@@ -3391,6 +3475,15 @@
         chatBox.insertAdjacentHTML('beforeend', assistantMsgHtml);
         chatBox.scrollTop = chatBox.scrollHeight;
 
+        // Update history count badge
+        const countBadge = document.getElementById('copilot-history-count');
+        if (countBadge) {
+          const current = parseInt(countBadge.textContent) || 0;
+          countBadge.textContent = `${current + 2} MSGS SAVED`;
+        }
+        lastSyncTimestamp = Date.now();
+        updateSyncTimeIndicator();
+
         // Optionally speak response if Voice AI enabled
         if (voiceBriefingsEnabled && data.reply) {
           const firstSentence = data.reply.split('.')[0] + '.';
@@ -3409,6 +3502,348 @@
         }
       } finally {
         if (sendBtn) sendBtn.disabled = false;
+      }
+    }
+
+    // =========================================================================
+    // F.R.I.D.A.Y. Persistent Copilot History & State Synchronization Logic
+    // =========================================================================
+
+    async function loadCopilotHistory() {
+      const chatBox = document.getElementById('copilot-chat-box');
+      const countBadge = document.getElementById('copilot-history-count');
+      if (!chatBox) return;
+
+      try {
+        const res = await fetch(`/api/copilot/history?station_id=${activeStation}&limit=100`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const history = data.history || [];
+
+        if (countBadge) {
+          countBadge.textContent = `${history.length} MSGS SAVED`;
+        }
+
+        if (history.length === 0) {
+          chatBox.innerHTML = `
+            <div class="copilot-msg assistant">
+              <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; align-items:center; gap:6px;">
+                <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
+                <span style="color:var(--text-dim); font-size:9px;">COGNITIVE AGENT</span>
+              </div>
+              <div>
+                Greetings, Commander. I am F.R.I.D.A.Y., Chief AI Governor for Bharati and Maitri Stations. I am operating with zero rule-based playbooks, dynamically reasoning over 505 synchronized telemetry sensors and our 35-node causal dependency graph. What operational status or multi-agent decision would you like to examine?
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let fullHtml = '';
+        for (const msg of history) {
+          if (msg.role === 'user') {
+            fullHtml += `
+              <div class="copilot-msg user">
+                <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:flex-end; gap:6px;">
+                  <span>COMMANDER / JUDGE</span>
+                  <span>👨‍✈️</span>
+                </div>
+                <div>${escapeHtml(msg.message)}</div>
+              </div>
+            `;
+          } else {
+            const citedTags = (msg.cited_sensors || []).map(s => 
+              `<span class="sensor-citation-tag">📡 ${escapeHtml(s)}</span>`
+            ).join('');
+
+            const isNominal = (msg.operational_status === 'NOMINAL');
+            const statusBadge = isNominal
+              ? '<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--emerald); font-size:9px;">NOMINAL</span>'
+              : '<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--crimson); font-size:9px;">ACTIVE DEFENSE</span>';
+
+            const formattedBody = renderMarkdownHud(msg.message);
+
+            const followupsHtml = (msg.suggested_followups && msg.suggested_followups.length > 0)
+              ? `<div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+                  <div style="font-size:9px; font-family:var(--font-mono); color:var(--text-muted); margin-bottom:5px; text-transform:uppercase;">Suggested Follow-Ups:</div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${msg.suggested_followups.map(f => `<span class="copilot-chip" onclick="useSuggestedQuery('${f.replace(/'/g, "\\'")}')">${escapeHtml(f)}</span>`).join('')}
+                  </div>
+                </div>`
+              : '';
+
+            fullHtml += `
+              <div class="copilot-msg assistant">
+                <div style="font-family:var(--font-hud); font-size:10px; font-weight:700; color:var(--cyan); display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span>🧠 F.R.I.D.A.Y. MASTER MIND</span>
+                    ${statusBadge}
+                  </div>
+                  <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-dim);">${escapeHtml(msg.model_used || 'Groq LPU')} &bull; ${(msg.latency_ms || 12).toFixed(1)}ms</span>
+                </div>
+                <div style="margin-top:2px;">${formattedBody}</div>
+                ${citedTags ? `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.08);">${citedTags}</div>` : ''}
+                ${followupsHtml}
+              </div>
+            `;
+          }
+        }
+        chatBox.innerHTML = fullHtml;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch (err) {
+        console.warn('Error loading copilot history:', err);
+      }
+    }
+
+    async function clearCopilotHistory() {
+      if (!confirm('Clear all saved Copilot conversation history from Edge Document Store?')) return;
+      try {
+        await fetch(`/api/copilot/clear?station_id=${activeStation}`, { method: 'POST' });
+        loadCopilotHistory();
+      } catch (err) {
+        alert('Failed to clear history: ' + err);
+      }
+    }
+
+    // Operator Authentication Modal
+    function openOperatorLoginModal() {
+      const modal = document.getElementById('modal-operator-login');
+      if (modal) {
+        const idInput = document.getElementById('login-op-id');
+        const nameInput = document.getElementById('login-op-name');
+        if (idInput && currentOperator.operator_id) idInput.value = currentOperator.operator_id;
+        if (nameInput && currentOperator.operator_name) nameInput.value = currentOperator.operator_name;
+        modal.classList.add('open');
+      }
+    }
+
+    function closeOperatorLoginModal() {
+      const modal = document.getElementById('modal-operator-login');
+      if (modal) modal.classList.remove('open');
+    }
+
+    async function performOperatorLogin() {
+      const opId = document.getElementById('login-op-id')?.value.trim() || 'CDR-T-SRISHANTH';
+      const opName = document.getElementById('login-op-name')?.value.trim() || 'CDR. T. SRISHANTH';
+      const pin = document.getElementById('login-op-pin')?.value.trim() || '';
+      const statusDiv = document.getElementById('login-status-box');
+
+      try {
+        const res = await fetch('/api/sync/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operator_id: opId,
+            operator_name: opName,
+            pin: pin,
+            station_id: activeStation
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          currentOperator = {
+            operator_id: opId,
+            operator_name: opName,
+            authenticated: true,
+            last_sync_unix: Date.now() / 1000
+          };
+          updateOperatorBadgeUI(opName, true);
+          if (statusDiv) {
+            statusDiv.innerHTML = `<span style="color:var(--emerald);">✔ AUTHENTICATED: Syncing Station State...</span>`;
+          }
+          await syncFullPlatformState(false);
+          setTimeout(() => {
+            closeOperatorLoginModal();
+          }, 800);
+        } else {
+          if (statusDiv) {
+            statusDiv.innerHTML = `<span style="color:var(--crimson);">✖ REJECTED: ${data.detail || data.message || 'Invalid Credentials'}</span>`;
+          }
+        }
+      } catch (err) {
+        if (statusDiv) {
+          statusDiv.innerHTML = `<span style="color:var(--crimson);">Error connecting to sync service: ${err.message}</span>`;
+        }
+      }
+    }
+
+    async function performOperatorLogout() {
+      try {
+        await fetch('/api/sync/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ station_id: activeStation })
+        });
+      } catch (e) {}
+      currentOperator.authenticated = false;
+      currentOperator.operator_name = 'GUEST OBSERVER';
+      currentOperator.operator_id = 'GUEST';
+      updateOperatorBadgeUI('GUEST OBSERVER', false);
+      closeOperatorLoginModal();
+    }
+
+    function updateOperatorBadgeUI(name, isAuth) {
+      const label = document.getElementById('operator-label');
+      const tag = document.getElementById('operator-status-tag');
+      const beacon = document.getElementById('operator-beacon');
+      if (label) label.textContent = isAuth ? `👨‍✈️ ${name}` : `🔒 ${name}`;
+      if (tag) {
+        tag.textContent = isAuth ? 'AUTH SYNCED' : 'UNAUTHENTICATED';
+        tag.style.color = isAuth ? 'var(--cyan)' : 'var(--amber)';
+      }
+      if (beacon) {
+        beacon.style.background = isAuth ? 'var(--emerald)' : 'var(--amber)';
+      }
+    }
+
+    async function triggerManualSync() {
+      const btn = document.getElementById('btn-manual-sync');
+      if (btn) btn.style.transform = 'scale(0.96)';
+      try {
+        const res = await fetch('/api/sync/full_refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ station_id: activeStation })
+        });
+        if (res.ok) {
+          lastSyncTimestamp = Date.now();
+          updateSyncTimeIndicator();
+          await syncFullPlatformState(false);
+        }
+      } catch (err) {
+        console.warn('Manual sync failed:', err);
+      } finally {
+        if (btn) btn.style.transform = 'scale(1)';
+      }
+    }
+
+    function updateSyncTimeIndicator() {
+      const el = document.getElementById('sync-time-indicator');
+      if (!el) return;
+      const elapsedSec = Math.floor((Date.now() - lastSyncTimestamp) / 1000);
+      el.textContent = `(${elapsedSec}s)`;
+    }
+
+    async function syncFullPlatformState(isInitialLoad = false) {
+      try {
+        const res = await fetch(`/api/sync/state?station_id=${activeStation}`);
+        let stateData = null;
+        if (res.ok) {
+          stateData = await res.json();
+        } else {
+          // Local storage fallback
+          const localStored = localStorage.getItem('friday_state_' + activeStation);
+          if (localStored) {
+            stateData = JSON.parse(localStored);
+          }
+        }
+
+        if (stateData) {
+          // 1. Station
+          if (isInitialLoad && stateData.station_id && stateData.station_id !== activeStation) {
+            switchStation(stateData.station_id, false);
+          }
+
+          // 2. Operator
+          if (stateData.operator_name) {
+            currentOperator.operator_name = stateData.operator_name;
+            currentOperator.operator_id = stateData.operator_id || currentOperator.operator_id;
+            currentOperator.authenticated = Boolean(stateData.authenticated);
+            updateOperatorBadgeUI(stateData.operator_name, stateData.authenticated);
+          }
+
+          // 3. Tab
+          if (stateData.active_tab) {
+            switchDbTab(stateData.active_tab, false);
+          }
+
+          // 4. Autonomy
+          if (stateData.autonomous_mode !== undefined && stateData.autonomous_mode !== isAutonomousLoopRunning) {
+            isAutonomousLoopRunning = Boolean(stateData.autonomous_mode);
+            const btnText = document.getElementById('autonomy-status-text');
+            const indicator = document.getElementById('continuous-indicator');
+            if (isAutonomousLoopRunning) {
+              if (btnText) btnText.innerText = 'Edge Autonomy: ON (1 Hz)';
+              if (indicator) {
+                indicator.innerText = '● AUTO-RUN 1Hz';
+                indicator.style.color = 'var(--emerald)';
+              }
+              const btnStep = document.getElementById('btn-auto-step');
+              if (btnStep) btnStep.innerText = 'Pause Loop';
+            } else {
+              if (btnText) btnText.innerText = 'Edge Autonomy: PAUSED';
+              if (indicator) {
+                indicator.innerText = '⏸ PAUSED';
+                indicator.style.color = 'var(--amber)';
+              }
+              const btnStep = document.getElementById('btn-auto-step');
+              if (btnStep) btnStep.innerText = 'Resume Loop';
+            }
+          }
+
+          // 5. Voice
+          if (stateData.voice_enabled !== undefined && stateData.voice_enabled !== voiceBriefingsEnabled) {
+            voiceBriefingsEnabled = Boolean(stateData.voice_enabled);
+            const icon = document.getElementById('voice-icon');
+            const label = document.getElementById('voice-label');
+            const btn = document.getElementById('btn-voice-toggle');
+            if (icon) icon.innerText = voiceBriefingsEnabled ? '🔊' : '🔇';
+            if (label) label.innerText = voiceBriefingsEnabled ? 'Voice AI: ON' : 'Voice AI: MUTED';
+            if (btn) {
+              btn.style.borderColor = voiceBriefingsEnabled ? 'var(--cyan)' : 'var(--text-dim)';
+              btn.style.color = voiceBriefingsEnabled ? 'var(--cyan)' : 'var(--text-dim)';
+            }
+          }
+
+          // 6. Cognitive category
+          if (stateData.cognitive_category && stateData.cognitive_category !== activeCognitiveCategory) {
+            filterCognitiveCategory(stateData.cognitive_category, false);
+          }
+
+          // 7. Pillar filter
+          if (stateData.pillar_filter && stateData.pillar_filter !== currentPillar) {
+            filterPillar(stateData.pillar_filter, false);
+          }
+        }
+
+        // Always load Copilot conversation history
+        await loadCopilotHistory();
+
+        lastSyncTimestamp = Date.now();
+        updateSyncTimeIndicator();
+      } catch (err) {
+        console.warn('Sync full platform state warning:', err);
+      }
+    }
+
+    async function savePlatformStateToServer() {
+      const statePayload = {
+        station_id: activeStation,
+        operator_id: currentOperator.operator_id || 'CDR-T-SRISHANTH',
+        operator_name: currentOperator.operator_name || 'CDR. T. SRISHANTH',
+        authenticated: currentOperator.authenticated !== false,
+        active_tab: currentDbTab || 'topo',
+        autonomous_mode: isAutonomousLoopRunning,
+        voice_enabled: voiceBriefingsEnabled,
+        cognitive_category: activeCognitiveCategory,
+        pillar_filter: currentPillar,
+        active_scenario: null
+      };
+
+      try {
+        localStorage.setItem('friday_state_' + activeStation, JSON.stringify(statePayload));
+      } catch (e) {}
+
+      try {
+        await fetch('/api/sync/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(statePayload)
+        });
+        lastSyncTimestamp = Date.now();
+        updateSyncTimeIndicator();
+      } catch (err) {
+        console.warn('Auto-save platform state warning:', err);
       }
     }
 

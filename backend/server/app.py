@@ -28,6 +28,7 @@ from .routes.deliberations import router as deliberations_router
 from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
 from .routes.stations import router as stations_router
+from .routes.sync import router as sync_router
 from .routes.telemetry import router as telemetry_router
 from .routes.telemetry_ingest import router as telemetry_ingest_router
 from .routes.ws import router as ws_router
@@ -88,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(scenarios_router)
     app.include_router(database_router)
     app.include_router(copilot_router)
+    app.include_router(sync_router)
 
     # Static files & Testing UI
     static_dir = os.path.join(os.path.dirname(__file__), "static")

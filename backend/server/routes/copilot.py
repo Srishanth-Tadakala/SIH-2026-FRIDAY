@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ...agents.framework.groq_brain import GroqBrainEngine
+from ...database.models import CopilotChatRecord
 from ..state import get_server_state
 
 logger = logging.getLogger("friday.server.routes.copilot")
@@ -32,7 +33,7 @@ class SetKeyRequest(BaseModel):
 
 @router.post("/chat")
 async def copilot_chat(request: CopilotChatRequest) -> dict[str, Any]:
-    """Interactive real-time consultation with F.R.I.D.A.Y. Chief AI Orchestrator."""
+    """Interactive real-time consultation with F.R.I.D.A.Y. Chief AI Orchestrator with persistent conversation history."""
     server_state = get_server_state()
     engine = server_state.get_engine(request.station_id)
     if not engine:
@@ -71,17 +72,86 @@ async def copilot_chat(request: CopilotChatRequest) -> dict[str, Any]:
         recent_episodes=recent_episodes,
     )
 
+    reply_text = res.get("reply", "No response generated.")
+    cited_sensors = res.get("cited_sensors", [])
+    suggested_followups = res.get("suggested_followups", [])
+    operational_status = res.get("operational_status", "NOMINAL")
+
+    # Persist user inquiry to edge database
+    try:
+        user_rec = CopilotChatRecord(
+            station_id=request.station_id,
+            role="user",
+            message=request.message,
+        )
+        await server_state.copilot_repo.save_message(user_rec)
+
+        # Persist assistant reply to edge database
+        asst_rec = CopilotChatRecord(
+            station_id=request.station_id,
+            role="assistant",
+            message=reply_text,
+            cited_sensors=cited_sensors,
+            suggested_followups=suggested_followups,
+            operational_status=operational_status,
+            model_used=brain.last_model_used,
+            latency_ms=brain.last_latency_ms,
+        )
+        await server_state.copilot_repo.save_message(asst_rec)
+    except Exception as e:
+        logger.warning("Failed saving copilot chat to persistent storage: %s", e)
+
     return {
         "status": "SUCCESS",
         "station_id": request.station_id,
-        "reply": res.get("reply", "No response generated."),
-        "cited_sensors": res.get("cited_sensors", []),
-        "suggested_followups": res.get("suggested_followups", []),
-        "operational_status": res.get("operational_status", "NOMINAL"),
+        "reply": reply_text,
+        "cited_sensors": cited_sensors,
+        "suggested_followups": suggested_followups,
+        "operational_status": operational_status,
         "latency_ms": brain.last_latency_ms,
         "model_used": brain.last_model_used,
         "is_live_groq": brain.is_live_available(),
         "timestamp": time.time(),
+    }
+
+
+class ClearHistoryRequest(BaseModel):
+    station_id: str | None = None
+
+
+@router.get("/history")
+async def get_copilot_history(
+    station_id: str = "bharati",
+    limit: int = 50,
+) -> dict[str, Any]:
+    """Retrieve persistent conversation history for the specified station."""
+    server_state = get_server_state()
+    records = await server_state.copilot_repo.get_history(station_id=station_id, limit=limit)
+    dict_list = [r.to_dict() for r in records]
+    return {
+        "status": "SUCCESS",
+        "station_id": station_id,
+        "count": len(dict_list),
+        "total": len(dict_list),
+        "messages": dict_list,
+        "history": dict_list,
+    }
+
+
+@router.post("/clear")
+async def clear_copilot_history(
+    req: ClearHistoryRequest | None = None,
+    station_id: str | None = None,
+) -> dict[str, Any]:
+    """Clear persistent conversation history for the specified station."""
+    target_station = (req.station_id if req and req.station_id else None) or station_id or "bharati"
+    server_state = get_server_state()
+    deleted = await server_state.copilot_repo.clear_history(station_id=target_station)
+    return {
+        "status": "SUCCESS",
+        "station_id": target_station,
+        "deleted_count": deleted,
+        "message": f"Cleared {deleted} persistent chat records for {target_station}.",
     }
 
 

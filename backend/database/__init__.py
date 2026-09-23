@@ -13,10 +13,12 @@ Provides:
 
 from .connection import DatabaseManager, get_database_manager
 from .models import (
+    CopilotChatRecord,
     DialogueRecord,
     EpisodeRecord,
     EquipmentLifecycleRecord,
     OperatorAuditRecord,
+    StationStateSyncRecord,
     SyncPriority,
     SyncStatus,
     TelemetryTimeSeriesRecord,
@@ -30,6 +32,8 @@ __all__ = [
     "EquipmentLifecycleRecord",
     "TelemetryTimeSeriesRecord",
     "OperatorAuditRecord",
+    "CopilotChatRecord",
+    "StationStateSyncRecord",
     "SyncStatus",
     "SyncPriority",
 ]
