@@ -9,6 +9,7 @@ and predictive maintenance countdowns across all station subsystems.
 
 from __future__ import annotations
 
+from collections import defaultdict
 import logging
 from typing import Any
 
@@ -25,6 +26,9 @@ class EquipmentRepository:
 
     def __init__(self, db_manager: DatabaseManager) -> None:
         self.db = db_manager
+        # In-memory buffer for runtime accumulation: (equipment_id, station_id) -> accumulated_seconds
+        self._runtime_buffer: dict[tuple[str, str], float] = defaultdict(float)
+        self._flush_threshold_seconds: float = 60.0
 
     async def initialize_station_assets(self, station_id: str = "bharati") -> None:
         """Seed baseline physical equipment records if not present."""
@@ -135,12 +139,37 @@ class EquipmentRepository:
         dt_seconds: float,
         is_running: bool,
         extra_vibration_mms: float = 0.0,
+        force_flush: bool = False,
     ) -> bool:
-        """Increment running hours and update wear telemetry on every simulation step."""
+        """Increment running hours and update wear telemetry with batched in-memory buffering."""
         if not is_running:
             return False
 
-        hours_delta = dt_seconds / 3600.0
+        key = (equipment_id, station_id)
+        self._runtime_buffer[key] += dt_seconds
+
+        # Commit to persistent storage only when buffer threshold (60s) reached, vibration anomaly reported, or forced
+        if (
+            self._runtime_buffer[key] >= self._flush_threshold_seconds
+            or extra_vibration_mms > 0
+            or force_flush
+        ):
+            return await self._flush_runtime(equipment_id, station_id, extra_vibration_mms)
+        return True
+
+    async def _flush_runtime(
+        self,
+        equipment_id: str,
+        station_id: str,
+        extra_vibration_mms: float = 0.0,
+    ) -> bool:
+        """Commit buffered runtime hours to persistent database storage."""
+        key = (equipment_id, station_id)
+        buffered_sec = self._runtime_buffer.pop(key, 0.0)
+        if buffered_sec <= 0.0 and extra_vibration_mms <= 0:
+            return True
+
+        hours_delta = buffered_sec / 3600.0
         doc = await self.db.find_one_record(
             COLLECTION_NAME, {"equipment_id": equipment_id, "station_id": station_id}
         )
@@ -156,7 +185,7 @@ class EquipmentRepository:
         elif new_hours >= due_hours - 100.0:
             status = "ADVISORY"
 
-        update_data = {
+        update_data: dict[str, Any] = {
             "$set": {
                 "total_running_hours": new_hours,
                 "health_status": status,
@@ -172,10 +201,21 @@ class EquipmentRepository:
             update_data,
         )
 
+    async def flush_all_buffers(self) -> None:
+        """Commit all pending in-memory equipment runtime buffers to persistent storage."""
+        pending_keys = list(self._runtime_buffer.keys())
+        for eq_id, st_id in pending_keys:
+            if self._runtime_buffer.get((eq_id, st_id), 0.0) > 0.0:
+                await self._flush_runtime(eq_id, st_id)
+
     async def get_all_equipment(
         self, station_id: str = "bharati"
     ) -> list[EquipmentLifecycleRecord]:
         """Retrieve all equipment health and wear records for a station."""
+        for (eq_id, st_id) in list(self._runtime_buffer.keys()):
+            if st_id == station_id and self._runtime_buffer.get((eq_id, st_id), 0.0) > 0.0:
+                await self._flush_runtime(eq_id, st_id)
+
         raw_docs = await self.db.find_records(
             COLLECTION_NAME,
             filter_dict={"station_id": station_id},
@@ -201,6 +241,10 @@ class EquipmentRepository:
         self, equipment_id: str, station_id: str = "bharati"
     ) -> EquipmentLifecycleRecord | None:
         """Retrieve a specific asset record by equipment_id and station_id."""
+        key = (equipment_id, station_id)
+        if self._runtime_buffer.get(key, 0.0) > 0.0:
+            await self._flush_runtime(equipment_id, station_id)
+
         doc = await self.db.find_one_record(
             COLLECTION_NAME, {"equipment_id": equipment_id, "station_id": station_id}
         )

@@ -17,7 +17,7 @@ ARCHITECTURAL PRINCIPLES:
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Any, Callable
 
 from .models import (
@@ -32,7 +32,7 @@ from .models import (
 class AgentMessageBus:
     """Central event broker and dialogue recording bus for F.R.I.D.A.Y. agents."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_history: int = 2000, max_sessions: int = 200) -> None:
         # Role-based subscribers: role -> list of callbacks
         self._role_subscribers: dict[AgentRole, list[Callable[[AgentMessage], None]]] = defaultdict(list)
         # Type-based subscribers: message_type -> list of callbacks
@@ -40,14 +40,17 @@ class AgentMessageBus:
         # Global broadcast subscribers: list of callbacks
         self._broadcast_subscribers: list[Callable[[AgentMessage], None]] = []
 
-        # Audit history & active sessions
-        self._message_history: list[AgentMessage] = []
+        # Audit history & active sessions (bounded to prevent memory leaks in continuous 24/7 ops)
+        self._max_history: int = max_history
+        self._max_sessions: int = max_sessions
+        self._message_history: deque[AgentMessage] = deque(maxlen=self._max_history)
+        self._total_messages_processed: int = 0
         self._sessions: dict[str, DeliberationSession] = {}
 
     @property
     def total_messages_processed(self) -> int:
         """Total messages routed through the bus."""
-        return len(self._message_history)
+        return self._total_messages_processed
 
     def subscribe_role(
         self,
@@ -77,6 +80,16 @@ class AgentMessageBus:
         trigger_alert: dict[str, Any] | None = None,
     ) -> DeliberationSession:
         """Create and register a new DeliberationSession blackboard."""
+        # Prune oldest resolved sessions if capacity exceeded
+        if len(self._sessions) >= self._max_sessions:
+            resolved_keys = [k for k, s in self._sessions.items() if s.resolved]
+            if resolved_keys:
+                for k in resolved_keys[: max(1, len(resolved_keys) // 2)]:
+                    self._sessions.pop(k, None)
+            elif len(self._sessions) > self._max_sessions * 2:
+                oldest_key = next(iter(self._sessions))
+                self._sessions.pop(oldest_key, None)
+
         session = DeliberationSession(
             trigger_alert=trigger_alert or {},
         )
@@ -101,7 +114,8 @@ class AgentMessageBus:
 
     def publish(self, message: AgentMessage) -> None:
         """Publish a message onto the bus and dispatch it to relevant subscribers."""
-        # 1. Record in global audit history
+        # 1. Record in global audit history and increment total lifetime counter
+        self._total_messages_processed += 1
         self._message_history.append(message)
 
         # 2. Append to deliberation session transcript if registered
@@ -135,7 +149,8 @@ class AgentMessageBus:
 
     def get_recent_messages(self, limit: int = 50) -> list[AgentMessage]:
         """Return the N most recent messages dispatched across the platform."""
-        return self._message_history[-limit:]
+        hist = list(self._message_history)
+        return hist[-limit:]
 
     def clear(self) -> None:
         """Clear all subscribers, sessions, and message history (primarily for unit testing)."""
@@ -143,4 +158,5 @@ class AgentMessageBus:
         self._type_subscribers.clear()
         self._broadcast_subscribers.clear()
         self._message_history.clear()
+        self._total_messages_processed = 0
         self._sessions.clear()

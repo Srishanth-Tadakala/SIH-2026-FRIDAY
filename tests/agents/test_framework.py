@@ -158,6 +158,49 @@ class TestAgentMessageBus:
         assert transcript[0].message_type == MessageType.ALERT
         assert transcript[1].message_type == MessageType.DIAGNOSIS
 
+    def test_bounded_history_and_lifetime_counter(self) -> None:
+        """Verify message bus bounds in-memory history while retaining lifetime counter."""
+        bus = AgentMessageBus(max_history=5)
+        for i in range(12):
+            msg = AgentMessage(
+                sender=AgentRole.SITUATION_AWARENESS,
+                recipient=AgentRole.DIAGNOSTIC,
+                message_type=MessageType.ALERT,
+                severity=SeverityLevel.INFO,
+                payload={"tick": i},
+                session_id=f"SES-{i}",
+            )
+            bus.publish(msg)
+
+        # Monotonic counter tracks all processed messages
+        assert bus.total_messages_processed == 12
+        # History queue bounded to max_history
+        assert len(bus._message_history) == 5
+        assert len(bus.get_recent_messages(50)) == 5
+        # Oldest stored message is tick 7
+        assert bus.get_recent_messages(1)[0].payload["tick"] == 11
+
+        bus.clear()
+        assert bus.total_messages_processed == 0
+        assert len(bus.get_recent_messages(10)) == 0
+
+    def test_session_pruning_on_capacity(self) -> None:
+        """Verify oldest resolved sessions are pruned when session limit is reached."""
+        bus = AgentMessageBus(max_sessions=4)
+        sessions = [bus.create_session() for _ in range(4)]
+        assert len(bus._sessions) == 4
+
+        # Mark first two sessions as resolved
+        sessions[0].resolved = True
+        sessions[1].resolved = True
+
+        # Creating a 5th session should trigger pruning of resolved sessions
+        s5 = bus.create_session()
+        assert s5.session_id in bus._sessions
+        assert len(bus._sessions) <= 4
+        # Resolved session 0 should have been pruned
+        assert sessions[0].session_id not in bus._sessions
+
 
 class TestSafetyInterlockManager:
     """Test suite for SafetyInterlockManager guardrails."""

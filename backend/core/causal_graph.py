@@ -96,15 +96,73 @@ class TwinCausalGraph:
         if node.node_id not in self._incoming_edges:
             self._incoming_edges[node.node_id] = []
 
-    def add_edge(self, edge: CausalEdge) -> None:
-        """Add a directed causal edge between two registered nodes."""
+    def add_edge(self, edge: CausalEdge, allow_cycle: bool = True) -> None:
+        """Add a directed causal edge between two registered nodes with cycle and duplicate guards."""
         if edge.source_id not in self._nodes:
             raise KeyError(f"Source node '{edge.source_id}' does not exist in causal graph.")
         if edge.target_id not in self._nodes:
             raise KeyError(f"Target node '{edge.target_id}' does not exist in causal graph.")
 
+        if edge.source_id == edge.target_id:
+            raise ValueError(f"Self-referential causal loops not allowed on node '{edge.source_id}'.")
+
+        # Duplicate edge guard: update existing edge attributes in-place if duplicate is added
+        for existing in self._outgoing_edges[edge.source_id]:
+            if existing.target_id == edge.target_id and existing.edge_type == edge.edge_type:
+                existing.weight = edge.weight
+                existing.latency_seconds = edge.latency_seconds
+                existing.description = edge.description
+                return
+
+        if not allow_cycle and self.would_form_cycle(edge.source_id, edge.target_id):
+            raise ValueError(
+                f"Adding causal edge '{edge.source_id}' -> '{edge.target_id}' would create a directed cycle."
+            )
+
         self._outgoing_edges[edge.source_id].append(edge)
         self._incoming_edges[edge.target_id].append(edge)
+
+    def would_form_cycle(self, source_id: str, target_id: str) -> bool:
+        """Check if adding an edge source_id -> target_id would form a directed cycle.
+        
+        Returns True if target_id can already reach source_id via existing outgoing edges.
+        """
+        if source_id == target_id:
+            return True
+        visited: set[str] = {target_id}
+        queue: deque[str] = deque([target_id])
+        while queue:
+            curr = queue.popleft()
+            if curr == source_id:
+                return True
+            for edge in self._outgoing_edges.get(curr, []):
+                if edge.target_id not in visited:
+                    visited.add(edge.target_id)
+                    queue.append(edge.target_id)
+        return False
+
+    def has_cycle(self) -> bool:
+        """Detect whether the causal graph contains any directed cycle (using DFS 3-color traversal)."""
+        # 0 = WHITE (unvisited), 1 = GRAY (visiting in current path), 2 = BLACK (visited & resolved)
+        color: dict[str, int] = {node_id: 0 for node_id in self._nodes}
+
+        def dfs(u: str) -> bool:
+            color[u] = 1
+            for edge in self._outgoing_edges.get(u, []):
+                v = edge.target_id
+                if color.get(v, 0) == 1:
+                    return True
+                if color.get(v, 0) == 0:
+                    if dfs(v):
+                        return True
+            color[u] = 2
+            return False
+
+        for node_id in self._nodes:
+            if color[node_id] == 0:
+                if dfs(node_id):
+                    return True
+        return False
 
     def get_node(self, node_id: str) -> CausalNode | None:
         """Lookup node by identifier."""
@@ -123,6 +181,7 @@ class TwinCausalGraph:
             return []
 
         results: list[dict[str, Any]] = []
+        recorded_causes: set[str] = set()
         visited: set[str] = {node_id}
         queue: deque[tuple[str, list[str], list[str], float, int]] = deque([
             (node_id, [node_id], [], 0.0, 0)
@@ -140,18 +199,20 @@ class TwinCausalGraph:
                 new_edge_types = [edge.edge_type.value] + edge_types
                 new_latency = cum_latency + edge.latency_seconds
 
-                results.append({
-                    "cause_node_id": parent_id,
-                    "cause_name": parent_node.name,
-                    "cause_type": parent_node.node_type.value,
-                    "subsystem": parent_node.subsystem,
-                    "criticality": parent_node.criticality,
-                    "depth": depth + 1,
-                    "cumulative_latency_seconds": round(new_latency, 2),
-                    "path": new_path,
-                    "edge_types": new_edge_types,
-                    "causal_weight": edge.weight,
-                })
+                if parent_id not in recorded_causes:
+                    recorded_causes.add(parent_id)
+                    results.append({
+                        "cause_node_id": parent_id,
+                        "cause_name": parent_node.name,
+                        "cause_type": parent_node.node_type.value,
+                        "subsystem": parent_node.subsystem,
+                        "criticality": parent_node.criticality,
+                        "depth": depth + 1,
+                        "cumulative_latency_seconds": round(new_latency, 2),
+                        "path": new_path,
+                        "edge_types": new_edge_types,
+                        "causal_weight": edge.weight,
+                    })
 
                 if parent_id not in visited:
                     visited.add(parent_id)
@@ -174,6 +235,7 @@ class TwinCausalGraph:
             return []
 
         results: list[dict[str, Any]] = []
+        recorded_impacts: set[str] = set()
         visited: set[str] = {node_id}
         queue: deque[tuple[str, list[str], list[str], float, int]] = deque([
             (node_id, [node_id], [], 0.0, 0)
@@ -191,18 +253,20 @@ class TwinCausalGraph:
                 new_edge_types = edge_types + [edge.edge_type.value]
                 new_latency = cum_latency + edge.latency_seconds
 
-                results.append({
-                    "impacted_node_id": child_id,
-                    "impacted_name": child_node.name,
-                    "impacted_type": child_node.node_type.value,
-                    "subsystem": child_node.subsystem,
-                    "criticality": child_node.criticality,
-                    "depth": depth + 1,
-                    "cumulative_latency_seconds": round(new_latency, 2),
-                    "path": new_path,
-                    "edge_types": new_edge_types,
-                    "causal_weight": edge.weight,
-                })
+                if child_id not in recorded_impacts:
+                    recorded_impacts.add(child_id)
+                    results.append({
+                        "impacted_node_id": child_id,
+                        "impacted_name": child_node.name,
+                        "impacted_type": child_node.node_type.value,
+                        "subsystem": child_node.subsystem,
+                        "criticality": child_node.criticality,
+                        "depth": depth + 1,
+                        "cumulative_latency_seconds": round(new_latency, 2),
+                        "path": new_path,
+                        "edge_types": new_edge_types,
+                        "causal_weight": edge.weight,
+                    })
 
                 if child_id not in visited:
                     visited.add(child_id)

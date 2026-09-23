@@ -22,6 +22,7 @@ import threading
 import pytest
 
 from backend.core.causal_graph import (
+    CausalEdge,
     EdgeType,
     NodeType,
     TwinCausalGraph,
@@ -297,6 +298,67 @@ class TestTwinCausalGraph:
         assert "source" in sample_edge
         assert "target" in sample_edge
         assert "type" in sample_edge
+
+    def test_self_loop_rejection(self, graph: TwinCausalGraph) -> None:
+        """Verify adding a self-referential causal edge raises ValueError."""
+        loop_edge = CausalEdge(
+            source_id="chp_1",
+            target_id="chp_1",
+            edge_type=EdgeType.ELECTRICAL_FEED,
+        )
+        with pytest.raises(ValueError, match="Self-referential causal loops not allowed"):
+            graph.add_edge(loop_edge)
+
+    def test_duplicate_edge_attribute_update(self, graph: TwinCausalGraph) -> None:
+        """Verify adding an existing edge updates attributes in-place without duplicating."""
+        initial_edge_count = graph.edge_count
+        updated_edge = CausalEdge(
+            source_id="chp_1",
+            target_id="mlvd_bus",
+            edge_type=EdgeType.ELECTRICAL_FEED,
+            weight=0.99,
+            latency_seconds=0.01,
+            description="Upgraded low-resistance busway",
+        )
+        graph.add_edge(updated_edge)
+        assert graph.edge_count == initial_edge_count
+
+        # Verify edge attributes were updated in-place
+        chp_outgoing = [e for e in graph._outgoing_edges["chp_1"] if e.target_id == "mlvd_bus"]
+        assert len(chp_outgoing) == 1
+        assert chp_outgoing[0].weight == 0.99
+        assert chp_outgoing[0].description == "Upgraded low-resistance busway"
+
+    def test_cycle_detection_and_prevention(self, graph: TwinCausalGraph) -> None:
+        """Verify cycle detection identifies cycles and rejects cycle formation when requested."""
+        # Baseline graph is a valid DAG without directed cycles
+        assert graph.has_cycle() is False
+
+        # Adding an edge from mlvd_bus -> chp_1 would create cycle (chp_1 -> mlvd_bus -> chp_1)
+        assert graph.would_form_cycle("mlvd_bus", "chp_1") is True
+        # Self edge would form cycle
+        assert graph.would_form_cycle("chp_1", "chp_1") is True
+        # Non-cycle check
+        assert graph.would_form_cycle("chp_1", "zone_living") is False
+
+        # Adding cycle-forming edge with allow_cycle=False should raise ValueError
+        back_edge = CausalEdge(
+            source_id="mlvd_bus",
+            target_id="chp_1",
+            edge_type=EdgeType.ELECTRICAL_FEED,
+        )
+        with pytest.raises(ValueError, match="would create a directed cycle"):
+            graph.add_edge(back_edge, allow_cycle=False)
+
+    def test_traversal_deduplication(self, graph: TwinCausalGraph) -> None:
+        """Verify upstream causes and downstream impacts do not contain duplicate node entries."""
+        upstream = graph.get_upstream_causes("sensor_living_temp", max_depth=6)
+        cause_ids = [c["cause_node_id"] for c in upstream]
+        assert len(cause_ids) == len(set(cause_ids)), "Duplicate cause nodes found in upstream search!"
+
+        downstream = graph.get_downstream_impacts("chp_1", max_depth=6)
+        impact_ids = [i["impacted_node_id"] for i in downstream]
+        assert len(impact_ids) == len(set(impact_ids)), "Duplicate impact nodes found in downstream search!"
 
 
 class TestTwinSandbox:

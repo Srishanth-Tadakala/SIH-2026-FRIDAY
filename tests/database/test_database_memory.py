@@ -141,6 +141,50 @@ async def test_equipment_repo_lifecycle_and_wear():
 
 
 @pytest.mark.asyncio
+async def test_equipment_repo_buffering_and_batch_flush():
+    """Verify high-frequency equipment runtime updates are batched in-memory and flushed properly."""
+    db = DatabaseManager()
+    repo = EquipmentRepository(db)
+    await repo.initialize_station_assets("bharati")
+
+    chp2 = await repo.get_asset("chp_2", "bharati")
+    assert chp2 is not None
+    initial_hours = chp2.total_running_hours
+
+    # 1. High frequency 1-second simulation ticks (10 ticks = 10s < 60s threshold)
+    for _ in range(10):
+        await repo.accumulate_runtime("chp_2", "bharati", dt_seconds=1.0, is_running=True)
+
+    # In-memory buffer holds the 10 seconds
+    assert repo._runtime_buffer[("chp_2", "bharati")] == pytest.approx(10.0, 0.01)
+
+    # Direct database read verifies persistent store has NOT been written yet
+    raw_doc = await db.find_one_record(
+        "equipment_lifecycle", {"equipment_id": "chp_2", "station_id": "bharati"}
+    )
+    assert raw_doc["total_running_hours"] == initial_hours
+
+    # 2. Explicit flush commits pending in-memory buffer
+    await repo.flush_all_buffers()
+    assert repo._runtime_buffer.get(("chp_2", "bharati"), 0.0) == 0.0
+
+    raw_doc_after = await db.find_one_record(
+        "equipment_lifecycle", {"equipment_id": "chp_2", "station_id": "bharati"}
+    )
+    assert raw_doc_after["total_running_hours"] == pytest.approx(initial_hours + (10.0 / 3600.0), 0.0001)
+
+    # 3. Vibration anomaly bypasses buffering and flushes immediately
+    await repo.accumulate_runtime(
+        "chp_2", "bharati", dt_seconds=1.0, is_running=True, extra_vibration_mms=4.5
+    )
+    assert repo._runtime_buffer.get(("chp_2", "bharati"), 0.0) == 0.0
+    raw_doc_vibe = await db.find_one_record(
+        "equipment_lifecycle", {"equipment_id": "chp_2", "station_id": "bharati"}
+    )
+    assert raw_doc_vibe["vibration_rms_mms"] >= 4.5
+
+
+@pytest.mark.asyncio
 async def test_dialogue_and_audit_repositories():
     """Test inter-agent dialogue message logging and operator audit ledger."""
     db = DatabaseManager()
