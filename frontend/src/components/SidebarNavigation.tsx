@@ -15,26 +15,32 @@ import {
 } from 'lucide-react';
 import { StationId } from '../types';
 
+export type NavView = 'overview' | 'stations' | 'canvas' | 'simulator' | 'capabilities' | 'benchmarks';
+
 interface SidebarNavigationProps {
   activeStation: StationId;
   onStationChange: (station: StationId) => void;
   onLaunchCockpit: () => void;
+  activeView: NavView;
+  onViewChange: (view: NavView) => void;
 }
 
 export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   activeStation,
   onStationChange,
   onLaunchCockpit,
+  activeView,
+  onViewChange,
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = [
-    { label: 'Overview', href: '#top', icon: LayoutDashboard },
-    { label: 'Station Fleet', href: '#stations', icon: Compass },
-    { label: 'Digital Twin Canvas', href: '#canvas', icon: Activity },
-    { label: 'Crisis Simulator', href: '#simulator', icon: Zap },
-    { label: 'Capabilities', href: '#capabilities', icon: Layers },
-    { label: 'Mission Benchmarks', href: '#metrics', icon: BarChart3 },
+  const navItems: Array<{ id: NavView; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'stations', label: 'Station Fleet', icon: Compass },
+    { id: 'canvas', label: 'Digital Twin Canvas', icon: Activity },
+    { id: 'simulator', label: 'Crisis Simulator', icon: Zap },
+    { id: 'capabilities', label: 'Capabilities', icon: Layers },
+    { id: 'benchmarks', label: 'Mission Benchmarks', icon: BarChart3 },
   ];
 
   return (
@@ -74,10 +80,16 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           {/* Brand Logo & System Status */}
           <div className="pt-1">
-            <a href="#top" className="flex items-center gap-3 group">
+            <button 
+              onClick={() => {
+                onViewChange('overview');
+                setMobileOpen(false);
+              }}
+              className="w-full flex items-center gap-3 group text-left"
+            >
               <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/25 group-hover:scale-105 transition-transform">
                 <Cpu className="w-5 h-5" />
               </div>
@@ -89,7 +101,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                   POLAR DIGITAL TWIN
                 </span>
               </div>
-            </a>
+            </button>
 
             {/* Defense Status Pill */}
             <div className="mt-4 px-3 py-1.5 rounded-lg bg-[#f2f3ff] border border-[#eaedff] flex items-center justify-between text-[11px] font-semibold text-[#4648d4]">
@@ -138,23 +150,30 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
             </div>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links (Module Tabs) */}
           <nav className="flex flex-col gap-1 text-sm font-medium">
             <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#73738c] mb-1">
-              Navigation
+              Modules &amp; Views
             </span>
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = activeView === item.id;
               return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#464554] hover:text-[#4648d4] hover:bg-[#f2f3ff] transition-colors"
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onViewChange(item.id);
+                    setMobileOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left text-sm font-medium ${
+                    isActive
+                      ? 'bg-[#4648d4] text-white font-semibold shadow-xs'
+                      : 'text-[#464554] hover:text-[#4648d4] hover:bg-[#f2f3ff]'
+                  }`}
                 >
-                  <Icon className="w-4 h-4 text-[#73738c] group-hover:text-[#4648d4]" />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#73738c]'}`} />
                   <span>{item.label}</span>
-                </a>
+                </button>
               );
             })}
           </nav>
