@@ -10,7 +10,11 @@ import { PartnerCloud } from './components/PartnerCloud';
 import { BentoCapabilities } from './components/BentoCapabilities';
 import { MetricRoiCards } from './components/MetricRoiCards';
 import { HeroCtaBanner } from './components/HeroCtaBanner';
-import { UnderMaintenanceView } from './components/UnderMaintenanceView';
+import { StationFleetView } from './components/views/StationFleetView';
+import { DigitalTwinView } from './components/views/DigitalTwinView';
+import { AgentsView } from './components/views/AgentsView';
+import { AnalyticsView } from './components/views/AnalyticsView';
+import { ActionsView } from './components/views/ActionsView';
 import { Footer } from './components/Footer';
 
 export function App() {
@@ -53,7 +57,7 @@ export function App() {
     setIsResolved(false);
 
     try {
-      await injectScenario(crisis);
+      await injectScenario(crisis, { station_id: station });
     } catch {}
 
     // Simulated autonomous multi-agent recovery resolution in 1.2s
@@ -145,58 +149,26 @@ export function App() {
           )}
 
           {activeView === 'stations' && (
-            <UnderMaintenanceView
-              viewId="STATION-FLEET"
-              title="Polar Station Fleet Management"
-              description="Dedicated multi-station telemetry explorer, satellite radar GIS overlays, and cross-station fuel logistics balancing between Bharati (Larsemann Hills) and Maitri (Schirmacher Oasis)."
+            <StationFleetView
               activeStation={station}
-              onBackToOverview={() => setActiveView('overview')}
-              onLaunchCockpit={handleLaunchCockpit}
+              onStationChange={setStation}
             />
           )}
 
-          {activeView === 'canvas' && (
-            <UnderMaintenanceView
-              viewId="DIGITAL-TWIN-CANVAS"
-              title="Expanded Digital Twin Synoptic Canvas"
-              description="High-fidelity 3D structural twin with real-time finite element stilt stress vectors, HVAC duct pressure flow, and utilidor heat distribution."
-              activeStation={station}
-              onBackToOverview={() => setActiveView('overview')}
-              onLaunchCockpit={handleLaunchCockpit}
-            />
+          {activeView === 'digital_twin' && (
+            <DigitalTwinView activeStation={station} />
           )}
 
-          {activeView === 'simulator' && (
-            <UnderMaintenanceView
-              viewId="CRISIS-SIMULATOR"
-              title="Autonomous Crisis Simulation Lab"
-              description="Adversarial polar emergency injector with katabatic storm gusts (>140 km/h), generator trip cascades, and automated 10-agent consensus verification."
-              activeStation={station}
-              onBackToOverview={() => setActiveView('overview')}
-              onLaunchCockpit={handleLaunchCockpit}
-            />
+          {activeView === 'agents' && (
+            <AgentsView activeStation={station} />
           )}
 
-          {activeView === 'capabilities' && (
-            <UnderMaintenanceView
-              viewId="CAPABILITIES-ARCHITECTURE"
-              title="10-Agent Cognitive Society Architecture"
-              description="Topological Bayesian causal DAG traversal, Groq LPU sub-400ms inference pipeline, and 4-tier defense safety interlock specifications."
-              activeStation={station}
-              onBackToOverview={() => setActiveView('overview')}
-              onLaunchCockpit={handleLaunchCockpit}
-            />
+          {activeView === 'analytics' && (
+            <AnalyticsView activeStation={station} />
           )}
 
-          {activeView === 'benchmarks' && (
-            <UnderMaintenanceView
-              viewId="MISSION-BENCHMARKS"
-              title="Polar Survivability & Performance Benchmarks"
-              description="Empirical performance logs verifying 1.2s autonomous incident mitigation, 90% satcom delta compression, and 99.98% life-support envelope retention."
-              activeStation={station}
-              onBackToOverview={() => setActiveView('overview')}
-              onLaunchCockpit={handleLaunchCockpit}
-            />
+          {activeView === 'actions' && (
+            <ActionsView activeStation={station} />
           )}
         </main>
 

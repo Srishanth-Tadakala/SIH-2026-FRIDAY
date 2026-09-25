@@ -4,18 +4,17 @@ import {
   LayoutDashboard, 
   Compass, 
   Activity, 
-  Zap, 
-  Layers, 
+  Users, 
   BarChart3, 
-  ArrowUpRight, 
   ShieldCheck, 
+  ArrowUpRight, 
   Menu, 
   X,
   Radio
 } from 'lucide-react';
 import { StationId } from '../types';
 
-export type NavView = 'overview' | 'stations' | 'canvas' | 'simulator' | 'capabilities' | 'benchmarks';
+export type NavView = 'overview' | 'stations' | 'digital_twin' | 'agents' | 'analytics' | 'actions';
 
 interface SidebarNavigationProps {
   activeStation: StationId;
@@ -37,10 +36,10 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   const navItems: Array<{ id: NavView; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'stations', label: 'Station Fleet', icon: Compass },
-    { id: 'canvas', label: 'Digital Twin Canvas', icon: Activity },
-    { id: 'simulator', label: 'Crisis Simulator', icon: Zap },
-    { id: 'capabilities', label: 'Capabilities', icon: Layers },
-    { id: 'benchmarks', label: 'Mission Benchmarks', icon: BarChart3 },
+    { id: 'digital_twin', label: 'Digital Twin', icon: Activity },
+    { id: 'agents', label: 'Agents', icon: Users },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'actions', label: 'Actions', icon: ShieldCheck },
   ];
 
   return (
@@ -48,11 +47,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       {/* Mobile Top Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-[#eaebf0] z-50 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/20">
-            <Cpu className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/20 font-bold text-xs">
+            DT
           </div>
           <div>
-            <span className="font-display font-bold text-base text-[#131b2e] leading-none">F.R.I.D.A.Y.</span>
+            <span className="font-display font-bold text-base text-[#131b2e] leading-none">DTIARS</span>
             <span className="block text-[9px] font-mono text-[#464554]">POLAR DIGITAL TWIN</span>
           </div>
         </div>
@@ -90,15 +89,15 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
               }}
               className="w-full flex items-center gap-3 group text-left"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/25 group-hover:scale-105 transition-transform">
-                <Cpu className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/25 group-hover:scale-105 transition-transform font-bold text-sm">
+                DT
               </div>
               <div className="flex flex-col">
-                <span className="font-display font-extrabold text-xl text-[#131b2e] tracking-tight leading-none">
-                  F.R.I.D.A.Y.
+                <span className="font-display font-black text-2xl text-[#131b2e] tracking-tight leading-none">
+                  DTIARS
                 </span>
-                <span className="text-[10px] font-mono font-semibold text-[#4648d4] tracking-wider mt-1 uppercase">
-                  POLAR DIGITAL TWIN
+                <span className="text-[9px] font-mono font-bold text-[#4648d4] tracking-wide mt-1 uppercase leading-tight line-clamp-1">
+                  INDIAN ANTARCTIC DIGITAL TWIN
                 </span>
               </div>
             </button>
@@ -153,7 +152,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           {/* Navigation Links (Module Tabs) */}
           <nav className="flex flex-col gap-1 text-sm font-medium">
             <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#73738c] mb-1">
-              Modules &amp; Views
+              Navigation Console
             </span>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -179,7 +178,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           </nav>
 
           {/* Live Telemetry Health Mini Capsule */}
-          <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#faf8ff] to-[#f2f3ff] border border-[#eaedff] flex flex-col gap-2">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-[#faf8ff] to-[#f2f3ff] border border-[#eaedff] flex flex-col gap-2">
             <div className="flex items-center justify-between text-[11px] text-[#464554] font-medium">
               <span className="flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-[#006577]" />
@@ -192,7 +191,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
               <span className="font-semibold text-[#4648d4]">10 Agents Active</span>
             </div>
             <div className="flex items-center justify-between text-[11px] text-[#464554] font-medium">
-              <span>Station Frequency</span>
+              <span>Grid Frequency</span>
               <span className="font-mono font-semibold text-[#10b981]">50.00 Hz</span>
             </div>
           </div>
@@ -215,7 +214,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-[#006c49]" />
               NCPOR / MoES
             </span>
-            <span className="font-mono text-[10px]">SIH 2026</span>
+            <span className="font-mono text-[10px]">DTIARS</span>
           </div>
         </div>
       </aside>
