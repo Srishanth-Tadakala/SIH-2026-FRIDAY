@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Luminous Scandi-Tech Core Tokens */
+    --scandi-surface: #faf8ff;
+    --scandi-card: #ffffff;
+    --scandi-border: #eaebf0;
+    --scandi-text: #131b2e;
+    --scandi-muted: #464554;
+
+    --scandi-primary: #4648d4;
+    --scandi-secondary: #10b981;
+    --scandi-tertiary: #006577;
+    --scandi-amber: #f59e0b;
+    --scandi-coral: #f43f5e;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--scandi-surface);
+    color: var(--scandi-text);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+}
+
+/* Minimal Light Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f2f3ff;
+}
+::-webkit-scrollbar-thumb {
+  background: #c7c4d7;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #767586;
+}
+
+/* Scandi Card Elevations */
+.scandi-card {
+  background-color: #ffffff;
+  border: 1px solid #eaebf0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scandi-card:hover {
+  border-color: rgba(70, 72, 212, 0.25);
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+
+/* Tabular Numbers for Jitter-Free Sensor Telemetry */
+.tabular-numbers {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* Polar Ambient Aura */
+.scandi-aura {
+  background: radial-gradient(circle at 50% 20%, rgba(96, 99, 238, 0.12) 0%, rgba(108, 248, 187, 0.08) 45%, transparent 70%);
+}
