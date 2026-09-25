@@ -68,16 +68,9 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#eaebf0]">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#4648d4] mb-1">
-            <Users className="w-3.5 h-3.5" />
-            <span>10-AGENT COGNITIVE SOCIETY</span>
-          </div>
           <h1 className="font-display font-black text-2xl sm:text-3xl text-[#131b2e] tracking-tight">
             Autonomous Multi-Agent Deliberation Bus
           </h1>
-          <p className="text-xs sm:text-sm text-[#464554] mt-0.5">
-            Distributed cognitive agents continuously collaborating over in-memory blackboard bus powered by Groq LPU.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

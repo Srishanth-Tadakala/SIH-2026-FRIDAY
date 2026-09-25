@@ -61,16 +61,9 @@ export const ActionsView: React.FC<ActionsViewProps> = ({ activeStation }) => {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#eaebf0]">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#4648d4] mb-1">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ACTION FLIGHT LEDGER &amp; INTERLOCK GATEWAY</span>
-          </div>
           <h1 className="font-display font-black text-2xl sm:text-3xl text-[#131b2e] tracking-tight">
             Autonomous Actuation Ledger
           </h1>
-          <p className="text-xs sm:text-sm text-[#464554] mt-0.5">
-            Immutable record of all physical commands validated by What-If sandbox and executed by F.R.I.D.A.Y.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
