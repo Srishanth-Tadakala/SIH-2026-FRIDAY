@@ -40,7 +40,7 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
             Indian Antarctic Research Stations
           </h2>
           <p className="text-xs sm:text-sm text-[#464554] mt-0.5">
-            Click any station card below to dynamically switch the live digital twin telemetry context.
+            Select station to inspect live digital twin telemetry.
           </p>
         </div>
 

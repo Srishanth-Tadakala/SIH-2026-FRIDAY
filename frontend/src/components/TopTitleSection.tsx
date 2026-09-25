@@ -15,9 +15,7 @@ export const TopTitleSection: React.FC<TopTitleSectionProps> = ({
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      setPolarTime(
-        now.toUTCString().replace('GMT', 'UTC')
-      );
+      setPolarTime(now.toUTCString().replace('GMT', 'UTC'));
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
@@ -25,76 +23,71 @@ export const TopTitleSection: React.FC<TopTitleSectionProps> = ({
   }, []);
 
   return (
-    <section id="top" className="relative w-full pt-4 pb-8 flex flex-col items-start text-left border-b border-[#eaebf0]/60 mb-8">
-      {/* Ambient Auroral Background Soft Glow */}
-      <div className="absolute -top-12 -left-20 w-[500px] h-[250px] bg-gradient-to-r from-[#e1e0ff] via-[#acedff] to-[#6ffbbe] opacity-35 blur-3xl -z-10 pointer-events-none rounded-full" />
+    <section id="top" className="relative w-full pt-2 pb-6 flex flex-col items-start text-left border-b border-[#eaebf0]/70 mb-7">
+      {/* Ambient Auroral Glow */}
+      <div className="absolute -top-10 -left-16 w-96 h-48 bg-gradient-to-r from-[#e1e0ff] via-[#acedff] to-[#6ffbbe] opacity-30 blur-3xl -z-10 pointer-events-none rounded-full" />
 
       {/* Top Meta Bar: SIH Badge + Polar Clock + Satcom Status */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-4">
-        {/* SIH Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f2f3ff] border border-[#eaedff] text-xs font-semibold text-[#4648d4] shadow-xs">
+      <div className="w-full flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f2f3ff] border border-[#eaedff] text-[11px] font-semibold text-[#4648d4]">
           <Sparkles className="w-3.5 h-3.5 text-[#4648d4]" />
-          <span>SIH 2026 • PROBLEM SIH26060 — NCPOR / MoES GOVT OF INDIA</span>
+          <span>SIH 2026 • SIH26060 — NCPOR / MoES</span>
         </div>
 
-        {/* Live Polar Clock & Satcom Pill */}
         <div className="flex items-center gap-2 text-xs text-[#464554]">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#eaebf0] font-mono text-[11px] shadow-xs">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#eaebf0] font-mono text-[11px]">
             <Clock className="w-3.5 h-3.5 text-[#006577]" />
-            <span>{polarTime || 'POLAR UTC CLOCK'}</span>
+            <span>{polarTime || 'POLAR UTC'}</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ecfdf5] border border-[#a7f3d0] text-[#006c49] font-medium text-[11px]">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ecfdf5] border border-[#a7f3d0] text-[#006c49] font-medium text-[11px]">
             <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-            <span>Satcom Synchronized</span>
+            <span>Satcom Active</span>
           </div>
         </div>
       </div>
 
-      {/* Clean Display Headline (Plus Jakarta Sans) */}
-      <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[46px] leading-[1.14] text-[#131b2e] tracking-tight max-w-4xl">
-        Autonomous Polar Digital Twin &amp;{' '}
-        <span className="text-[#4648d4] underline decoration-[#6cf8bb] decoration-4 underline-offset-4">
-          Multi-Agent
-        </span>{' '}
-        Cognitive Governor
+      {/* Minimal Bold Display Headline */}
+      <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[42px] leading-[1.12] text-[#131b2e] tracking-tight">
+        Autonomous Polar Digital Twin
+        <span className="block text-[#4648d4] text-xl sm:text-2xl font-bold mt-1">
+          Cognitive Operations Governor
+        </span>
       </h1>
 
-      {/* Clean Subheadline (Inter) */}
-      <p className="font-sans text-base sm:text-lg text-[#464554] max-w-3xl mt-3.5 leading-relaxed">
-        Eliminate remote crisis latency. An autonomous multi-agent society governing 505 physics sensors across Bharati and Maitri stations—stabilizing microgrids, preventing utilidor freeze, and actuating mitigations in sub-second timeframes.
+      {/* Minimal Crisp Subheadline */}
+      <p className="font-sans text-sm sm:text-base text-[#464554] mt-2 max-w-2xl leading-normal">
+        Sub-second microgrid stabilization, predictive freeze prevention, and life-critical physics across 505 synchronized sensors for Indian Antarctic stations.
       </p>
 
-      {/* Quick CTAs and Micro-Trust Badges Row */}
-      <div className="w-full mt-6 flex flex-wrap items-center justify-between gap-4">
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Action Buttons & Micro-Trust Badges */}
+      <div className="w-full mt-5 flex flex-wrap items-center justify-between gap-3.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={onLaunchCockpit}
-            className="h-11 px-6 rounded-xl bg-[#4648d4] text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-[#4648d4]/20 hover:bg-[#6063ee] transition-all active:scale-[0.98]"
+            className="h-10 px-5 rounded-xl bg-[#4648d4] text-white text-xs font-semibold flex items-center gap-2 shadow-sm shadow-[#4648d4]/20 hover:bg-[#6063ee] transition-all active:scale-[0.98]"
           >
             <span>Launch Mission Cockpit</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={onTriggerDemo}
-            className="h-11 px-5 rounded-xl bg-white hover:bg-[#f2f3ff] text-[#131b2e] text-xs font-semibold flex items-center gap-2 border border-[#eaebf0] shadow-xs transition-colors"
+            className="h-10 px-4 rounded-xl bg-white hover:bg-[#f2f3ff] text-[#131b2e] text-xs font-semibold flex items-center gap-2 border border-[#eaebf0] shadow-2xs transition-colors"
           >
-            <Play className="w-3.5 h-3.5 text-[#4648d4] fill-[#4648d4]" />
-            <span>Interactive Crisis Demo (60s)</span>
+            <Play className="w-3 h-3 text-[#4648d4] fill-[#4648d4]" />
+            <span>Crisis Simulator</span>
           </button>
         </div>
 
-        {/* Micro-Trust Pills */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[#73738c] font-medium">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#73738c] font-medium">
           <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#eaebf0]">
             <CheckCircle2 className="w-3.5 h-3.5 text-[#006c49]" />
             NCPOR Goa
           </span>
           <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#eaebf0]">
             <Shield className="w-3.5 h-3.5 text-[#4648d4]" />
-            3-Tier Safety Interlocks
+            3-Tier Interlocks
           </span>
           <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#eaebf0]">
             <Radio className="w-3.5 h-3.5 text-[#006577]" />
