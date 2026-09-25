@@ -1,5 +1,6 @@
 import { 
   StationId, 
+  StationInfo,
   StationSnapshot, 
   ActuationRecord, 
   DynamicAgentCall, 
@@ -7,6 +8,12 @@ import {
 } from './types';
 
 const API_BASE = '/api';
+
+export async function fetchStations(): Promise<StationInfo[]> {
+  const res = await fetch(`${API_BASE}/stations`);
+  if (!res.ok) throw new Error(`Stations list failed: ${res.statusText}`);
+  return res.json();
+}
 
 export async function fetchStationSnapshot(stationId: StationId = 'bharati'): Promise<StationSnapshot> {
   const res = await fetch(`${API_BASE}/stations/${stationId}/snapshot`);

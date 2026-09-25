@@ -2,6 +2,43 @@
 
 export type StationId = 'bharati' | 'maitri';
 
+export interface StationCoordinates {
+  latitude: number;
+  longitude: number;
+  latitude_dms: string;
+  longitude_dms: string;
+  elevation_m: number;
+}
+
+export interface StationInfo {
+  station_id: StationId;
+  station_name: string;
+  location: string;
+  coordinates: StationCoordinates;
+  sensor_count: number;
+  active_scenario: string;
+  sim_time_seconds: number;
+  timestamp_iso: string;
+  kpis: {
+    total_generation_kw: number;
+    running_chp_count: number;
+    station_electrical_load_kw: number;
+    station_heating_demand_kw: number;
+    indoor_avg_temp_c: number;
+    ambient_temp_c: number;
+    wind_speed_mps: number;
+    total_fuel_reserve_l: number;
+    fuel_autonomy_days: number;
+    water_autonomy_days: number;
+    potable_tank_level_pct: number;
+    fleet_availability_pct: number;
+    ground_route_accessibility_pct: number;
+    composite_risk_score: number;
+  };
+  active_alert_count: number;
+  is_active_context: boolean;
+}
+
 export interface StationKPIs {
   sim_time_seconds: number;
   total_generation_kw: number;
