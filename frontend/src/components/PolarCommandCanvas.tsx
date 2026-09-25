@@ -79,16 +79,13 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#006577]" />
                 <h3 className="font-display font-bold text-sm text-[#131b2e]">
-                  Microgrid & Power Matrix
+                  Microgrid &amp; Power Matrix
                 </h3>
               </div>
               <span className="text-[11px] font-semibold text-[#006577] bg-[#acedff]/60 px-2 py-0.5 rounded-full">
                 400V 50Hz Bus
               </span>
             </div>
-            <p className="text-xs text-[#464554] mb-4">
-              Real-time generation and load balance across energy assets.
-            </p>
 
             {/* Row 1: Generator CHP-01 */}
             <div className={`p-3 mb-2.5 rounded-lg bg-white shadow-sm border transition-all ${
@@ -101,7 +98,6 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[#131b2e] leading-tight">CHP-01 (Diesel)</p>
-                    <p className="text-[10px] text-[#464554]">Baseload Microgrid</p>
                   </div>
                 </div>
                 <span className={`text-xs font-mono font-bold ${isChp1Tripped ? 'text-[#ba1a1a]' : 'text-[#4648d4]'}`}>
@@ -124,7 +120,6 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[#131b2e] leading-tight">CHP-02 (Standby)</p>
-                    <p className="text-[10px] text-[#464554]">Auto-Transfer Armed</p>
                   </div>
                 </div>
                 <span className={`text-xs font-mono font-bold ${
@@ -149,7 +144,6 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[#131b2e] leading-tight">Bifacial Solar Array</p>
-                    <p className="text-[10px] text-[#464554]">Polar Latitude 65°</p>
                   </div>
                 </div>
                 <span className="text-xs font-mono font-bold text-[#4648d4]">12.4 kW</span>
@@ -168,7 +162,6 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[#131b2e] leading-tight">BESS Lithium Bank</p>
-                    <p className="text-[10px] text-[#464554]">100 kWh Peak Reserve</p>
                   </div>
                 </div>
                 <span className="text-xs font-mono font-bold text-[#006c49]">92% SOC</span>
@@ -183,10 +176,7 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
           <div className="mt-4 p-3 rounded-lg bg-[#eaedff] flex items-center justify-between border border-[#c7c4d7]/40">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-[#006577]" />
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">Reserve Margin: +16.6 kW</p>
-                <p className="text-[10px] text-[#464554]">50.00 Hz Microgrid Frequency Nominal</p>
-              </div>
+              <p className="text-xs font-bold text-[#131b2e]">Reserve Margin: +16.6 kW</p>
             </div>
             <span className="px-2 py-0.5 rounded bg-[#6cf8bb] text-[#002113] text-[10px] font-bold">
               Optimal
