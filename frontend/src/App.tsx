@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StationId, StationSnapshot } from './types';
-import { fetchStationSnapshot, injectScenario, clearScenario } from './api';
-import { NavigationHeader } from './components/NavigationHeader';
-import { HeroSection } from './components/HeroSection';
+import { StationId, StationInfo, StationSnapshot } from './types';
+import { fetchStationSnapshot, fetchStations, injectScenario, clearScenario } from './api';
+import { SidebarNavigation } from './components/SidebarNavigation';
+import { TopTitleSection } from './components/TopTitleSection';
+import { StationCardsSection } from './components/StationCardsSection';
 import { PolarCommandCanvas } from './components/PolarCommandCanvas';
 import { InteractiveCrisisBar } from './components/InteractiveCrisisBar';
 import { PartnerCloud } from './components/PartnerCloud';
@@ -14,25 +15,30 @@ import { Footer } from './components/Footer';
 export function App() {
   const [station, setStation] = useState<StationId>('bharati');
   const [snapshot, setSnapshot] = useState<StationSnapshot | null>(null);
+  const [stationsList, setStationsList] = useState<StationInfo[] | null>(null);
   const [activeCrisis, setActiveCrisis] = useState<string | null>(null);
   const [isResolved, setIsResolved] = useState<boolean>(false);
 
-  // Poll Backend Snapshot
+  // Poll Backend Snapshot & Station List
   useEffect(() => {
     let isMounted = true;
-    const loadSnapshot = async () => {
+    const loadData = async () => {
       try {
-        const snap = await fetchStationSnapshot(station);
-        if (isMounted && snap) {
-          setSnapshot(snap);
+        const [snap, stations] = await Promise.all([
+          fetchStationSnapshot(station),
+          fetchStations()
+        ]);
+        if (isMounted) {
+          if (snap) setSnapshot(snap);
+          if (stations) setStationsList(stations);
         }
       } catch {
         // Fallback default snapshot if offline
       }
     };
 
-    loadSnapshot();
-    const interval = setInterval(loadSnapshot, 2500);
+    loadData();
+    const interval = setInterval(loadData, 2500);
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -67,57 +73,66 @@ export function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#faf8ff] text-[#131b2e] antialiased selection:bg-[#4648d4]/15 selection:text-[#4648d4]">
-      {/* Navigation Header */}
-      <NavigationHeader
+    <div className="flex min-h-screen bg-[#faf8ff] text-[#131b2e] antialiased selection:bg-[#4648d4]/15 selection:text-[#4648d4]">
+      {/* 1. Left Sidebar Navigation */}
+      <SidebarNavigation
         activeStation={station}
         onStationChange={setStation}
         onLaunchCockpit={handleLaunchCockpit}
       />
 
-      {/* Main Homepage Flow */}
-      <main className="w-full pt-16 scandi-aura">
-        {/* 1. Hero Section */}
-        <HeroSection
-          onTriggerDemo={() => {
-            const el = document.getElementById('simulator');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-          onLaunchCockpit={handleLaunchCockpit}
-        />
+      {/* 2. Main Clean Content Area */}
+      <div className="flex-1 md:ml-64 lg:ml-72 min-h-screen flex flex-col justify-between overflow-x-hidden pt-16 md:pt-0">
+        <main className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 scandi-aura">
+          {/* A. Clean Top Title Section */}
+          <TopTitleSection
+            onTriggerDemo={() => {
+              const el = document.getElementById('simulator');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            onLaunchCockpit={handleLaunchCockpit}
+          />
 
-        {/* 2. Central Product Showcase Canvas */}
-        <div className="px-4 sm:px-6">
-          <PolarCommandCanvas
-            kpis={snapshot?.kpis || null}
+          {/* B. 2 Interactive Station Cards (Bharati & Maitri) */}
+          <StationCardsSection
+            activeStation={station}
+            onStationChange={setStation}
+            stationsData={stationsList}
+          />
+
+          {/* C. Central Product Showcase Canvas */}
+          <div id="canvas" className="mb-10">
+            <PolarCommandCanvas
+              kpis={snapshot?.kpis || null}
+              activeCrisis={activeCrisis}
+              isResolved={isResolved}
+            />
+          </div>
+
+          {/* D. Interactive Tactile Crisis Bar */}
+          <InteractiveCrisisBar
+            onInject={handleInjectCrisis}
+            onReset={handleReset}
             activeCrisis={activeCrisis}
             isResolved={isResolved}
           />
-        </div>
 
-        {/* 3. Interactive Tactile Crisis Bar */}
-        <InteractiveCrisisBar
-          onInject={handleInjectCrisis}
-          onReset={handleReset}
-          activeCrisis={activeCrisis}
-          isResolved={isResolved}
-        />
+          {/* E. Scientific Partner Cloud */}
+          <PartnerCloud />
 
-        {/* 4. Scientific Partner & Institution Cloud */}
-        <PartnerCloud />
+          {/* F. 4 Core Capabilities Bento Grid */}
+          <BentoCapabilities />
 
-        {/* 5. 4 Core Capabilities Bento Grid */}
-        <BentoCapabilities />
+          {/* G. Live Metric ROI Cards */}
+          <MetricRoiCards />
 
-        {/* 6. Live Metric ROI Cards */}
-        <MetricRoiCards />
+          {/* H. Bottom Radiant CTA Banner */}
+          <HeroCtaBanner onLaunchCockpit={handleLaunchCockpit} />
+        </main>
 
-        {/* 7. Bottom Radiant CTA Banner */}
-        <HeroCtaBanner onLaunchCockpit={handleLaunchCockpit} />
-      </main>
-
-      {/* Footer */}
-      <Footer />
+        {/* Footer */}
+        <Footer />
+      </div>
     </div>
   );
 }
