@@ -32,16 +32,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-[#4648d4] mb-1">
-            <Compass className="w-3.5 h-3.5" />
-            <span>Dual Outpost Architecture</span>
-          </div>
           <h2 className="font-display font-bold text-2xl text-[#131b2e] tracking-tight">
             Indian Antarctic Research Stations
           </h2>
-          <p className="text-xs sm:text-sm text-[#464554] mt-0.5">
-            Select station to inspect live digital twin telemetry.
-          </p>
         </div>
 
         <div className="text-xs text-[#73738c] font-mono">
@@ -108,7 +101,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {bharatiData?.kpis?.station_electrical_load_kw?.toFixed(1) || '148.2'} kW
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">50.00 Hz Nominal</span>
             </div>
 
             {/* Indoor Temperature */}
@@ -120,7 +112,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 +{bharatiData?.kpis?.indoor_avg_temp_c?.toFixed(1) || '20.2'}°C
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">Safe Margin</span>
             </div>
 
             {/* Ambient Climate */}
@@ -132,9 +123,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {bharatiData?.kpis?.wind_speed_mps?.toFixed(1) || '12.0'} m/s
               </div>
-              <span className="text-[10px] text-[#464554]">
-                Ambient {bharatiData?.kpis?.ambient_temp_c?.toFixed(0) || '-18'}°C
-              </span>
             </div>
 
             {/* Bulk Fuel Autonomy */}
@@ -146,7 +134,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {bharatiData?.kpis?.fuel_autonomy_days?.toFixed(0) || '261'} Days
               </div>
-              <span className="text-[10px] text-[#464554]">275,847 L Bulk</span>
             </div>
 
             {/* Potable Water Tank */}
@@ -158,7 +145,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {bharatiData?.kpis?.potable_tank_level_pct?.toFixed(0) || '82'}% Level
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">Trace Heat Active</span>
             </div>
 
             {/* Sensor Channels */}
@@ -170,15 +156,11 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {bharatiData?.sensor_count || 505} Points
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">100% Online</span>
             </div>
           </div>
 
           {/* Action Row */}
-          <div className="pt-3 border-t border-[#eaebf0] flex items-center justify-between text-xs">
-            <span className="text-[#73738c]">
-              Aerodynamic Stilt Architecture • Commissioned 2012
-            </span>
+          <div className="pt-3 border-t border-[#eaebf0] flex items-center justify-end text-xs">
             <div className="flex items-center gap-1 font-semibold text-[#4648d4]">
               {activeStation === 'bharati' ? (
                 <>
@@ -249,7 +231,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {maitriData?.kpis?.station_electrical_load_kw?.toFixed(1) || '148.0'} kW
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">50.00 Hz Nominal</span>
             </div>
 
             {/* Indoor Temperature */}
@@ -261,7 +242,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 +{maitriData?.kpis?.indoor_avg_temp_c?.toFixed(1) || '20.2'}°C
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">Safe Margin</span>
             </div>
 
             {/* Ambient Climate */}
@@ -273,9 +253,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {maitriData?.kpis?.wind_speed_mps?.toFixed(1) || '12.0'} m/s
               </div>
-              <span className="text-[10px] text-[#464554]">
-                Ambient {maitriData?.kpis?.ambient_temp_c?.toFixed(0) || '-18'}°C
-              </span>
             </div>
 
             {/* Bulk Fuel Autonomy */}
@@ -287,7 +264,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {maitriData?.kpis?.fuel_autonomy_days?.toFixed(0) || '262'} Days
               </div>
-              <span className="text-[10px] text-[#464554]">275,850 L Bulk</span>
             </div>
 
             {/* Potable Water Tank */}
@@ -299,7 +275,6 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {maitriData?.kpis?.potable_tank_level_pct?.toFixed(0) || '82'}% Level
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">Priyadarshini Lake</span>
             </div>
 
             {/* Sensor Channels */}
@@ -311,15 +286,11 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
               <div className="font-mono font-bold text-base text-[#131b2e]">
                 {maitriData?.sensor_count || 505} Points
               </div>
-              <span className="text-[10px] text-[#006c49] font-medium">100% Online</span>
             </div>
           </div>
 
           {/* Action Row */}
-          <div className="pt-3 border-t border-[#eaebf0] flex items-center justify-between text-xs">
-            <span className="text-[#73738c]">
-              Inland Oasis Habitat • Commissioned 1989
-            </span>
+          <div className="pt-3 border-t border-[#eaebf0] flex items-center justify-end text-xs">
             <div className="flex items-center gap-1 font-semibold text-[#4648d4]">
               {activeStation === 'maitri' ? (
                 <>
