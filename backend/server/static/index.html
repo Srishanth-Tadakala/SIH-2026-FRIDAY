@@ -693,6 +693,154 @@
       min-height: 44px;
     }
 
+    /* Live Actuation Floating HUD Toast */
+    #actuation-hud-toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 1000;
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+      border: 1px solid var(--emerald);
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.6), inset 0 0 12px rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #actuation-hud-toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast-icon-pulse {
+      font-size: 20px;
+      animation: pulse-glow 1.5s infinite alternate;
+    }
+    @keyframes pulse-glow {
+      0% { transform: scale(1); filter: drop-shadow(0 0 4px var(--emerald)); }
+      100% { transform: scale(1.15); filter: drop-shadow(0 0 14px #34d399); }
+    }
+    .toast-title {
+      font-family: var(--font-hud);
+      font-size: 12px;
+      font-weight: 700;
+      color: #34d399;
+      letter-spacing: 0.5px;
+    }
+    .toast-details {
+      font-size: 11px;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* Actuation Black Box Flight Ledger Table */
+    .ledger-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      background: rgba(10, 16, 30, 0.7);
+    }
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      text-align: left;
+    }
+    .ledger-table th {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--cyan);
+      font-family: var(--font-hud);
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+    .ledger-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      vertical-align: top;
+    }
+    .ledger-table tr:hover td {
+      background: rgba(56, 189, 248, 0.05);
+    }
+    .override-pill {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      margin: 1px 2px;
+    }
+    .tier-badge {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-hud);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .tier-1 { background: rgba(16, 185, 129, 0.2); color: var(--emerald); border: 1px solid var(--emerald); }
+    .tier-2 { background: rgba(245, 158, 11, 0.2); color: var(--amber); border: 1px solid var(--amber); }
+    .tier-3 { background: rgba(239, 68, 68, 0.2); color: var(--crimson); border: 1px solid var(--crimson); }
+    .tier-manual { background: rgba(168, 85, 247, 0.2); color: var(--purple); border: 1px solid var(--purple); }
+
+    /* Inter-Agent Dynamic Calls Stream */
+    .calls-stream-box {
+      max-height: 480px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dynamic-call-card {
+      background: rgba(15, 23, 42, 0.85);
+      border-left: 3px solid var(--cyan);
+      border-radius: 4px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background 0.2s;
+    }
+    .dynamic-call-card:hover {
+      background: rgba(22, 33, 58, 0.95);
+    }
+    .call-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+    .call-route {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .call-arrow {
+      color: var(--cyan);
+      font-weight: 800;
+    }
+    .call-summary-txt {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
     /* F.R.I.D.A.Y. Cognitive Neural Society & Deliberation Visualizer */
     .neural-canvas-container {
       position: relative;
@@ -870,6 +1018,16 @@
 </head>
 <body>
 
+  <!-- Live Actuation HUD Floating Toast -->
+  <div id="actuation-hud-toast">
+    <div class="toast-icon-pulse">⚡</div>
+    <div>
+      <div class="toast-title" id="toast-title">PHYSICAL ACTUATION EXECUTED ON DIGITAL TWIN</div>
+      <div class="toast-details" id="toast-details">Digital twin registers updated. Microgrid balance and life-support secured.</div>
+    </div>
+    <button class="btn btn-sm" onclick="openActuationLedgerModal()" style="background:rgba(16,185,129,0.3); border:1px solid var(--emerald); color:#fff; font-size:10px; padding:4px 8px; cursor:pointer;">Flight Ledger</button>
+  </div>
+
   <!-- Top Tactical Command Navigation -->
   <header>
     <div class="brand-section">
@@ -1021,6 +1179,17 @@
       </button>
       <button class="btn btn-primary" onclick="openCopilotModal()" style="border-color:var(--cyan); background:rgba(0,240,255,0.18); color:var(--cyan); font-weight:700;" title="Direct real-time consultation with Chief AI Orchestrator (Groq LPU)">
         🧠 Ask F.R.I.D.A.Y.
+      </button>
+    </div>
+
+    <!-- Actuation Flight Recorder & Dynamic Multi-Agent Call Deck -->
+    <div class="deck-group">
+      <span class="deck-label" style="color:var(--emerald);">Autonomous Actuation:</span>
+      <button class="btn btn-demo" id="btn-open-actuation-ledger" onclick="openActuationLedgerModal()" style="border-color:var(--emerald); background:rgba(16,185,129,0.18); color:var(--emerald); font-weight:700;" title="Inspect tamper-evident flight recorder of digital twin physical actuations & adjustments">
+        ⚡ Actuation Ledger (<span id="ledger-badge-count">0</span>)
+      </button>
+      <button class="btn btn-demo" id="btn-open-dynamic-calls" onclick="openDynamicCallsModal()" style="border-color:var(--cyan); background:rgba(0,240,255,0.14); color:var(--cyan); font-weight:600;" title="Inspect live inter-agent dynamic calls, queries, and multi-agent message routing">
+        📡 Inter-Agent Calls (<span id="dynamic-calls-count">0</span>)
       </button>
     </div>
   </div>
@@ -1717,6 +1886,90 @@
     </div>
   </div>
 
+  <!-- Digital Twin Actuation & Physical Adjustment Black Box Ledger Modal -->
+  <div class="modal-overlay" id="modal-actuation-ledger">
+    <div class="modal-hud-window" style="max-width:980px; width:95%; max-height:92vh;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">⚡</span>
+          <div>
+            <div style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:#34d399;">DIGITAL TWIN PHYSICAL ACTUATION & ADJUSTMENT FLIGHT RECORDER</div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">Tamper-Evident Black Box Log of Multi-Agent Consensus Overrides Executed Directly on Station Physics</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn btn-sm" onclick="fetchActuationHistory()" style="font-size:10px; padding:3px 8px;">Refresh</button>
+          <button onclick="closeActuationLedgerModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+      </div>
+      <div class="modal-hud-body" style="padding:14px; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-causal-filter active" id="act-tab-ALL" onclick="filterActuationTier('ALL')">All Actions</button>
+            <button class="btn btn-causal-filter" id="act-tab-TIER_1_AUTONOMOUS" onclick="filterActuationTier('TIER_1_AUTONOMOUS')">Tier 1 Autonomous</button>
+            <button class="btn btn-causal-filter" id="act-tab-TIER_2_SUPERVISED" onclick="filterActuationTier('TIER_2_SUPERVISED')">Tier 2 Supervised</button>
+            <button class="btn btn-causal-filter" id="act-tab-TIER_3_COMMANDER_CONFIRMATION" onclick="filterActuationTier('TIER_3_COMMANDER_CONFIRMATION')">Tier 3 Commander PIN</button>
+            <button class="btn btn-causal-filter" id="act-tab-MANUAL_COMMANDER_OVERRIDE" onclick="filterActuationTier('MANUAL_COMMANDER_OVERRIDE')">Manual Overrides</button>
+          </div>
+          <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-dim);">
+            Total Physical Actions Recorded: <span id="ledger-total-count" style="color:var(--cyan); font-weight:700;">0</span>
+          </div>
+        </div>
+
+        <div class="ledger-table-wrap" style="max-height:460px; overflow-y:auto;">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Sim Time / UTC</th>
+                <th style="width:160px;">Action Plan & Title</th>
+                <th style="width:130px;">Autonomy Tier</th>
+                <th style="width:200px;">Dynamic Agent Consensus Chain</th>
+                <th>Physical Parameter Overrides Applied</th>
+                <th style="width:140px;">Twin Verification</th>
+                <th style="width:100px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-tbody">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim); font-style:italic;">No physical adjustments recorded yet. Inject a demo scenario to see live actuations.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Agent Dynamic Call Graph & Dialogue Stream Modal -->
+  <div class="modal-overlay" id="modal-dynamic-calls">
+    <div class="modal-hud-window" style="max-width:920px; width:95%; max-height:92vh;">
+      <div class="modal-hud-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">📡</span>
+          <div>
+            <div style="font-family:var(--font-hud); font-size:13px; font-weight:700; color:var(--cyan);">MULTI-AGENT DYNAMIC CALL GRAPH & DIALOGUE STREAM</div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">Live Event-Driven Message Bus Traffic: Inter-Agent Delegation, Queries, and Sandbox Arbitration</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn btn-sm" onclick="fetchDynamicCalls()" style="font-size:10px; padding:3px 8px;">Refresh</button>
+          <button onclick="closeDynamicCallsModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+      </div>
+      <div class="modal-hud-body" style="padding:14px; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted);">
+            Active Society Bus Messages: <span id="dynamic-calls-total" style="color:var(--cyan); font-weight:700;">0</span>
+          </div>
+          <div style="font-size:10px; color:var(--text-dim); font-family:var(--font-mono);">
+            Protocol: In-Memory High-Speed Publish/Subscribe Bus (0.1ms Latency)
+          </div>
+        </div>
+        <div class="calls-stream-box" id="dynamic-calls-stream">
+          <div style="text-align:center; padding:20px; color:var(--text-dim); font-style:italic;">Loading dynamic agent calls...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript Application Logic -->
   <script>
     let activeStation = 'bharati';
@@ -1726,6 +1979,10 @@
     let cachedCognitiveLogs = [];
     let cachedAgentsData = null;
     let cachedCausalGraph = null;
+    let cachedActuations = [];
+    let cachedDynamicCalls = [];
+    let activeActuationTier = 'ALL';
+    let lastSeenActuationId = null;
     let activeCognitiveCategory = 'ALL';
     let currentPillar = 'ALL';
     let currentDbTab = 'topo';
@@ -1754,6 +2011,8 @@
       fetchCognitiveLogs();
       fetchAgentStatus();
       fetchDatabaseStatus();
+      fetchActuationHistory();
+      fetchDynamicCalls();
 
       // 3. High-frequency digital twin telemetry refresh loop
       setInterval(() => {
@@ -1761,6 +2020,8 @@
         fetchCognitiveLogs();
         fetchAgentStatus();
         fetchDatabaseStatus();
+        fetchActuationHistory();
+        fetchDynamicCalls();
         updateSyncTimeIndicator();
       }, 1500);
 
@@ -2567,6 +2828,209 @@
 
     function closeBriefingCardModal() {
       document.getElementById('modal-briefing-card').classList.remove('open');
+    }
+
+    // =========================================================================
+    // Digital Twin Actuation & Physical Adjustment Black Box Ledger
+    // =========================================================================
+
+    function openActuationLedgerModal() {
+      document.getElementById('modal-actuation-ledger').classList.add('open');
+      fetchActuationHistory();
+    }
+
+    function closeActuationLedgerModal() {
+      document.getElementById('modal-actuation-ledger').classList.remove('open');
+    }
+
+    function filterActuationTier(tier) {
+      activeActuationTier = tier;
+      document.querySelectorAll('#modal-actuation-ledger .btn-causal-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.id === `act-tab-${tier}`);
+      });
+      renderActuationLedger();
+    }
+
+    async function fetchActuationHistory() {
+      try {
+        const res = await fetch(`/api/actions/history?station_id=${activeStation}&limit=50`);
+        if (!res.ok) return;
+        cachedActuations = await res.json();
+        
+        // Update badge counters
+        const total = cachedActuations.length;
+        const badgeElem = document.getElementById('ledger-badge-count');
+        const totalElem = document.getElementById('ledger-total-count');
+        if (badgeElem) badgeElem.innerText = total;
+        if (totalElem) totalElem.innerText = total;
+
+        // Check if there is a newly executed actuation to trigger HUD toast
+        if (total > 0) {
+          const latest = cachedActuations[total - 1];
+          if (latest.action_id !== lastSeenActuationId) {
+            if (lastSeenActuationId !== null) {
+              showActuationToast(latest);
+            }
+            lastSeenActuationId = latest.action_id;
+          }
+        }
+
+        renderActuationLedger();
+      } catch (err) {
+        console.warn('Error fetching actuation history:', err);
+      }
+    }
+
+    function renderActuationLedger() {
+      const tbody = document.getElementById('ledger-table-tbody');
+      if (!tbody) return;
+
+      const filtered = cachedActuations.filter(a => {
+        if (activeActuationTier === 'ALL') return true;
+        return a.autonomy_tier === activeActuationTier;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-dim); font-style:italic;">No physical adjustments recorded in this category yet. Click a demo scenario above to trigger an autonomous action.</td></tr>';
+        return;
+      }
+
+      // Render most recent first
+      tbody.innerHTML = [...filtered].reverse().map(a => {
+        const simTimeStr = a.sim_time_seconds !== undefined ? `T+${Math.round(a.sim_time_seconds)}s` : '';
+        const clockTime = a.timestamp_iso ? new Date(a.timestamp_iso).toLocaleTimeString() : '';
+        
+        // Tier badge style
+        let tierClass = 'tier-1';
+        let tierLabel = a.autonomy_tier || 'TIER 1 AUTONOMOUS';
+        if (tierLabel.includes('TIER_2')) { tierClass = 'tier-2'; tierLabel = 'TIER 2 SUPERVISED'; }
+        else if (tierLabel.includes('TIER_3')) { tierClass = 'tier-3'; tierLabel = 'TIER 3 COMMANDER GATED'; }
+        else if (tierLabel.includes('MANUAL')) { tierClass = 'tier-manual'; tierLabel = 'COMMANDER OVERRIDE'; }
+        else { tierClass = 'tier-1'; tierLabel = 'TIER 1 AUTONOMOUS'; }
+
+        // Dynamic chain pills
+        const chainHtml = (a.dynamic_agent_chain || []).map(node => 
+          `<span style="background:rgba(56,189,248,0.12); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:3px; padding:1px 4px; font-size:9px; font-family:var(--font-mono); margin:1px;">${node}</span>`
+        ).join(' <span style="color:var(--text-dim); font-size:10px;">➔</span> ');
+
+        // Overrides pills
+        const overridesHtml = (a.applied_overrides || []).map(ov => 
+          `<span class="override-pill">${ov.path || ov.pillar || 'param'}: <strong>${ov.value !== undefined ? ov.value : 'SET'}</strong></span>`
+        ).join('') || '<span style="color:var(--text-dim); font-style:italic;">Direct Physics Mutated</span>';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:700; color:var(--cyan); font-family:var(--font-mono);">${simTimeStr}</div>
+              <div style="font-size:10px; color:var(--text-dim);">${clockTime}</div>
+            </td>
+            <td>
+              <div style="font-weight:600; color:#fff;">${a.title || 'Mitigation Plan'}</div>
+              <div style="font-size:10px; color:var(--text-dim); font-family:var(--font-mono);">ID: ${a.action_id || ''}</div>
+            </td>
+            <td>
+              <span class="tier-badge ${tierClass}">${tierLabel}</span>
+            </td>
+            <td>
+              <div style="line-height:1.6;">${chainHtml}</div>
+            </td>
+            <td>
+              <div style="display:flex; flex-wrap:wrap; gap:3px;">${overridesHtml}</div>
+            </td>
+            <td>
+              <div style="font-size:10px; color:#a7f3d0; line-height:1.3;">
+                ${a.physical_verification || 'Verified Safe'}
+              </div>
+            </td>
+            <td>
+              <span style="display:inline-block; background:rgba(16,185,129,0.2); border:1px solid var(--emerald); color:var(--emerald); border-radius:3px; padding:2px 6px; font-size:9px; font-weight:700; font-family:var(--font-hud);">
+                EXECUTED
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    let toastTimeout = null;
+    function showActuationToast(action) {
+      const toast = document.getElementById('actuation-hud-toast');
+      const titleElem = document.getElementById('toast-title');
+      const detailsElem = document.getElementById('toast-details');
+      if (!toast || !titleElem || !detailsElem) return;
+
+      titleElem.innerText = `PHYSICAL ACTUATION: ${action.title || 'Digital Twin Overrides'}`;
+      const ovCount = (action.applied_overrides || []).length;
+      detailsElem.innerText = `Autonomy: ${action.autonomy_tier || 'TIER 1'} • Overrides applied: ${ovCount} parameters • Life-support stabilized.`;
+
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 6000);
+    }
+
+    // =========================================================================
+    // Multi-Agent Dynamic Call Graph & Dialogue Stream
+    // =========================================================================
+
+    function openDynamicCallsModal() {
+      document.getElementById('modal-dynamic-calls').classList.add('open');
+      fetchDynamicCalls();
+    }
+
+    function closeDynamicCallsModal() {
+      document.getElementById('modal-dynamic-calls').classList.remove('open');
+    }
+
+    async function fetchDynamicCalls() {
+      try {
+        const res = await fetch('/api/agents/dynamic_calls?limit=50');
+        if (!res.ok) return;
+        cachedDynamicCalls = await res.json();
+
+        const badgeElem = document.getElementById('dynamic-calls-count');
+        const totalElem = document.getElementById('dynamic-calls-total');
+        if (badgeElem) badgeElem.innerText = cachedDynamicCalls.length;
+        if (totalElem) totalElem.innerText = cachedDynamicCalls.length;
+
+        renderDynamicCalls();
+      } catch (err) {
+        console.warn('Error fetching dynamic agent calls:', err);
+      }
+    }
+
+    function renderDynamicCalls() {
+      const container = document.getElementById('dynamic-calls-stream');
+      if (!container) return;
+
+      if (!cachedDynamicCalls || cachedDynamicCalls.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-dim); font-style:italic;">No inter-agent messages routed yet. Agents will dynamically communicate as soon as an anomaly or step occurs.</div>';
+        return;
+      }
+
+      // Render recent calls first
+      container.innerHTML = [...cachedDynamicCalls].reverse().map(call => {
+        const timeStr = call.timestamp ? new Date(call.timestamp * 1000).toLocaleTimeString() : '';
+        const sevColor = (call.severity === 'CRITICAL' || call.severity === 'EMERGENCY') ? 'var(--crimson)' : (call.severity === 'WARNING' ? 'var(--amber)' : 'var(--cyan)');
+
+        return `
+          <div class="dynamic-call-card" style="border-left-color:${sevColor};">
+            <div class="call-meta-row">
+              <div class="call-route">
+                <span style="background:rgba(56,189,248,0.2); color:#fff; border:1px solid rgba(56,189,248,0.4); border-radius:3px; padding:2px 6px; font-size:10px;">${call.caller}</span>
+                <span class="call-arrow">➔</span>
+                <span style="background:rgba(168,85,247,0.2); color:#e9d5ff; border:1px solid rgba(168,85,247,0.4); border-radius:3px; padding:2px 6px; font-size:10px;">${call.callee}</span>
+                <span style="font-size:9px; background:rgba(255,255,255,0.08); color:${sevColor}; padding:1px 5px; border-radius:3px; font-weight:700;">${call.call_type}</span>
+              </div>
+              <div style="color:var(--text-dim); font-size:10px;">
+                ${timeStr} • Conf: ${Math.round(call.confidence * 100)}%
+              </div>
+            </div>
+            <div class="call-summary-txt">${call.summary || 'Inter-agent message payload routed across bus.'}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     // =========================================================================

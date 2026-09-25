@@ -83,6 +83,17 @@ def execute_action(payload: ActionProposalPayload) -> dict[str, Any]:
     return res_dict
 
 
+@router.get("/history")
+def get_action_history(station_id: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    """Retrieve full chronological audit trail of all executed physical actions and digital twin adjustments."""
+    state = get_server_state()
+    history = list(state.autonomous_action_history)
+    if station_id:
+        sid = station_id.lower()
+        history = [a for a in history if a.get("station_id", "").lower() == sid]
+    return history[-limit:]
+
+
 @router.get("/pending")
 def list_pending_supervised_actions() -> list[dict[str, Any]]:
     """List all actions currently queued in the Tier 2 supervised countdown review window."""

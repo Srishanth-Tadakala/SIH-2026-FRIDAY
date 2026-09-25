@@ -86,6 +86,40 @@ def get_bus_statistics() -> dict[str, Any]:
     }
 
 
+@router.get("/dynamic_calls")
+def get_dynamic_agent_calls(limit: int = 50) -> list[dict[str, Any]]:
+    """Retrieve chronological log of all dynamic inter-agent calls, queries, and delegations."""
+    state = get_server_state()
+    calls = []
+    for m in state.bus.get_history():
+        s_val = m.sender.value if hasattr(m.sender, "value") else str(m.sender)
+        r_val = m.recipient.value if hasattr(m.recipient, "value") else str(m.recipient)
+        t_val = m.message_type.value if hasattr(m.message_type, "value") else str(m.message_type)
+        sev_val = m.severity.value if hasattr(m.severity, "value") else str(m.severity)
+        
+        summary = (
+            m.payload.get("summary")
+            or m.payload.get("title")
+            or m.payload.get("explanation")
+            or m.payload.get("dialogue_text")
+            or str(m.payload)[:100]
+        )
+        
+        calls.append({
+            "message_id": m.message_id,
+            "session_id": m.session_id,
+            "caller": s_val,
+            "callee": r_val,
+            "call_type": t_val,
+            "severity": sev_val,
+            "confidence": round(float(m.confidence), 2),
+            "timestamp": m.timestamp,
+            "summary": summary,
+            "payload": m.payload,
+        })
+    return calls[-limit:]
+
+
 @router.get("/causal_graph")
 def get_causal_graph() -> dict[str, Any]:
     """Retrieve complete topological causal dependency graph for station digital twin.
