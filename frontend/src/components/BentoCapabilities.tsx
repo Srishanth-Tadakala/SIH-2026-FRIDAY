@@ -42,17 +42,11 @@ export const BentoCapabilities: React.FC = () => {
   ];
 
   return (
-    <section id="capabilities" className="w-full max-w-[1440px] mx-auto px-6 py-20">
-      <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-        <div className="inline-flex px-3.5 py-1 rounded-full bg-[#eaedff] text-[#4648d4] text-xs font-semibold uppercase tracking-wider">
-          Architecture of Modern Autonomy
-        </div>
+    <section id="capabilities" className="w-full max-w-[1440px] mx-auto px-6 py-16">
+      <div className="text-center max-w-2xl mx-auto mb-10">
         <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-[#131b2e] tracking-tight">
-          Engineered for polar extremes, built for human survivability.
+          Core Platform Capabilities
         </h2>
-        <p className="text-base text-[#464554]">
-          Zero coordination lag. F.R.I.D.A.Y. continuously executes autonomous synchronization routines across 505 physical sensors.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -70,12 +64,9 @@ export const BentoCapabilities: React.FC = () => {
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cap.badgeColor}`}>
                 {cap.badge}
               </span>
-              <h3 className="font-display font-bold text-base text-[#131b2e] mt-2 mb-2">
+              <h3 className="font-display font-bold text-base text-[#131b2e] mt-3 mb-2">
                 {cap.title}
               </h3>
-              <p className="text-xs text-[#464554] leading-relaxed">
-                {cap.description}
-              </p>
             </div>
 
             <div className="mt-6 pt-4 border-t border-[#eaebf0] flex items-center gap-1.5 text-xs font-semibold text-[#4648d4] group-hover:text-[#6063ee]">
