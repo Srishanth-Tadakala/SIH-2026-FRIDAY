@@ -43,6 +43,7 @@ Thumbs.db
 .env
 *.env
 .env.*
+!.env.example
 
 # Local Persistent Storage
 data/edge_storage/*.json

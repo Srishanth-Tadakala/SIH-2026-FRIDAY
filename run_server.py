@@ -11,6 +11,12 @@ Run:
 import sys
 import uvicorn
 
+try:
+    import dotenv
+    dotenv.load_dotenv()
+except ImportError:
+    pass
+
 if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("  F.R.I.D.A.Y. CHIEF AI POLAR DIGITAL TWIN PLATFORM (SIH26060)")

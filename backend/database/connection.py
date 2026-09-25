@@ -24,6 +24,12 @@ import os
 import time
 from typing import Any, Callable
 
+try:
+    import dotenv
+    dotenv.load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger("friday.database.connection")
 
 # Optional motor import with safe fallback
