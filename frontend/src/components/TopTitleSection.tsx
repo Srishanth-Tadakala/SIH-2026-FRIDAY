@@ -47,19 +47,11 @@ export const TopTitleSection: React.FC<TopTitleSectionProps> = ({
         </div>
       </div>
 
-      {/* DTIARS Headline with Full Expansion */}
+      {/* DTIARS Headline */}
       <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[44px] leading-[1.12] text-[#131b2e] tracking-tight">
         <span className="text-[#4648d4] font-black mr-3">DTIARS</span>
         Digital Twin for Indian Antarctic Research Stations
-        <span className="block text-[#131b2e] text-xl sm:text-2xl font-bold mt-1 text-[#464554]">
-          Autonomous Cognitive Operations &amp; Life-Support Governor
-        </span>
       </h1>
-
-      {/* Minimal Subhead */}
-      <p className="font-sans text-sm sm:text-base text-[#464554] mt-2 max-w-2xl leading-normal">
-        Sub-second microgrid stabilization, predictive freeze prevention, and life-critical physics across 505 synchronized sensors for Bharati (69°S) and Maitri (70°S).
-      </p>
 
       {/* Action Buttons & Micro-Trust Badges */}
       <div className="w-full mt-5 flex flex-wrap items-center justify-between gap-3.5">
