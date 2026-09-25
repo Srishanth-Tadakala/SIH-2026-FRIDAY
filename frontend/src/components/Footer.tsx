@@ -15,9 +15,6 @@ export const Footer: React.FC = () => {
                 DTIARS
               </span>
             </div>
-            <p className="text-xs text-[#464554] max-w-sm leading-relaxed">
-              Digital Twin for Indian Antarctic Research Stations (Bharati &amp; Maitri) — Autonomous Multi-Agent Management Platform for NCPOR &amp; MoES Govt of India.
-            </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f2f3ff] text-[#131b2e] text-xs font-medium">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />

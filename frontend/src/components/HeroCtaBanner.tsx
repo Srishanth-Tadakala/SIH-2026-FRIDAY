@@ -14,17 +14,9 @@ export const HeroCtaBanner: React.FC<HeroCtaBannerProps> = ({ onLaunchCockpit })
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-[#acedff] opacity-25 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-          <span className="inline-flex px-3.5 py-1 rounded-full bg-white/15 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">
-            National Centre for Polar & Ocean Research • Govt of India
-          </span>
-
-          <h2 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight leading-tight">
-            Safeguard India's polar research frontier with autonomous intelligence.
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight leading-tight">
+            Ready to Launch DTIARS Mission Cockpit?
           </h2>
-
-          <p className="text-base sm:text-lg text-[#e1e0ff] max-w-xl mx-auto">
-            Experience the defense-grade digital twin platform engineered for the extreme survival demands of Bharati and Maitri stations.
-          </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
