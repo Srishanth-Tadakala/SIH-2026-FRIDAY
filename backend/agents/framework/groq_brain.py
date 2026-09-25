@@ -69,6 +69,11 @@ class GroqBrainEngine:
             cls._instance = GroqBrainEngine()
         return cls._instance
 
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset singleton GroqBrainEngine instance."""
+        cls._instance = None
+
     def _initialize_client(self) -> None:
         """Initialize AsyncGroq client if SDK is installed and key is available."""
         if GROQ_SDK_AVAILABLE and self.api_key:
@@ -222,14 +227,21 @@ class GroqBrainEngine:
         # Dynamic Edge Neural Fallback
         target_cause = upstream_candidates[-1]["cause_node_id"] if upstream_candidates else symptom_node_id
         chain = [c["cause_node_id"] for c in upstream_candidates] + [symptom_node_id] if upstream_candidates else [symptom_node_id]
+        is_env = target_cause.startswith("env_")
+        subsystem = "ENVIRONMENT" if is_env else ("ENERGY" if "chp" in target_cause or "bus" in target_cause else "INFRASTRUCTURE")
+        exp = (
+            f"Environmental stressor '{target_cause}' has propagated across station boundary down to '{symptom_node_id}'."
+            if is_env
+            else f"Topological upstream traversal isolated failure inception at '{target_cause}' with cascade propagating to '{symptom_node_id}'."
+        )
         return {
             "root_cause_node_id": target_cause,
             "root_cause_name": target_cause.replace("_", " ").upper(),
-            "subsystem": "ENERGY" if "chp" in target_cause or "bus" in target_cause else "INFRASTRUCTURE",
+            "subsystem": subsystem,
             "confidence": 0.94,
             "causal_chain": chain,
-            "explanation": f"Topological upstream traversal isolated failure inception at '{target_cause}' with cascade propagating to '{symptom_node_id}'.",
-            "recommended_focus": f"Isolate {target_cause} and verify secondary containment.",
+            "explanation": exp,
+            "recommended_focus": f"Mitigate external environmental hazard '{target_cause}'." if is_env else f"Isolate {target_cause} and verify secondary containment.",
         }
 
     # -------------------------------------------------------------------------
