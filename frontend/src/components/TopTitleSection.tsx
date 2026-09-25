@@ -31,7 +31,7 @@ export const TopTitleSection: React.FC<TopTitleSectionProps> = ({
       <div className="w-full flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f2f3ff] border border-[#eaedff] text-[11px] font-semibold text-[#4648d4]">
           <Sparkles className="w-3.5 h-3.5 text-[#4648d4]" />
-          <span>SIH 2026 • SIH26060 — NCPOR / MoES</span>
+          <span>SIH 2026 • SIH26060 — NCPOR / MoES GOVT OF INDIA</span>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-[#464554]">
@@ -42,22 +42,23 @@ export const TopTitleSection: React.FC<TopTitleSectionProps> = ({
 
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ecfdf5] border border-[#a7f3d0] text-[#006c49] font-medium text-[11px]">
             <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-            <span>Satcom Active</span>
+            <span>Satcom Synchronized</span>
           </div>
         </div>
       </div>
 
-      {/* Minimal Bold Display Headline */}
-      <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[42px] leading-[1.12] text-[#131b2e] tracking-tight">
-        Autonomous Polar Digital Twin
-        <span className="block text-[#4648d4] text-xl sm:text-2xl font-bold mt-1">
-          Cognitive Operations Governor
+      {/* DTIARS Headline with Full Expansion */}
+      <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[44px] leading-[1.12] text-[#131b2e] tracking-tight">
+        <span className="text-[#4648d4] font-black mr-3">DTIARS</span>
+        Digital Twin for Indian Antarctic Research Stations
+        <span className="block text-[#131b2e] text-xl sm:text-2xl font-bold mt-1 text-[#464554]">
+          Autonomous Cognitive Operations &amp; Life-Support Governor
         </span>
       </h1>
 
-      {/* Minimal Crisp Subheadline */}
+      {/* Minimal Subhead */}
       <p className="font-sans text-sm sm:text-base text-[#464554] mt-2 max-w-2xl leading-normal">
-        Sub-second microgrid stabilization, predictive freeze prevention, and life-critical physics across 505 synchronized sensors for Indian Antarctic stations.
+        Sub-second microgrid stabilization, predictive freeze prevention, and life-critical physics across 505 synchronized sensors for Bharati (69°S) and Maitri (70°S).
       </p>
 
       {/* Action Buttons & Micro-Trust Badges */}

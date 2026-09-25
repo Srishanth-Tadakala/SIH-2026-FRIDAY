@@ -9,14 +9,14 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-[#4648d4] text-white flex items-center justify-center font-bold text-xs">
-                <Cpu className="w-4 h-4" />
+                DT
               </div>
-              <span className="font-display font-bold text-base text-[#131b2e]">
-                F.R.I.D.A.Y.
+              <span className="font-display font-black text-lg text-[#131b2e]">
+                DTIARS
               </span>
             </div>
             <p className="text-xs text-[#464554] max-w-sm leading-relaxed">
-              Fleet, Resource, Infrastructure, Diagnostics, Automation & Yield — Digital Platform for Autonomous Remote Management of Indian Antarctic Stations.
+              Digital Twin for Indian Antarctic Research Stations (Bharati &amp; Maitri) — Autonomous Multi-Agent Management Platform for NCPOR &amp; MoES Govt of India.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f2f3ff] text-[#131b2e] text-xs font-medium">
               <span className="relative flex h-2 w-2">
@@ -65,7 +65,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="pt-6 border-t border-[#eaebf0] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#464554]">
-          <p>© 2026 F.R.I.D.A.Y. • Smart India Hackathon (SIH26060) • Client: NCPOR / MoES Govt of India.</p>
+          <p>© 2026 DTIARS • Digital Twin for Indian Antarctic Research Stations • Problem SIH26060 • Client: NCPOR / MoES Govt of India.</p>
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/Srishanth-Tadakala/SIH-2026-FRIDAY"
