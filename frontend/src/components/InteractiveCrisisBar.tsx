@@ -38,15 +38,12 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
       <div className="p-6 rounded-2xl bg-white border border-[#eaebf0] shadow-sm flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#eaebf0] pb-3">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#4648d4] font-mono">
-              TACTILE JUDGE EVALUATION BENCHMARK
-            </span>
             <h3 className="font-display font-bold text-base text-[#131b2e]">
-              Simulate Polar Emergencies & Watch Sub-Second Autonomous Recovery
+              Polar Crisis Simulator
             </h3>
           </div>
           <span className="text-xs text-[#464554] font-medium bg-[#f2f3ff] px-3 py-1 rounded-full w-fit">
-            3-Tier Defense Safety Interlocks
+            3-Tier Safety Interlocks
           </span>
         </div>
 
@@ -65,10 +62,7 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
               <div className="w-8 h-8 rounded-lg bg-[#f43f5e]/10 text-[#ba1a1a] flex items-center justify-center">
                 <Flame className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">Generator Trip</p>
-                <p className="text-[10px] text-[#464554]">Baseload drop to 0 kW</p>
-              </div>
+              <p className="text-xs font-bold text-[#131b2e]">Generator Trip</p>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#f43f5e]" />
           </button>
@@ -86,10 +80,7 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
               <div className="w-8 h-8 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
                 <CloudSnow className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">Katabatic Blizzard</p>
-                <p className="text-[10px] text-[#464554]">34 m/s storm surge</p>
-              </div>
+              <p className="text-xs font-bold text-[#131b2e]">Katabatic Blizzard</p>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#006577]" />
           </button>
@@ -107,10 +98,7 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
               <div className="w-8 h-8 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
                 <Droplet className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">Utilidor Freeze</p>
-                <p className="text-[10px] text-[#464554]">Conduit subzero risk</p>
-              </div>
+              <p className="text-xs font-bold text-[#131b2e]">Utilidor Freeze</p>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#006577]" />
           </button>
@@ -123,10 +111,7 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
               <div className="w-8 h-8 rounded-lg bg-[#10b981]/10 text-[#006c49] flex items-center justify-center">
                 <RotateCcw className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">Restore Baseline</p>
-                <p className="text-[10px] text-[#464554]">Clear all simulations</p>
-              </div>
+              <p className="text-xs font-bold text-[#131b2e]">Restore Baseline</p>
             </div>
           </button>
         </div>
