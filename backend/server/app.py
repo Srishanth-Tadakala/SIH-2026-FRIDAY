@@ -91,19 +91,37 @@ def create_app() -> FastAPI:
     app.include_router(copilot_router)
     app.include_router(sync_router)
 
-    # Static files & Testing UI
+    # Luminous Scandi-Tech React Frontend Mount
+    frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
     static_dir = os.path.join(os.path.dirname(__file__), "static")
+    
+    if os.path.exists(frontend_dist) and os.path.exists(os.path.join(frontend_dist, "index.html")):
+        assets_dir = os.path.join(frontend_dist, "assets")
+        if os.path.exists(assets_dir):
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
     if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    @app.get("/", response_class=HTMLResponse, tags=["Testing UI"])
-    @app.get("/ui", response_class=HTMLResponse, tags=["Testing UI"])
-    def serve_testing_ui() -> Any:
-        """Serve the interactive F.R.I.D.A.Y. Polar Digital Twin Testing Cockpit."""
-        index_file = os.path.join(static_dir, "index.html")
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return HTMLResponse("<h1>F.R.I.D.A.Y. Testing UI</h1><p>index.html not found</p>")
+    @app.get("/", response_class=HTMLResponse, tags=["Homepage UI"])
+    @app.get("/ui", response_class=HTMLResponse, tags=["Homepage UI"])
+    def serve_homepage_ui() -> Any:
+        """Serve the modern Luminous Scandi-Tech React Homepage."""
+        react_index = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(react_index):
+            return FileResponse(react_index)
+        legacy_index = os.path.join(static_dir, "index.html")
+        if os.path.exists(legacy_index):
+            return FileResponse(legacy_index)
+        return HTMLResponse("<h1>F.R.I.D.A.Y. Homepage UI</h1><p>index.html not found</p>")
+
+    @app.get("/legacy-ui", response_class=HTMLResponse, tags=["Testing Cockpit"])
+    def serve_legacy_ui() -> Any:
+        """Serve the standalone tactical testing cockpit."""
+        legacy_index = os.path.join(static_dir, "index.html")
+        if os.path.exists(legacy_index):
+            return FileResponse(legacy_index)
+        return HTMLResponse("<h1>Cockpit UI not found</h1>")
 
     @app.get("/api/health", tags=["System"])
     def health_check() -> dict[str, Any]:
