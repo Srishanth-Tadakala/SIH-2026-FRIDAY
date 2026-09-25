@@ -68,17 +68,9 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#eaebf0]">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#4648d4] mb-1">
-            <Activity className="w-3.5 h-3.5" />
-            <span>4-PILLAR DIGITAL TWIN OBSERVABILITY</span>
-          </div>
           <h1 className="font-display font-black text-2xl sm:text-3xl text-[#131b2e] tracking-tight">
             Physical Sensor Synoptic Grid
           </h1>
-          <p className="text-xs sm:text-sm text-[#464554] mt-0.5">
-            Real-time telemetry stream across 505 synchronized channels for{' '}
-            <strong className="text-[#4648d4] uppercase">{activeStation} Station</strong>.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
