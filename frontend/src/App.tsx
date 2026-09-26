@@ -17,13 +17,50 @@ import { AnalyticsView } from './components/views/AnalyticsView';
 import { ActionsView } from './components/views/ActionsView';
 import { Footer } from './components/Footer';
 
+const getInitialView = (): NavView => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view')?.toLowerCase();
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+
+    const candidate = viewParam || hash || path;
+    const validViews: NavView[] = ['overview', 'stations', 'digital_twin', 'agents', 'analytics', 'actions'];
+    if (validViews.includes(candidate as NavView)) {
+      return candidate as NavView;
+    }
+  } catch {}
+  return 'overview';
+};
+
 export function App() {
-  const [activeView, setActiveView] = useState<NavView>('overview');
+  const [activeView, setActiveView] = useState<NavView>(getInitialView);
   const [station, setStation] = useState<StationId>('bharati');
   const [snapshot, setSnapshot] = useState<StationSnapshot | null>(null);
   const [stationsList, setStationsList] = useState<StationInfo[] | null>(null);
   const [activeCrisis, setActiveCrisis] = useState<string | null>(null);
   const [isResolved, setIsResolved] = useState<boolean>(false);
+
+  const handleViewChange = (newView: NavView) => {
+    setActiveView(newView);
+    try {
+      const url = new URL(window.location.href);
+      if (newView === 'overview') {
+        url.searchParams.delete('view');
+      } else {
+        url.searchParams.set('view', newView);
+      }
+      window.history.pushState({}, '', url.toString());
+    } catch {}
+  };
+
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveView(getInitialView());
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // Poll Backend Snapshot & Station List
   useEffect(() => {
@@ -86,7 +123,7 @@ export function App() {
         onStationChange={setStation}
         onLaunchCockpit={handleLaunchCockpit}
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
       />
 
       {/* 2. Main Content Area */}
@@ -110,7 +147,7 @@ export function App() {
                 onStationChange={setStation}
                 onSelectStationTwin={(st) => {
                   setStation(st);
-                  setActiveView('digital_twin');
+                  handleViewChange('digital_twin');
                 }}
                 stationsData={stationsList}
               />
@@ -122,7 +159,7 @@ export function App() {
                   snapshot={snapshot}
                   activeCrisis={activeCrisis}
                   isResolved={isResolved}
-                  onOpenDigitalTwin={() => setActiveView('digital_twin')}
+                  onOpenDigitalTwin={() => handleViewChange('digital_twin')}
                 />
               </div>
 
