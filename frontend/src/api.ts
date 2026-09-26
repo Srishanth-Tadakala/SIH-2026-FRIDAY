@@ -39,6 +39,30 @@ export async function fetchAgentSocietyStatus(): Promise<AgentSocietyStatus> {
   return res.json();
 }
 
+export async function fetchBusStatistics(): Promise<any> {
+  const res = await fetch(`${API_BASE}/agents/bus/stats`);
+  if (!res.ok) throw new Error(`Bus stats failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchAgentDetail(agentRole: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/agents/${agentRole}`);
+  if (!res.ok) throw new Error(`Agent detail failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchCausalGraph(): Promise<any> {
+  const res = await fetch(`${API_BASE}/agents/causal_graph`);
+  if (!res.ok) throw new Error(`Causal graph failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchGroqStatus(): Promise<any> {
+  const res = await fetch(`${API_BASE}/agents/groq_status`);
+  if (!res.ok) throw new Error(`Groq status failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchDynamicAgentCalls(limit = 50): Promise<DynamicAgentCall[]> {
   const res = await fetch(`${API_BASE}/agents/dynamic_calls?limit=${limit}`);
   if (!res.ok) throw new Error(`Dynamic calls failed: ${res.statusText}`);
