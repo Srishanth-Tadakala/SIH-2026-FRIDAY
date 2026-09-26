@@ -173,10 +173,11 @@ export async function fetchAvailableScenarios(): Promise<any[]> {
 }
 
 export async function injectScenario(scenario: string, params: Record<string, any> = {}): Promise<any> {
+  const stationId = params.station_id || 'bharati';
   const res = await fetch(`${API_BASE}/scenarios/inject`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scenario, parameters: params }),
+    body: JSON.stringify({ scenario, station_id: stationId, parameters: params }),
   });
   if (!res.ok) throw new Error(`Inject scenario failed: ${res.statusText}`);
   return res.json();
