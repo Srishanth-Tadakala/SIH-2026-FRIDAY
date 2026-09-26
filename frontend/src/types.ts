@@ -126,7 +126,14 @@ export interface AgentSocietyStatus {
     last_active_time: number;
     messages_sent: number;
     messages_received: number;
+    confidence?: number;
+    objective?: string;
+    tag?: string;
+    icon?: string;
+    color?: string;
   }>;
   bus_total_messages: number;
   active_sessions_count: number;
+  orchestrator_state?: string;
+  total_agents?: number;
 }
