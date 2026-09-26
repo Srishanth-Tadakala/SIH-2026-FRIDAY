@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Flame, CloudSnow, Droplet, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 interface InteractiveCrisisBarProps {
   onInject: (crisis: string) => void;
@@ -23,27 +22,18 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
 
     setTimeout(() => {
       setTriggering(null);
-      // Trigger Scandi celebratory particle burst
-      confetti({
-        particleCount: 35,
-        spread: 50,
-        origin: { y: 0.8 },
-        colors: ['#4648d4', '#10b981', '#06b6d4'],
-      });
     }, 1200);
   };
 
   return (
-    <section id="simulator" className="w-full max-w-6xl mx-auto mt-10 px-4 sm:px-0">
-      <div className="p-6 rounded-2xl bg-white border border-[#eaebf0] shadow-sm flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#eaebf0] pb-3">
-          <div>
-            <h3 className="font-display font-bold text-base text-[#131b2e]">
-              Polar Crisis Simulator
-            </h3>
-          </div>
-          <span className="text-xs text-[#464554] font-medium bg-[#f2f3ff] px-3 py-1 rounded-full w-fit">
-            3-Tier Safety Interlocks
+    <section id="simulator" className="w-full max-w-6xl mx-auto mt-8 px-4 sm:px-0">
+      <div className="p-5 rounded-3xl bg-white border border-[#eaebf0] shadow-xs flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-[#eaebf0] pb-3">
+          <h3 className="font-display font-bold text-sm text-[#131b2e]">
+            Simulation Test Bench
+          </h3>
+          <span className="text-[11px] font-mono text-[#4648d4] font-semibold bg-[#faf8ff] px-2.5 py-0.5 rounded-full border border-[#eaedff]">
+            Hardware Interlocked
           </span>
         </div>
 
@@ -52,17 +42,17 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
           <button
             onClick={() => handleClick('GENERATOR_TRIP')}
             disabled={!!triggering}
-            className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+            className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
               activeCrisis === 'GENERATOR_TRIP'
-                ? 'border-[#f43f5e] bg-[#ffdad6]/30 shadow-sm'
-                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#4648d4]/40 hover:bg-white'
+                ? 'border-[#f43f5e] bg-[#fff1f2] shadow-xs'
+                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#f43f5e]/40 hover:bg-white'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#f43f5e]/10 text-[#ba1a1a] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#f43f5e]/10 text-[#e11d48] flex items-center justify-center">
                 <Flame className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-[#131b2e]">Generator Trip</p>
+              <span className="text-xs font-bold text-[#131b2e]">Generator Trip</span>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#f43f5e]" />
           </button>
@@ -70,17 +60,17 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
           <button
             onClick={() => handleClick('BLIZZARD_STRIKE')}
             disabled={!!triggering}
-            className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+            className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
               activeCrisis === 'BLIZZARD_STRIKE'
-                ? 'border-[#4648d4] bg-[#eaedff] shadow-sm'
-                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#4648d4]/40 hover:bg-white'
+                ? 'border-[#0284c7] bg-[#f0f9ff] shadow-xs'
+                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#0284c7]/40 hover:bg-white'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
                 <CloudSnow className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-[#131b2e]">Katabatic Blizzard</p>
+              <span className="text-xs font-bold text-[#131b2e]">Katabatic Blizzard</span>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#006577]" />
           </button>
@@ -88,58 +78,51 @@ export const InteractiveCrisisBar: React.FC<InteractiveCrisisBarProps> = ({
           <button
             onClick={() => handleClick('WATER_LINE_FREEZE')}
             disabled={!!triggering}
-            className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+            className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
               activeCrisis === 'WATER_LINE_FREEZE'
-                ? 'border-[#006577] bg-[#acedff]/30 shadow-sm'
-                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#4648d4]/40 hover:bg-white'
+                ? 'border-[#06b6d4] bg-[#ecfeff] shadow-xs'
+                : 'border-[#eaebf0] bg-[#faf8ff] hover:border-[#06b6d4]/40 hover:bg-white'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#006577]/10 text-[#006577] flex items-center justify-center">
                 <Droplet className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-[#131b2e]">Utilidor Freeze</p>
+              <span className="text-xs font-bold text-[#131b2e]">Utilidor Freeze</span>
             </div>
             <Zap className="w-3.5 h-3.5 text-[#006577]" />
           </button>
 
           <button
             onClick={onReset}
-            className="p-3.5 rounded-xl border border-[#eaebf0] bg-white hover:bg-[#f2f3ff] text-left flex items-center justify-between transition-all"
+            className="p-3 rounded-2xl border border-[#eaebf0] bg-white hover:bg-[#f2f3ff] text-left flex items-center justify-between transition-all shadow-2xs"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#10b981]/10 text-[#006c49] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#10b981]/10 text-[#006c49] flex items-center justify-center">
                 <RotateCcw className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-[#131b2e]">Restore Baseline</p>
+              <span className="text-xs font-bold text-[#131b2e]">Restore Baseline</span>
             </div>
           </button>
         </div>
 
         {/* Live Autonomous Resolution Result Banner */}
         {activeCrisis && (
-          <div className="p-3.5 rounded-xl bg-[#f2f3ff] border border-[#6cf8bb] flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-300">
+          <div className="p-3 rounded-2xl bg-[#faf8ff] border border-[#a7f3d0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
             <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-full bg-[#10b981] text-white flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#131b2e]">
-                  {triggering ? 'AI Deliberation in progress across 10 specialized agents...' : 'Autonomous Mitigation Executed in 1.2s • Tier 1 Autonomy'}
-                </p>
-                <p className="text-[11px] text-[#464554]">
-                  {triggering
-                    ? 'Synthesizing Causal DAG root cause and executing What-If physics simulation...'
-                    : activeCrisis === 'GENERATOR_TRIP'
-                    ? 'Started Standby Generator CHP-02 (+65 kW). Microgrid frequency nominal at 50.00 Hz.'
-                    : activeCrisis === 'BLIZZARD_STRIKE'
-                    ? 'Sealed AHU fresh air dampers to 0%. Hydronic heating boosted to 85%.'
-                    : 'Energized utilidor potable water trace heating. Pipe temperature secured at +4.8°C.'}
-                </p>
-              </div>
+              <ShieldCheck className="w-4 h-4 text-[#006c49]" />
+              <p className="text-xs font-mono font-semibold text-[#131b2e]">
+                {triggering
+                  ? 'Deliberating across 10 cognitive agents...'
+                  : activeCrisis === 'GENERATOR_TRIP'
+                  ? 'Autonomous Tier 1 ATS: Started CHP-02 (+65 kW). 50.00 Hz nominal.'
+                  : activeCrisis === 'BLIZZARD_STRIKE'
+                  ? 'Autonomous Mitigation: Sealed fresh air dampers. Heating at 85%.'
+                  : 'Autonomous Trace Boost: 24 kWth engaged. Pipe temperature secured.'}
+              </p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-[#6cf8bb] text-[#002113] text-xs font-bold whitespace-nowrap self-start sm:self-auto">
-              {triggering ? 'DELIBERATING...' : '100% RECOVERED'}
+            <span className="px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-[#006c49] text-[11px] font-mono font-bold whitespace-nowrap self-start sm:self-auto">
+              {triggering ? 'DELIBERATING' : 'RECOVERED IN 1.2s'}
             </span>
           </div>
         )}
