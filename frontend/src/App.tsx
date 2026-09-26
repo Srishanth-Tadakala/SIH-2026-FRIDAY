@@ -108,15 +108,21 @@ export function App() {
               <StationCardsSection
                 activeStation={station}
                 onStationChange={setStation}
+                onSelectStationTwin={(st) => {
+                  setStation(st);
+                  setActiveView('digital_twin');
+                }}
                 stationsData={stationsList}
               />
 
               {/* Digital Twin Command Canvas */}
               <div id="canvas" className="mb-10">
                 <PolarCommandCanvas
-                  kpis={snapshot?.kpis || null}
+                  activeStation={station}
+                  snapshot={snapshot}
                   activeCrisis={activeCrisis}
                   isResolved={isResolved}
+                  onOpenDigitalTwin={() => setActiveView('digital_twin')}
                 />
               </div>
 
