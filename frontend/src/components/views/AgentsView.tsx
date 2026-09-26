@@ -52,6 +52,12 @@ import { ParticleEdge } from './digital-twin/ParticleEdge';
 import { AgentInspectorDrawer } from './agents/AgentInspectorDrawer';
 import { LiveInterAgentCallStream } from './agents/LiveInterAgentCallStream';
 
+const EMPTY_AGENTS_MAP: Record<string, any> = {};
+
+const customEdgeTypes = {
+  particleEdge: ParticleEdge,
+};
+
 interface AgentsViewProps {
   activeStation: StationId;
 }
@@ -139,7 +145,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
     setTimeout(() => setStatusBanner(null), 3000);
   };
 
-  const handleExecuteAction = async (actionId: string) => {
+  const handleExecuteAction = useCallback(async (actionId: string) => {
     setStatusBanner(`Executing action [${actionId}]...`);
     try {
       await executeAction(actionId, activeStation);
@@ -149,13 +155,14 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
       setStatusBanner(`Simulation fallback: Action verified.`);
     }
     setTimeout(() => setStatusBanner(null), 3000);
-  };
+  }, [activeStation, loadAgentData]);
 
   const isChpTripped = activeCrisis === 'GENERATOR_TRIP' && !isResolved;
   const isBlizzard = activeCrisis === 'BLIZZARD_STRIKE';
   const isFreeze = activeCrisis === 'WATER_LINE_FREEZE';
 
-  const agentsMap = society?.agents || {};
+  const agentsMap = society?.agents ?? EMPTY_AGENTS_MAP;
+  const selectedAgentRole = selectedAgentData?.role || null;
 
   // Node Selection Handler
   const handleSelectNode = useCallback((nodeData: any) => {
@@ -304,7 +311,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '38ms Groq',
           messages_sent: sa.messages_sent ?? (isChpTripped ? 24 : 12),
           messages_received: sa.messages_received ?? (isChpTripped ? 18 : 8),
-          isSelected: selectedAgentData?.role === 'SITUATION_AWARENESS',
+          isSelected: selectedAgentRole === 'SITUATION_AWARENESS',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [80, 85, 95, 100, 100] : [65, 70, 72, 75, 76],
@@ -335,7 +342,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '42ms Groq',
           messages_sent: dg.messages_sent ?? (isChpTripped ? 28 : 10),
           messages_received: dg.messages_received ?? (isChpTripped ? 32 : 12),
-          isSelected: selectedAgentData?.role === 'DIAGNOSTIC',
+          isSelected: selectedAgentRole === 'DIAGNOSTIC',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [60, 75, 90, 98, 100] : [60, 62, 65, 68, 70],
@@ -360,7 +367,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '45ms Groq',
           messages_sent: pr.messages_sent ?? 14,
           messages_received: pr.messages_received ?? 16,
-          isSelected: selectedAgentData?.role === 'PREDICTION',
+          isSelected: selectedAgentRole === 'PREDICTION',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: [55, 60, 65, 70, 72],
@@ -383,7 +390,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '36ms Groq',
           messages_sent: ri.messages_sent ?? 16,
           messages_received: ri.messages_received ?? 20,
-          isSelected: selectedAgentData?.role === 'RISK_IMPACT',
+          isSelected: selectedAgentRole === 'RISK_IMPACT',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [40, 60, 85, 75, 45] : [40, 42, 45, 43, 42],
@@ -414,7 +421,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '48ms Groq',
           messages_sent: pl.messages_sent ?? 22,
           messages_received: pl.messages_received ?? 24,
-          isSelected: selectedAgentData?.role === 'PLANNING',
+          isSelected: selectedAgentRole === 'PLANNING',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [50, 70, 95, 90, 85] : [50, 52, 55, 54, 55],
@@ -437,7 +444,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '34ms Groq',
           messages_sent: wi.messages_sent ?? 30,
           messages_received: wi.messages_received ?? 28,
-          isSelected: selectedAgentData?.role === 'WHAT_IF',
+          isSelected: selectedAgentRole === 'WHAT_IF',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [60, 80, 100, 100, 100] : [60, 62, 65, 64, 65],
@@ -460,7 +467,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '40ms Groq',
           messages_sent: ro.messages_sent ?? 18,
           messages_received: ro.messages_received ?? 16,
-          isSelected: selectedAgentData?.role === 'RESOURCE_OPTIMIZER',
+          isSelected: selectedAgentRole === 'RESOURCE_OPTIMIZER',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: [45, 50, 52, 55, 54],
@@ -483,7 +490,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '44ms Groq',
           messages_sent: mn.messages_sent ?? 12,
           messages_received: mn.messages_received ?? 14,
-          isSelected: selectedAgentData?.role === 'MAINTENANCE',
+          isSelected: selectedAgentRole === 'MAINTENANCE',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: [40, 42, 45, 44, 45],
@@ -510,7 +517,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '39ms Groq',
           messages_sent: mo.messages_sent ?? 16,
           messages_received: mo.messages_received ?? 18,
-          isSelected: selectedAgentData?.role === 'MISSION_OPS',
+          isSelected: selectedAgentRole === 'MISSION_OPS',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: [70, 72, 75, 74, 75],
@@ -535,7 +542,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           latency: '1.2s Autonomy',
           messages_sent: fr.messages_sent ?? (isChpTripped ? 45 : 20),
           messages_received: fr.messages_received ?? (isChpTripped ? 65 : 35),
-          isSelected: selectedAgentData?.role === 'FRIDAY_ORCHESTRATOR',
+          isSelected: selectedAgentRole === 'FRIDAY_ORCHESTRATOR',
           onSelect: handleSelectNode,
           onQuickAction: handleQuickAction,
           history: isChpTripped ? [70, 85, 100, 100, 100] : [70, 72, 75, 76, 78],
@@ -591,7 +598,17 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
         },
       },
     ];
-  }, [agentsMap, isChpTripped, isResolved, isBlizzard, isFreeze, selectedAgentData, handleSelectNode, handleQuickAction]);
+  }, [
+    agentsMap,
+    isChpTripped,
+    isResolved,
+    isBlizzard,
+    isFreeze,
+    selectedAgentRole,
+    handleSelectNode,
+    handleQuickAction,
+    handleExecuteAction,
+  ]);
 
   // Build Animated High-Speed Particle Edges
   const initialEdges: Edge[] = useMemo(() => {
@@ -780,10 +797,24 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // Synchronize when initialNodes or initialEdges change (skipping redundant first mount update)
+  const isFirstMountNodes = useRef(true);
   useEffect(() => {
+    if (isFirstMountNodes.current) {
+      isFirstMountNodes.current = false;
+      return;
+    }
     setNodes(initialNodes);
+  }, [initialNodes, setNodes]);
+
+  const isFirstMountEdges = useRef(true);
+  useEffect(() => {
+    if (isFirstMountEdges.current) {
+      isFirstMountEdges.current = false;
+      return;
+    }
     setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
+  }, [initialEdges, setEdges]);
 
   // Apply Layer Perspective Filtering
   const displayNodes = useMemo(() => {
@@ -834,10 +865,6 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
       };
     });
   }, [edges, activeLayer]);
-
-  const edgeTypes = useMemo(() => ({
-    particleEdge: ParticleEdge,
-  }), []);
 
   return (
     <div className="w-full flex flex-col gap-5">
@@ -1044,7 +1071,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           nodes={displayNodes}
           edges={displayEdges}
           nodeTypes={customAgentNodeTypes}
-          edgeTypes={edgeTypes}
+          edgeTypes={customEdgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onInit={(instance) => {
