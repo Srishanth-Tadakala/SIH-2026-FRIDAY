@@ -40,26 +40,36 @@ export interface StationInfo {
 }
 
 export interface StationKPIs {
-  sim_time_seconds: number;
+  sim_time_seconds?: number;
   total_generation_kw: number;
-  total_load_kw: number;
-  grid_frequency_hz: number;
-  grid_voltage_v: number;
-  ambient_temp_c: number;
-  wind_speed_mps: number;
-  wind_direction_deg: number;
-  indoor_temp_living_c: number;
-  indoor_temp_labs_c: number;
-  utilidor_pipe_temp_c: number;
-  water_storage_liters: number;
-  fuel_storage_liters: number;
-  fuel_burn_rate_lph: number;
-  running_chp_count: number;
-  science_loads_shed: boolean;
-  active_alert_count: number;
-  satcom_connected: boolean;
-  satcom_latency_ms: number;
-  satcom_bandwidth_kbps: number;
+  total_load_kw?: number;
+  station_electrical_load_kw?: number;
+  station_heating_demand_kw?: number;
+  grid_frequency_hz?: number;
+  grid_voltage_v?: number;
+  ambient_temp_c?: number;
+  wind_speed_mps?: number;
+  wind_direction_deg?: number;
+  indoor_temp_living_c?: number;
+  indoor_temp_labs_c?: number;
+  indoor_avg_temp_c?: number;
+  utilidor_pipe_temp_c?: number;
+  water_storage_liters?: number;
+  fuel_storage_liters?: number;
+  fuel_burn_rate_lph?: number;
+  total_fuel_reserve_l?: number;
+  fuel_autonomy_days?: number;
+  water_autonomy_days?: number;
+  potable_tank_level_pct?: number;
+  fleet_availability_pct?: number;
+  ground_route_accessibility_pct?: number;
+  composite_risk_score?: number;
+  running_chp_count?: number;
+  science_loads_shed?: boolean;
+  active_alert_count?: number;
+  satcom_connected?: boolean;
+  satcom_latency_ms?: number;
+  satcom_bandwidth_kbps?: number;
 }
 
 export interface StationSnapshot {
