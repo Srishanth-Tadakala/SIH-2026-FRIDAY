@@ -21,7 +21,8 @@ import {
   Play,
   RotateCcw,
   Sparkles,
-  Info
+  ChevronRight,
+  Waves
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -38,8 +39,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   satcom: Radio,
 };
 
-// Mini SVG Sparkline generator for live telemetry waveforms inside nodes
-const renderMiniSparkline = (points: number[], strokeColor: string, height = 22, width = 90) => {
+// Mini SVG Sparkline generator for live telemetry waveforms
+const renderMiniSparkline = (points: number[], strokeColor: string, height = 20, width = 75) => {
   if (!points || points.length < 2) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -63,12 +64,11 @@ const renderMiniSparkline = (points: number[], strokeColor: string, height = 22,
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Active pulse endpoint */}
       {points.length > 0 && (
         <circle
           cx={width}
           cy={height - ((points[points.length - 1] - min) / range) * (height - 6) - 3}
-          r={2.5}
+          r={2.2}
           fill={strokeColor}
           className="animate-ping"
         />
@@ -77,15 +77,54 @@ const renderMiniSparkline = (points: number[], strokeColor: string, height = 22,
   );
 };
 
+// Radial Minimalist Certainty Gauge for Cognitive & Hardware telemetry
+const MinimalRadialGauge: React.FC<{ pct: number; color: string; size?: number }> = ({ pct, color, size = 36 }) => {
+  const radius = (size - 6) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (pct / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#eaebf0"
+          strokeWidth={2.8}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={2.8}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          fill="none"
+          className="transition-all duration-500 ease-out"
+        />
+      </svg>
+      <div className="absolute text-[9px] font-mono font-bold text-[#131b2e] tracking-tighter">
+        {pct}%
+      </div>
+    </div>
+  );
+};
+
+// ========================================================
 // 0. ARCHITECTURAL CLUSTER GROUP NODE (Compound Area Container)
+// ========================================================
 export const ClusterGroupNode: React.FC<{ data: any }> = ({ data }) => {
   const isAlarm = data.status === 'ALARM' || data.status === 'TRIPPED';
   return (
     <div
       className={`w-full h-full rounded-3xl border-2 transition-all duration-300 p-5 flex flex-col justify-between pointer-events-none select-none ${
         isAlarm
-          ? 'bg-[#fff1f2]/30 border-[#f43f5e]/30'
-          : 'bg-[#f8fafc]/40 border-[#eaebf0]/80'
+          ? 'bg-[#fff1f2]/25 border-[#f43f5e]/30'
+          : 'bg-[#faf8ff]/40 border-[#eaebf0]/80'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -105,7 +144,7 @@ export const ClusterGroupNode: React.FC<{ data: any }> = ({ data }) => {
       </div>
 
       <div className="flex items-center justify-between text-[9px] font-mono text-[#73738c] pt-2 border-t border-[#eaebf0]/40">
-        <span>{data.description || 'System Sub-array'}</span>
+        <span className="font-semibold">{data.description || 'System Sub-array'}</span>
         <span className="inline-flex items-center gap-1 font-bold text-[#006c49]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
           ACTIVE
@@ -115,7 +154,9 @@ export const ClusterGroupNode: React.FC<{ data: any }> = ({ data }) => {
   );
 };
 
+// ========================================================
 // 1. POWER SOURCE NODE (Generators, Solar, BESS, Wind Turbines)
+// ========================================================
 export const PowerSourceNode: React.FC<{ data: any }> = ({ data }) => {
   const Icon = iconMap[data.iconType] || Zap;
   const isTripped = data.status === 'TRIPPED';
@@ -126,28 +167,37 @@ export const PowerSourceNode: React.FC<{ data: any }> = ({ data }) => {
   const sparklineData = data.history || (isTripped ? [75, 74, 50, 20, 0, 0] : isStandby ? [0, 0, 0, 0] : [72, 75, 74, 76, 75, 75.4]);
   const sparklineColor = isTripped ? '#e11d48' : isSurge ? '#006577' : '#4648d4';
 
+  const cap = data.capacityPercent !== undefined ? Math.min(Math.max(data.capacityPercent, 0), 100) : 75;
+
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[240px] shadow-xs select-none ${
+      className={`group relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[250px] shadow-xs select-none ${
         isTripped
-          ? 'border-[#f43f5e] ring-4 ring-[#f43f5e]/20 bg-[#fff1f2] shadow-lg shadow-[#f43f5e]/10'
+          ? 'border-[#f43f5e] ring-3 ring-[#f43f5e]/25 bg-[#fff1f2]/60 shadow-md'
           : isStandby
           ? 'border-[#eaebf0] hover:border-[#c7c4d7] bg-white/95'
           : isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
-          : 'border-[#eaebf0] hover:border-[#4648d4]/50 hover:shadow-sm'
+          : 'border-[#eaebf0] hover:border-[#4648d4]/50 hover:shadow-md'
       }`}
     >
-      {/* Floating Action Toolbar on Selected Node */}
-      <NodeToolbar isVisible={isSelected} position={Position.Top} offset={10} className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30">
+      {/* Node Action Toolbar */}
+      <NodeToolbar
+        isVisible={isSelected}
+        position={Position.Top}
+        offset={10}
+        className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30 font-mono text-[10px]"
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onQuickAction?.('toggle_state', data);
           }}
-          className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition-colors ${
-            isTripped ? 'bg-[#ecfdf5] text-[#006c49] hover:bg-[#d1fae5]' : 'bg-[#fff1f2] text-[#e11d48] hover:bg-[#ffe4e6]'
+          className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-colors shadow-2xs ${
+            isTripped 
+              ? 'bg-[#ecfdf5] text-[#006c49] hover:bg-[#d1fae5]' 
+              : 'bg-[#fff1f2] text-[#e11d48] hover:bg-[#ffe4e6]'
           }`}
         >
           {isTripped ? <RotateCcw className="w-3 h-3" /> : <Flame className="w-3 h-3" />}
@@ -158,21 +208,22 @@ export const PowerSourceNode: React.FC<{ data: any }> = ({ data }) => {
             e.stopPropagation();
             data.onSelect?.(data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] font-bold flex items-center gap-1 transition-colors"
         >
-          <Sliders className="w-3 h-3" />
-          <span>Inspect Registers</span>
+          <span>Registers</span>
+          <ChevronRight className="w-3 h-3" />
         </button>
       </NodeToolbar>
 
-      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-xs" />
-      <Handle type="target" position={Position.Left} className="w-3 h-3 !bg-[#73738c] !border-2 !border-white" />
+      {/* Handles */}
+      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-[#73738c] !border-2 !border-white" />
 
-      {/* Header */}
+      {/* 1. Header: Icon Avatar, Name, Status Pill */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2.5">
           <div
-            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs transition-colors ${
+            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs transition-transform duration-200 group-hover:scale-105 ${
               isTripped
                 ? 'bg-[#f43f5e]/15 text-[#e11d48]'
                 : isStandby
@@ -188,7 +239,7 @@ export const PowerSourceNode: React.FC<{ data: any }> = ({ data }) => {
             <span className="font-display font-bold text-xs text-[#131b2e] leading-tight block">
               {data.label}
             </span>
-            <span className="text-[10px] font-mono text-[#73738c]">
+            <span className="text-[9px] font-mono text-[#73738c]">
               {data.subsystem || 'Asset Point'}
             </span>
           </div>
@@ -212,43 +263,48 @@ export const PowerSourceNode: React.FC<{ data: any }> = ({ data }) => {
         </span>
       </div>
 
-      {/* Sparkline & Real-time Value */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#eaebf0]/70">
-        <div>
-          <span className="text-[9px] font-mono text-[#73738c] uppercase block">Output Power</span>
-          <div className="flex items-baseline gap-1">
-            <span className={`font-mono font-black text-lg ${isTripped ? 'text-[#e11d48]' : 'text-[#131b2e]'}`}>
-              {data.value}
-            </span>
-            <span className="text-xs font-mono font-semibold text-[#4648d4]">
-              {data.metricUnit || 'kW'}
-            </span>
-          </div>
+      {/* 2. Bold Telemetry Value & Live Sparkline */}
+      <div className="flex items-baseline justify-between mt-2 pt-2 border-t border-[#eaebf0]/70">
+        <div className="flex items-baseline gap-1">
+          <span className={`font-mono font-black text-xl tracking-tight ${isTripped ? 'text-[#e11d48]' : 'text-[#131b2e]'}`}>
+            {data.value}
+          </span>
+          <span className="text-[10px] font-mono font-bold text-[#4648d4]">
+            {data.metricUnit || 'kW'}
+          </span>
         </div>
 
-        {/* Real-time Inline Waveform */}
         <div className="flex flex-col items-end">
-          <span className="text-[8px] font-mono text-[#73738c] uppercase">Telemetry Wave</span>
-          {renderMiniSparkline(sparklineData, sparklineColor, 20, 75)}
+          {renderMiniSparkline(sparklineData, sparklineColor, 18, 70)}
         </div>
       </div>
 
-      {/* Load percentage progress bar */}
-      {data.capacityPercent !== undefined && (
-        <div className="mt-2 w-full bg-[#f4f4f5] rounded-full h-1.5 overflow-hidden">
+      {/* 3. Sleek Load / Capacity Gradient Bar */}
+      <div className="mt-2.5">
+        <div className="flex items-center justify-between text-[8px] font-mono text-[#73738c] mb-1">
+          <span>CAPACITY</span>
+          <span className="font-bold text-[#131b2e]">{cap}%</span>
+        </div>
+        <div className="w-full bg-[#f4f4f5] rounded-full h-1.5 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              isTripped ? 'bg-[#e11d48]' : 'bg-[#4648d4]'
+            className={`h-full rounded-full transition-all duration-500 ease-out ${
+              isTripped 
+                ? 'bg-[#e11d48]' 
+                : isSurge 
+                ? 'bg-gradient-to-r from-[#006577] to-[#0891b2]' 
+                : 'bg-gradient-to-r from-[#4648d4] to-[#10b981]'
             }`}
-            style={{ width: `${Math.min(Math.max(data.capacityPercent, 0), 100)}%` }}
+            style={{ width: `${cap}%` }}
           />
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
+// ========================================================
 // 2. MAIN SWITCHBOARD BUS NODE (400V 50Hz MLVD Bus)
+// ========================================================
 export const BusNode: React.FC<{ data: any }> = ({ data }) => {
   const isRecovering = data.status === 'RECOVERING';
   const isSelected = data.isSelected;
@@ -257,21 +313,27 @@ export const BusNode: React.FC<{ data: any }> = ({ data }) => {
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-5 py-4 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[280px] shadow-sm select-none ${
+      className={`group relative px-5 py-4 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[290px] shadow-sm select-none ${
         isRecovering
-          ? 'border-[#f59e0b] ring-4 ring-[#f59e0b]/25 bg-[#fffbeb] shadow-lg'
+          ? 'border-[#f59e0b] ring-3 ring-[#f59e0b]/25 bg-[#fffbeb]/60 shadow-lg'
           : isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
           : 'border-[#4648d4] hover:shadow-md'
       }`}
     >
-      <NodeToolbar isVisible={isSelected} position={Position.Top} offset={10} className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30">
+      {/* Node Toolbar */}
+      <NodeToolbar
+        isVisible={isSelected}
+        position={Position.Top}
+        offset={10}
+        className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30 font-mono text-[10px]"
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onQuickAction?.('harmonic_scan', data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] font-bold flex items-center gap-1 shadow-2xs"
         >
           <Activity className="w-3 h-3" />
           <span>Harmonic Scan</span>
@@ -281,69 +343,77 @@ export const BusNode: React.FC<{ data: any }> = ({ data }) => {
             e.stopPropagation();
             data.onSelect?.(data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-white text-[#131b2e] border border-[#eaebf0] hover:bg-[#faf8ff] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-white text-[#131b2e] border border-[#eaebf0] hover:bg-[#faf8ff] font-bold flex items-center gap-1"
         >
           <Sliders className="w-3 h-3" />
           <span>Bus Health</span>
         </button>
       </NodeToolbar>
 
-      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-xs" />
-      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-xs" />
-      <Handle type="target" position={Position.Bottom} id="bottom" className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-xs" />
+      {/* Handles */}
+      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="target" position={Position.Bottom} id="bottom" className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
 
-      <div className="flex items-center justify-between gap-2 mb-2">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-xs font-bold text-xs">
+          <div className="w-9 h-9 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-xs font-bold text-xs">
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="font-display font-bold text-sm text-[#131b2e] block leading-tight">
+            <span className="font-display font-bold text-xs text-[#131b2e] block leading-tight">
               {data.label}
             </span>
-            <span className="text-[10px] font-mono text-[#4648d4] font-semibold">
+            <span className="text-[9px] font-mono text-[#4648d4] font-semibold">
               3-Phase 400V AC Bus
             </span>
           </div>
         </div>
 
         <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold inline-flex items-center gap-1.5 ${
+          className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold inline-flex items-center gap-1.5 ${
             isRecovering
               ? 'bg-[#fffbeb] text-[#d97706] border border-[#f59e0b]/30 animate-pulse'
               : 'bg-[#ecfdf5] text-[#006c49]'
           }`}
         >
-          <span className={`w-2 h-2 rounded-full ${isRecovering ? 'bg-[#d97706]' : 'bg-[#10b981]'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${isRecovering ? 'bg-[#d97706]' : 'bg-[#10b981]'}`} />
           {data.status || 'SYNCHRONIZED'}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-[#eaebf0]">
+      {/* Dual Glanceable Telemetry */}
+      <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-[#eaebf0]">
         <div>
-          <span className="text-[10px] text-[#73738c] font-medium block">Total Demand</span>
-          <span className="font-mono font-extrabold text-base text-[#131b2e]">
-            {data.loadKw} kW
+          <span className="text-[9px] text-[#73738c] font-mono uppercase block">Total Load</span>
+          <span className="font-mono font-black text-lg text-[#131b2e]">
+            {data.loadKw} <span className="text-[10px] font-bold text-[#4648d4]">kW</span>
           </span>
         </div>
         <div>
-          <span className="text-[10px] text-[#73738c] font-medium block">Grid Frequency</span>
-          <span className={`font-mono font-extrabold text-base ${isRecovering ? 'text-[#d97706]' : 'text-[#006c49]'}`}>
-            {data.frequencyHz || '50.00'} Hz
+          <span className="text-[9px] text-[#73738c] font-mono uppercase block">Grid Frequency</span>
+          <span className={`font-mono font-black text-lg ${isRecovering ? 'text-[#d97706]' : 'text-[#006c49]'}`}>
+            {data.frequencyHz || '50.00'} <span className="text-[10px] font-bold">Hz</span>
           </span>
         </div>
       </div>
 
-      {/* Frequency Oscilloscope Wave */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#eaebf0]/60">
-        <span className="text-[9px] font-mono text-[#73738c]">50Hz PLL Lock</span>
+      {/* PLL Waveform */}
+      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#eaebf0]/60">
+        <span className="text-[8px] font-mono text-[#73738c] uppercase flex items-center gap-1">
+          <Waves className="w-3 h-3 text-[#4648d4]" />
+          PLL Lock 50Hz
+        </span>
         {renderMiniSparkline(freqPoints, isRecovering ? '#d97706' : '#10b981', 18, 90)}
       </div>
     </div>
   );
 };
 
+// ========================================================
 // 3. CONSUMER LOAD NODE (HVAC, Utilidor, Science)
+// ========================================================
 export const ConsumerNode: React.FC<{ data: any }> = ({ data }) => {
   const Icon = iconMap[data.iconType] || Droplet;
   const isAlert = data.status === 'ALERT';
@@ -356,49 +426,56 @@ export const ConsumerNode: React.FC<{ data: any }> = ({ data }) => {
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[240px] shadow-xs select-none ${
+      className={`group relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[250px] shadow-xs select-none ${
         isAlert
-          ? 'border-[#06b6d4] ring-4 ring-[#06b6d4]/25 bg-[#ecfeff] shadow-md'
+          ? 'border-[#06b6d4] ring-3 ring-[#06b6d4]/25 bg-[#ecfeff]/60 shadow-md'
           : isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
-          : 'border-[#eaebf0] hover:border-[#4648d4]/50 hover:shadow-sm'
+          : 'border-[#eaebf0] hover:border-[#4648d4]/50 hover:shadow-md'
       }`}
     >
-      <NodeToolbar isVisible={isSelected} position={Position.Top} offset={10} className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30">
+      <NodeToolbar
+        isVisible={isSelected}
+        position={Position.Top}
+        offset={10}
+        className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30 font-mono text-[10px]"
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onQuickAction?.('boost_action', data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#ecfeff] text-[#0891b2] hover:bg-[#cffafe] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-[#ecfeff] text-[#0891b2] hover:bg-[#cffafe] font-bold flex items-center gap-1 shadow-2xs"
         >
           <Sparkles className="w-3 h-3" />
-          <span>Trace Heat Boost</span>
+          <span>Boost Circuit</span>
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onSelect?.(data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff]"
+          className="px-2.5 py-1 rounded-lg bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] font-bold flex items-center gap-1"
         >
-          Inspect
+          <span>Telemetry</span>
+          <ChevronRight className="w-3 h-3" />
         </button>
       </NodeToolbar>
 
-      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-xs" />
-      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#006577] !border-2 !border-white shadow-xs" />
+      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="source" position={Position.Right} className="w-3.5 h-3.5 !bg-[#006577] !border-2 !border-white shadow-2xs" />
 
+      {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#006577]/10 text-[#006577] flex items-center justify-center font-bold text-xs">
+          <div className="w-8 h-8 rounded-xl bg-[#006577]/10 text-[#006577] flex items-center justify-center font-bold text-xs transition-transform duration-200 group-hover:scale-105">
             <Icon className="w-4 h-4" />
           </div>
           <div>
             <span className="font-display font-bold text-xs text-[#131b2e] leading-tight block">
               {data.label}
             </span>
-            <span className="text-[10px] font-mono text-[#73738c]">
+            <span className="text-[9px] font-mono text-[#73738c]">
               {data.subsystem || 'Life Support'}
             </span>
           </div>
@@ -422,50 +499,71 @@ export const ConsumerNode: React.FC<{ data: any }> = ({ data }) => {
         </span>
       </div>
 
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#eaebf0]/70">
+      {/* Telemetry and status */}
+      <div className="flex items-baseline justify-between mt-2 pt-2 border-t border-[#eaebf0]/70">
         <div>
-          <span className="font-mono font-black text-lg text-[#131b2e]">
+          <span className="font-mono font-black text-xl text-[#131b2e]">
             {data.value}
           </span>
-          <span className="text-[10px] font-mono font-semibold text-[#006577] block">
+          <span className="text-[9px] font-mono font-semibold text-[#006577] block mt-0.5">
             {data.secondary}
           </span>
         </div>
 
         <div className="flex flex-col items-end">
-          <span className="text-[8px] font-mono text-[#73738c] uppercase">Loop Trend</span>
-          {renderMiniSparkline(points, sparkColor, 18, 75)}
+          {renderMiniSparkline(points, sparkColor, 18, 70)}
         </div>
       </div>
     </div>
   );
 };
 
-// 4. COGNITIVE AGENT NODE (Situation Awareness, Causal Diagnostic, Sandbox, Friday)
+// ========================================================
+// 4. COGNITIVE AGENT NODE (Situation Awareness, Causal Reasoner, Sandbox, Friday)
+// ========================================================
 export const AgentNode: React.FC<{ data: any }> = ({ data }) => {
   const isFriday = data.id === 'agent_friday';
   const isSelected = data.isSelected;
+  const isAlert = data.hypothesis?.toLowerCase().includes('trip') || data.hypothesis?.toLowerCase().includes('freeze');
+
+  // Parse numerical certainty (default 99)
+  const confRaw = typeof data.confidence === 'string' ? parseFloat(data.confidence) : 99;
+  const confidence = isNaN(confRaw) ? 99 : Math.round(confRaw > 1 ? confRaw : confRaw * 100);
+
+  // Short glanceable insight tag instead of a paragraph
+  const insightTag = data.hypothesis
+    ? data.hypothesis.length > 45
+      ? data.hypothesis.substring(0, 42) + '...'
+      : data.hypothesis
+    : '505 sensor streams nominal';
 
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[240px] shadow-xs select-none ${
+      className={`group relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[260px] max-w-[275px] shadow-xs select-none ${
         isFriday
-          ? 'border-[#4648d4] ring-2 ring-[#4648d4]/25 shadow-md bg-gradient-to-br from-white to-[#f2f3ff]'
+          ? 'border-[#4648d4] ring-2 ring-[#4648d4]/20 shadow-md bg-gradient-to-br from-white to-[#faf8ff]'
+          : isAlert
+          ? 'border-[#f43f5e] ring-3 ring-[#f43f5e]/25 bg-[#fff1f2]/50 shadow-md'
           : isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
-          : 'border-[#eaebf0] hover:border-[#4648d4]/40 hover:shadow-sm'
+          : 'border-[#eaebf0] hover:border-[#4648d4]/40 hover:shadow-md'
       }`}
     >
-      <NodeToolbar isVisible={isSelected} position={Position.Top} offset={10} className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30">
+      <NodeToolbar
+        isVisible={isSelected}
+        position={Position.Top}
+        offset={10}
+        className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30 font-mono text-[10px]"
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onQuickAction?.('deliberate', data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#faf8ff] text-[#4648d4] border border-[#eaedff] hover:bg-[#f2f3ff] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-[#4648d4] text-white hover:bg-[#3b3dbf] font-bold flex items-center gap-1 shadow-2xs"
         >
-          <Brain className="w-3 h-3 text-[#4648d4]" />
+          <Play className="w-3 h-3 fill-current" />
           <span>Deliberate</span>
         </button>
         <button
@@ -473,20 +571,22 @@ export const AgentNode: React.FC<{ data: any }> = ({ data }) => {
             e.stopPropagation();
             data.onSelect?.(data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-white text-[#131b2e] border border-[#eaebf0] hover:bg-[#faf8ff]"
+          className="px-2.5 py-1 rounded-lg bg-[#f2f3ff] text-[#4648d4] hover:bg-[#eaedff] font-bold flex items-center gap-1"
         >
-          Inspect
+          <span>Inspect</span>
+          <ChevronRight className="w-3 h-3" />
         </button>
       </NodeToolbar>
 
-      <Handle type="target" position={Position.Left} className="w-3 h-3 !bg-[#4648d4] !border-2 !border-white" />
-      <Handle type="source" position={Position.Right} className="w-3 h-3 !bg-[#4648d4] !border-2 !border-white" />
-      <Handle type="source" position={Position.Top} id="top" className="w-3 h-3 !bg-[#4648d4] !border-2 !border-white" />
+      <Handle type="target" position={Position.Left} className="w-3 h-3 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="source" position={Position.Right} className="w-3 h-3 !bg-[#4648d4] !border-2 !border-white shadow-2xs" />
+      <Handle type="source" position={Position.Top} id="top" className="w-2.5 h-2.5 !bg-[#4648d4] !border-2 !border-white" />
 
+      {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <div
-            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs transition-transform duration-200 group-hover:scale-105 ${
               isFriday ? 'bg-[#4648d4] text-white shadow-xs' : 'bg-[#e1e0ff] text-[#07006c]'
             }`}
           >
@@ -496,7 +596,7 @@ export const AgentNode: React.FC<{ data: any }> = ({ data }) => {
             <span className="font-display font-bold text-xs text-[#131b2e] leading-tight block">
               {data.label}
             </span>
-            <span className="text-[10px] font-mono text-[#4648d4] font-semibold">
+            <span className="text-[9px] font-mono text-[#4648d4] font-semibold">
               {data.role || 'Autonomous Cognitive'}
             </span>
           </div>
@@ -507,57 +607,67 @@ export const AgentNode: React.FC<{ data: any }> = ({ data }) => {
         </span>
       </div>
 
-      <div className="text-[11px] text-[#464554] font-mono line-clamp-2 mt-2 pt-2 border-t border-[#eaebf0]/70">
-        <strong className="text-[#006c49]">Hypothesis: </strong>
-        {data.hypothesis || 'All sensor streams nominal.'}
-      </div>
+      {/* Minimal Visual Insight Capsule & Radial Certainty Gauge */}
+      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-[#eaebf0]/70">
+        <div className="flex-1 min-w-0">
+          <div className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-[#131b2e] bg-[#f8fafc] px-2 py-1 rounded-lg border border-[#eaebf0] truncate w-full">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isAlert ? 'bg-[#e11d48]' : 'bg-[#10b981]'}`} />
+            <span className="truncate">{insightTag}</span>
+          </div>
+        </div>
 
-      <div className="flex items-center justify-between mt-2 pt-1.5 text-[10px] font-mono text-[#73738c]">
-        <span>Consensus Confidence</span>
-        <span className="font-bold text-[#006c49]">{data.confidence || '99.4%'}</span>
+        <div className="shrink-0">
+          <MinimalRadialGauge pct={confidence} color={isAlert ? '#e11d48' : '#006c49'} size={34} />
+        </div>
       </div>
     </div>
   );
 };
 
+// ========================================================
 // 5. GATEWAY & SATCOM NODE (NCPOR Goa, Interlocks)
+// ========================================================
 export const GatewayNode: React.FC<{ data: any }> = ({ data }) => {
   const isSelected = data.isSelected;
 
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[220px] shadow-xs select-none ${
+      className={`group relative px-4 py-3.5 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[230px] shadow-xs select-none ${
         isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
-          : 'border-[#eaebf0] hover:border-[#4648d4]/50'
+          : 'border-[#eaebf0] hover:border-[#4648d4]/50 hover:shadow-md'
       }`}
     >
-      <NodeToolbar isVisible={isSelected} position={Position.Top} className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30">
+      <NodeToolbar
+        isVisible={isSelected}
+        position={Position.Top}
+        className="flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#eaebf0] shadow-md z-30 font-mono text-[10px]"
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             data.onQuickAction?.('ping_satcom', data);
           }}
-          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#ecfeff] text-[#006577] hover:bg-[#cffafe] flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg bg-[#ecfeff] text-[#006577] hover:bg-[#cffafe] font-bold flex items-center gap-1 shadow-2xs"
         >
           <Radio className="w-3 h-3" />
           <span>Ping Satcom</span>
         </button>
       </NodeToolbar>
 
-      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#006577] !border-2 !border-white shadow-xs" />
+      <Handle type="target" position={Position.Left} className="w-3.5 h-3.5 !bg-[#006577] !border-2 !border-white shadow-2xs" />
 
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#006577]/10 text-[#006577] flex items-center justify-center font-bold text-xs">
+          <div className="w-8 h-8 rounded-xl bg-[#006577]/10 text-[#006577] flex items-center justify-center font-bold text-xs transition-transform duration-200 group-hover:scale-105">
             <Radio className="w-4 h-4" />
           </div>
           <div>
             <span className="font-display font-bold text-xs text-[#131b2e] leading-tight block">
               {data.label}
             </span>
-            <span className="text-[10px] font-mono text-[#006577] font-semibold">
+            <span className="text-[9px] font-mono text-[#006577] font-semibold">
               Polar Satcom Link
             </span>
           </div>
@@ -569,10 +679,13 @@ export const GatewayNode: React.FC<{ data: any }> = ({ data }) => {
       </div>
 
       <div className="flex items-baseline justify-between mt-2 pt-2 border-t border-[#eaebf0]/70">
-        <span className="font-mono font-bold text-sm text-[#131b2e]">
-          {data.latency || '640ms'}
-        </span>
-        <span className="text-[10px] font-mono text-[#006c49] font-bold">
+        <div>
+          <span className="text-[8px] font-mono text-[#73738c] uppercase block">Roundtrip Latency</span>
+          <span className="font-mono font-black text-base text-[#131b2e]">
+            {data.latency || '640ms'}
+          </span>
+        </div>
+        <span className="text-[9px] font-mono text-[#006c49] font-bold bg-[#ecfdf5] px-2 py-0.5 rounded-md border border-[#a7f3d0]">
           {data.deltaSaved || '90% Delta Saved'}
         </span>
       </div>
@@ -580,17 +693,19 @@ export const GatewayNode: React.FC<{ data: any }> = ({ data }) => {
   );
 };
 
+// ========================================================
 // 6. SAFETY INTERLOCK GOVERNOR NODE (Tier 1/2/3 Hardware Protections)
+// ========================================================
 export const InterlockNode: React.FC<{ data: any }> = ({ data }) => {
   const isSelected = data.isSelected;
 
   return (
     <div
       onClick={() => data.onSelect?.(data)}
-      className={`relative px-4 py-3 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-200 min-w-[210px] shadow-xs select-none ${
+      className={`group relative px-4 py-3 rounded-2xl bg-white border text-left cursor-pointer transition-all duration-300 min-w-[220px] shadow-xs select-none ${
         isSelected
           ? 'border-[#4648d4] ring-3 ring-[#4648d4]/25 shadow-md'
-          : 'border-[#eaebf0] hover:border-[#4648d4]/40'
+          : 'border-[#eaebf0] hover:border-[#4648d4]/40 hover:shadow-md'
       }`}
     >
       <Handle type="target" position={Position.Left} className="w-3 h-3 !bg-[#10b981] !border-2 !border-white" />
@@ -598,7 +713,7 @@ export const InterlockNode: React.FC<{ data: any }> = ({ data }) => {
 
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#ecfdf5] text-[#006c49] flex items-center justify-center font-bold text-xs">
+          <div className="w-7 h-7 rounded-lg bg-[#ecfdf5] text-[#006c49] flex items-center justify-center font-bold text-xs transition-transform duration-200 group-hover:scale-105">
             <Lock className="w-3.5 h-3.5" />
           </div>
           <div>
@@ -616,9 +731,9 @@ export const InterlockNode: React.FC<{ data: any }> = ({ data }) => {
         </span>
       </div>
 
-      <div className="text-[10px] font-mono text-[#464554] mt-1.5 pt-1.5 border-t border-[#eaebf0]/70 flex items-center justify-between">
-        <span>Hardware Limit</span>
-        <span className="font-bold text-[#131b2e]">&lt; 1.20s Relay</span>
+      <div className="text-[9px] font-mono text-[#464554] mt-1.5 pt-1.5 border-t border-[#eaebf0]/70 flex items-center justify-between">
+        <span className="text-[#73738c]">HARDWARE RELAY</span>
+        <span className="font-bold text-[#131b2e]">&lt; 1.20s Contact</span>
       </div>
     </div>
   );

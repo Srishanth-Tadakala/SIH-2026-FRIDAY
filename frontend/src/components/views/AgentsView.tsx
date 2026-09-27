@@ -33,7 +33,8 @@ import {
   Layers,
   Zap,
   Sliders,
-  Maximize2
+  Maximize2,
+  Brain
 } from 'lucide-react';
 import { StationId, AgentSocietyStatus, DynamicAgentCall } from '../../types';
 import { 
@@ -904,6 +905,71 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      {/* 1.5. Glanceable Cognitive Society Telemetry Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#f2f3ff] text-[#4648d4] flex items-center justify-center shrink-0">
+            <Brain className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Society Nodes</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">10 <span className="text-[10px] font-semibold text-[#4648d4]">Specialists</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] text-[#006c49] flex items-center justify-center shrink-0">
+            <Radio className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Neural Bus</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">{busStats?.total_messages_published || 640} <span className="text-[10px] font-semibold text-[#006c49]">Msg</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#fffbeb] text-[#d97706] flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">LPU Latency</span>
+            <span className="font-mono font-black text-sm text-[#d97706]">{groqStatus?.latency_ms || 38} <span className="text-[10px] font-semibold">ms</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#ecfeff] text-[#006577] flex items-center justify-center shrink-0">
+            <Activity className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Causal Graph</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">35 <span className="text-[10px] font-semibold text-[#006577]">DAG Vertices</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#f0fdf4] text-[#16a34a] flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Safety Interlock</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">&lt;1.2s <span className="text-[10px] font-semibold text-[#16a34a]">Tier 1</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isResolved ? 'bg-[#ecfdf5] text-[#006c49]' : activeCrisis ? 'bg-[#fff1f2] text-[#e11d48]' : 'bg-[#f2f3ff] text-[#4648d4]'}`}>
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Consensus State</span>
+            <span className={`font-mono font-black text-sm ${isResolved ? 'text-[#006c49]' : activeCrisis ? 'text-[#e11d48]' : 'text-[#4648d4]'}`}>
+              {isResolved ? 'Mitigated' : activeCrisis ? 'Deliberating' : 'Nominal'}
+            </span>
+          </div>
         </div>
       </div>
 

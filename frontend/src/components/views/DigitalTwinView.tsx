@@ -31,7 +31,11 @@ import {
   Filter,
   Maximize2,
   Sliders,
-  Crosshair
+  Crosshair,
+  Sun,
+  BatteryCharging,
+  Thermometer,
+  Wind
 } from 'lucide-react';
 import { StationId, StationSnapshot, AgentSocietyStatus } from '../../types';
 import { 
@@ -979,6 +983,69 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      {/* 1.5. Glanceable Microgrid & Station Telemetry Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#f2f3ff] text-[#4648d4] flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Bus Demand</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">{loadKw} <span className="text-[10px] font-semibold text-[#4648d4]">kW</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] text-[#006c49] flex items-center justify-center shrink-0">
+            <Activity className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Frequency</span>
+            <span className={`font-mono font-black text-sm ${isChpTripped ? 'text-[#d97706]' : 'text-[#006c49]'}`}>{isChpTripped ? '49.55' : freqHz} <span className="text-[10px] font-semibold">Hz</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isChpTripped ? 'bg-[#fff1f2] text-[#e11d48]' : 'bg-[#f2f3ff] text-[#4648d4]'}`}>
+            <Flame className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Baseload CHP</span>
+            <span className={`font-mono font-black text-sm ${isChpTripped ? 'text-[#e11d48]' : 'text-[#131b2e]'}`}>{chp1Value} <span className="text-[10px] font-semibold text-[#4648d4]">kW</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#f0fdf4] text-[#16a34a] flex items-center justify-center shrink-0">
+            <BatteryCharging className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">BESS Storage</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">{bessSoc} <span className="text-[10px] font-semibold text-[#16a34a]">% SOC</span></span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isBlizzard ? 'bg-[#ecfeff] text-[#0891b2]' : 'bg-[#faf8ff] text-[#006577]'}`}>
+            <Thermometer className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Habitat Living</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">+{indoorTemp}°C</span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white border border-[#eaebf0] shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#ecfeff] text-[#006577] flex items-center justify-center shrink-0">
+            <Radio className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-[#73738c] uppercase block">Goa Satcom</span>
+            <span className="font-mono font-black text-sm text-[#131b2e]">640ms <span className="text-[10px] font-semibold text-[#006c49]">Delta</span></span>
+          </div>
         </div>
       </div>
 
