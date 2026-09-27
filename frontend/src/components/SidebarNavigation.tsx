@@ -10,11 +10,12 @@ import {
   ArrowUpRight, 
   Menu, 
   X,
-  Radio
+  Radio,
+  Database
 } from 'lucide-react';
 import { StationId } from '../types';
 
-export type NavView = 'overview' | 'stations' | 'digital_twin' | 'agents' | 'analytics' | 'actions';
+export type NavView = 'overview' | 'stations' | 'digital_twin' | 'agents' | 'memory' | 'analytics' | 'actions';
 
 interface SidebarNavigationProps {
   activeStation: StationId;
@@ -38,6 +39,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     { id: 'stations', label: 'Station Fleet', icon: Compass },
     { id: 'digital_twin', label: 'Digital Twin', icon: Activity },
     { id: 'agents', label: 'Agents', icon: Users },
+    { id: 'memory', label: 'Memory', icon: Database },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'actions', label: 'Actions', icon: ShieldCheck },
   ];
