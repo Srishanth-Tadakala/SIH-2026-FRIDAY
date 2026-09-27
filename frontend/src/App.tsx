@@ -15,6 +15,7 @@ import { DigitalTwinView } from './components/views/DigitalTwinView';
 import { AgentsView } from './components/views/AgentsView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ActionsView } from './components/views/ActionsView';
+import { MemoryView } from './components/views/MemoryView';
 import { Footer } from './components/Footer';
 import { CopilotDrawer } from './components/CopilotDrawer';
 import { Sparkles } from 'lucide-react';
@@ -27,7 +28,7 @@ const getInitialView = (): NavView => {
     const path = window.location.pathname.replace(/^\//, '').toLowerCase();
 
     const candidate = viewParam || hash || path;
-    const validViews: NavView[] = ['overview', 'stations', 'digital_twin', 'agents', 'analytics', 'actions'];
+    const validViews: NavView[] = ['overview', 'stations', 'digital_twin', 'agents', 'memory', 'analytics', 'actions'];
     if (validViews.includes(candidate as NavView)) {
       return candidate as NavView;
     }
@@ -97,21 +98,19 @@ export function App() {
     setIsResolved(false);
 
     try {
-      await injectScenario(crisis, { station_id: station });
+      const res = await injectScenario(crisis, { station_id: station });
+      if (res?.active_scenario) {
+        setActiveCrisis(res.active_scenario);
+      }
     } catch {}
-
-    // Simulated autonomous multi-agent recovery resolution in 1.2s
-    setTimeout(() => {
-      setIsResolved(true);
-    }, 1200);
   };
 
   const handleReset = async () => {
-    setActiveCrisis(null);
-    setIsResolved(false);
     try {
       await clearScenario(station);
     } catch {}
+    setActiveCrisis(null);
+    setIsResolved(false);
   };
 
   const handleLaunchCockpit = () => {
@@ -207,6 +206,10 @@ export function App() {
 
           {activeView === 'agents' && (
             <AgentsView activeStation={station} />
+          )}
+
+          {activeView === 'memory' && (
+            <MemoryView activeStation={station} />
           )}
 
           {activeView === 'analytics' && (

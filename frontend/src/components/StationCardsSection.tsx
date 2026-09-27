@@ -82,7 +82,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Microgrid Load</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {bharatiData?.kpis?.station_electrical_load_kw?.toFixed(1) || '148.7'} kW
+                {bharatiData?.kpis?.station_electrical_load_kw != null
+                  ? `${bharatiData.kpis.station_electrical_load_kw.toFixed(1)} kW`
+                  : '—'}
               </div>
             </div>
 
@@ -92,7 +94,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Habitat Temp</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                +{bharatiData?.kpis?.indoor_avg_temp_c?.toFixed(1) || '20.2'}°C
+                {bharatiData?.kpis?.indoor_avg_temp_c != null
+                  ? `${bharatiData.kpis.indoor_avg_temp_c > 0 ? '+' : ''}${bharatiData.kpis.indoor_avg_temp_c.toFixed(1)}°C`
+                  : '—'}
               </div>
             </div>
 
@@ -102,7 +106,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Polar Wind</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {bharatiData?.kpis?.wind_speed_mps?.toFixed(1) || '12.0'} m/s
+                {bharatiData?.kpis?.wind_speed_mps != null
+                  ? `${bharatiData.kpis.wind_speed_mps.toFixed(1)} m/s`
+                  : '—'}
               </div>
             </div>
 
@@ -112,7 +118,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Fuel Autonomy</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {bharatiData?.kpis?.fuel_autonomy_days?.toFixed(0) || '282'} Days
+                {bharatiData?.kpis?.fuel_autonomy_days != null
+                  ? `${bharatiData.kpis.fuel_autonomy_days.toFixed(0)} Days`
+                  : '—'}
               </div>
             </div>
 
@@ -122,17 +130,19 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Water Storage</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {bharatiData?.kpis?.potable_tank_level_pct?.toFixed(0) || '82'}% Level
+                {bharatiData?.kpis?.potable_tank_level_pct != null
+                  ? `${bharatiData.kpis.potable_tank_level_pct.toFixed(0)}% Level`
+                  : '—'}
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-[#faf8ff] border border-[#eaedff]">
               <div className="flex items-center gap-1.5 text-xs text-[#73738c] mb-1 font-mono">
                 <Radio className="w-3.5 h-3.5 text-[#4648d4]" />
-                <span>Satcom Uplink</span>
+                <span>Twin Telemetry</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                640ms Delta
+                {bharatiData ? 'DIGITAL_TWIN' : 'DISCONNECTED'}
               </div>
             </div>
           </div>
@@ -197,7 +207,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Microgrid Load</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {maitriData?.kpis?.station_electrical_load_kw?.toFixed(1) || '148.0'} kW
+                {maitriData?.kpis?.station_electrical_load_kw != null
+                  ? `${maitriData.kpis.station_electrical_load_kw.toFixed(1)} kW`
+                  : '—'}
               </div>
             </div>
 
@@ -207,7 +219,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Habitat Temp</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                +{maitriData?.kpis?.indoor_avg_temp_c?.toFixed(1) || '20.2'}°C
+                {maitriData?.kpis?.indoor_avg_temp_c != null
+                  ? `${maitriData.kpis.indoor_avg_temp_c > 0 ? '+' : ''}${maitriData.kpis.indoor_avg_temp_c.toFixed(1)}°C`
+                  : '—'}
               </div>
             </div>
 
@@ -217,7 +231,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Polar Wind</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {maitriData?.kpis?.wind_speed_mps?.toFixed(1) || '12.0'} m/s
+                {maitriData?.kpis?.wind_speed_mps != null
+                  ? `${maitriData.kpis.wind_speed_mps.toFixed(1)} m/s`
+                  : '—'}
               </div>
             </div>
 
@@ -227,7 +243,9 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Fuel Autonomy</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {maitriData?.kpis?.fuel_autonomy_days?.toFixed(0) || '262'} Days
+                {maitriData?.kpis?.fuel_autonomy_days != null
+                  ? `${maitriData.kpis.fuel_autonomy_days.toFixed(0)} Days`
+                  : '—'}
               </div>
             </div>
 
@@ -237,17 +255,19 @@ export const StationCardsSection: React.FC<StationCardsSectionProps> = ({
                 <span>Water Storage</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                {maitriData?.kpis?.potable_tank_level_pct?.toFixed(0) || '82'}% Level
+                {maitriData?.kpis?.potable_tank_level_pct != null
+                  ? `${maitriData.kpis.potable_tank_level_pct.toFixed(0)}% Level`
+                  : '—'}
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-[#faf8ff] border border-[#eaedff]">
               <div className="flex items-center gap-1.5 text-xs text-[#73738c] mb-1 font-mono">
                 <Radio className="w-3.5 h-3.5 text-[#006577]" />
-                <span>Satcom Uplink</span>
+                <span>Twin Telemetry</span>
               </div>
               <div className="font-mono font-bold text-base text-[#131b2e]">
-                640ms Delta
+                {maitriData ? 'DIGITAL_TWIN' : 'DISCONNECTED'}
               </div>
             </div>
           </div>

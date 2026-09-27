@@ -36,26 +36,40 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
     ? '69°24\'S, 76°11\'E' 
     : '70°45\'S, 11°43\'E';
 
-  const totalLoadKw = (kpis?.station_electrical_load_kw ?? (kpis as any)?.total_load_kw ?? 148.7).toFixed(1);
-  const totalGenKw = (kpis?.total_generation_kw ?? 148.8).toFixed(1);
-  const reserveKw = Math.max(0, Number(totalGenKw) - Number(totalLoadKw)).toFixed(1);
+  const totalLoadKw = kpis?.station_electrical_load_kw != null 
+    ? kpis.station_electrical_load_kw.toFixed(1) 
+    : (kpis as any)?.total_load_kw != null ? (kpis as any).total_load_kw.toFixed(1) : null;
+    
+  const totalGenKw = kpis?.total_generation_kw != null 
+    ? kpis.total_generation_kw.toFixed(1) 
+    : null;
+    
+  const reserveKw = (totalGenKw != null && totalLoadKw != null) 
+    ? Math.max(0, Number(totalGenKw) - Number(totalLoadKw)).toFixed(1) 
+    : null;
 
-  const rawChp1 = readings['BHARATI.CHP.01.POWER']?.value ?? 75.0;
-  const chp1Kw = isChp1Tripped ? '0.0' : Number(rawChp1).toFixed(1);
-  const chp2Kw = isResolved ? '65.0' : '0.0';
+  const rawChp1 = readings['BHARATI.CHP.01.POWER']?.value ?? readings['PWR-GEN-01-KW']?.value;
+  const chp1Kw = rawChp1 != null ? (isChp1Tripped ? '0.0' : Number(rawChp1).toFixed(1)) : null;
+  
+  const rawChp2 = readings['BHARATI.CHP.02.POWER']?.value ?? readings['PWR-GEN-02-KW']?.value;
+  const chp2Kw = rawChp2 != null ? Number(rawChp2).toFixed(1) : (isResolved ? '65.0' : null);
 
-  const rawSolar = readings['ENV-RAD-SOLAR-AVAIL']?.value ?? 18.8;
-  const solarKw = Number(rawSolar).toFixed(1);
-  const batterySoc = Math.round(kpis?.potable_tank_level_pct ? Math.min(95, kpis.potable_tank_level_pct + 10) : 92);
+  const rawSolar = readings['ENV-RAD-SOLAR-AVAIL']?.value ?? readings['PWR-SOLAR-KW']?.value;
+  const solarKw = rawSolar != null ? Number(rawSolar).toFixed(1) : null;
+  
+  const rawBattery = (kpis as any)?.bess_soc_pct ?? readings['PWR-BAT-SOC']?.value ?? kpis?.potable_tank_level_pct;
+  const batterySoc = rawBattery != null ? Math.round(Number(rawBattery)) : null;
 
-  const indoorTemp = (kpis?.indoor_avg_temp_c ?? 20.2).toFixed(1);
-  const rawUtilidor = readings['BHARATI-PIPE-WATER01-TEMP']?.value ?? 4.8;
-  const utilidorTemp = isFreeze ? '+1.2' : `+${Number(rawUtilidor).toFixed(1)}`;
-  const ambientTemp = (kpis?.ambient_temp_c ?? -18.0).toFixed(1);
-  const windMps = (isBlizzard ? 34.2 : (kpis?.wind_speed_mps ?? 12.0)).toFixed(1);
-  const healthPct = (kpis?.composite_risk_score ?? 98.6).toFixed(1);
+  const indoorTemp = kpis?.indoor_avg_temp_c != null ? kpis.indoor_avg_temp_c.toFixed(1) : null;
+  const rawUtilidor = readings['BHARATI-PIPE-WATER01-TEMP']?.value ?? readings['THM-UTILIDOR-TEMP']?.value;
+  const utilidorTemp = rawUtilidor != null ? `${Number(rawUtilidor) > 0 ? '+' : ''}${Number(rawUtilidor).toFixed(1)}` : null;
+  const ambientTemp = kpis?.ambient_temp_c != null ? kpis.ambient_temp_c.toFixed(1) : null;
+  const windMps = kpis?.wind_speed_mps != null ? kpis.wind_speed_mps.toFixed(1) : null;
+  const healthPct = kpis?.composite_risk_score != null 
+    ? Math.max(0, Math.min(100, Math.round((1.0 - (kpis.composite_risk_score / 100.0)) * 100))).toFixed(1) 
+    : null;
 
-  const sensorCount = Object.keys(readings).length || 505;
+  const sensorCount = Object.keys(readings).length;
 
   return (
     <div id="canvas" className="w-full max-w-6xl mx-auto rounded-3xl bg-white border border-[#eaebf0] shadow-xl p-5 sm:p-6 lg:p-7 relative">
@@ -141,7 +155,7 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                   </div>
                 </div>
                 <span className={`text-xs font-mono font-bold ${isChp1Tripped ? 'text-[#e11d48]' : 'text-[#4648d4]'}`}>
-                  {isChp1Tripped ? '0.0 kW (TRIPPED)' : `${chp1Kw} kW`}
+                  {isChp1Tripped ? '0.0 kW (TRIPPED)' : chp1Kw != null ? `${chp1Kw} kW` : '—'}
                 </span>
               </div>
               <div className="w-full bg-[#f4f4f5] h-1.5 rounded-full overflow-hidden">
@@ -167,7 +181,7 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                 <span className={`text-xs font-mono font-bold ${
                   isResolved ? 'text-[#006c49]' : 'text-[#71717a]'
                 }`}>
-                  {isResolved ? `${chp2Kw} kW (ONLINE)` : '0.0 kW'}
+                  {chp2Kw != null ? (isResolved ? `${chp2Kw} kW (ONLINE)` : `${chp2Kw} kW`) : '—'}
                 </span>
               </div>
               <div className="w-full bg-[#f4f4f5] h-1.5 rounded-full overflow-hidden">
@@ -188,7 +202,9 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                     <p className="text-xs font-bold text-[#131b2e]">Bifacial Solar</p>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold text-[#d97706]">{solarKw} kW</span>
+                <span className="text-xs font-mono font-bold text-[#d97706]">
+                  {solarKw != null ? `${solarKw} kW` : '—'}
+                </span>
               </div>
               <div className="w-full bg-[#f4f4f5] h-1.5 rounded-full overflow-hidden">
                 <div className="bg-[#f59e0b] h-full rounded-full w-2/5" />
@@ -206,10 +222,12 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                     <p className="text-xs font-bold text-[#131b2e]">BESS Storage</p>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold text-[#006c49]">{batterySoc}% SOC</span>
+                <span className="text-xs font-mono font-bold text-[#006c49]">
+                  {batterySoc != null ? `${batterySoc}% SOC` : '—'}
+                </span>
               </div>
               <div className="w-full bg-[#f4f4f5] h-1.5 rounded-full overflow-hidden">
-                <div className="bg-[#10b981] h-full rounded-full" style={{ width: `${batterySoc}%` }} />
+                <div className="bg-[#10b981] h-full rounded-full" style={{ width: `${batterySoc ?? 50}%` }} />
               </div>
             </div>
           </div>
@@ -219,12 +237,16 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-[#4648d4]" />
               <div>
-                <p className="text-xs font-bold text-[#131b2e]">Reserve: +{reserveKw} kW</p>
-                <span className="text-[10px] text-[#73738c]">Gen: {totalGenKw} kW | Load: {totalLoadKw} kW</span>
+                <p className="text-xs font-bold text-[#131b2e]">
+                  Reserve: {reserveKw != null ? `+${reserveKw} kW` : '—'}
+                </p>
+                <span className="text-[10px] text-[#73738c]">
+                  Gen: {totalGenKw != null ? `${totalGenKw} kW` : '—'} | Load: {totalLoadKw != null ? `${totalLoadKw} kW` : '—'}
+                </span>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-md bg-[#ecfdf5] text-[#006c49] text-[10px] font-bold">
-              Optimal
+              {reserveKw != null && Number(reserveKw) > 0 ? 'Optimal' : 'Guarded'}
             </span>
           </div>
         </div>
@@ -308,7 +330,7 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                 <h4 className="font-display font-bold text-sm text-[#131b2e]">Station Health</h4>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-[#ecfdf5] text-[#006c49] text-xs font-mono font-bold">
-                {healthPct}%
+                {healthPct != null ? `${healthPct}%` : '—'}
               </span>
             </div>
 
@@ -328,15 +350,17 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
                     stroke="currentColor"
-                    strokeDasharray={`${healthPct}, 100`}
+                    strokeDasharray={`${healthPct ?? 0}, 100`}
                     strokeLinecap="round"
                     strokeWidth="3.5"
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <span className="font-display font-black text-xl text-[#131b2e]">{healthPct}%</span>
+                  <span className="font-display font-black text-xl text-[#131b2e]">
+                    {healthPct != null ? `${healthPct}%` : '—'}
+                  </span>
                   <span className="text-[9px] text-[#73738c] uppercase tracking-wider font-mono">
-                    Nominal
+                    {healthPct != null ? (Number(healthPct) > 80 ? 'Nominal' : 'Guarded') : 'Unavailable'}
                   </span>
                 </div>
               </div>
@@ -346,17 +370,23 @@ export const PolarCommandCanvas: React.FC<PolarCommandCanvasProps> = ({
             <div className="space-y-2 mt-2">
               <div className="p-2.5 rounded-xl bg-white shadow-xs border border-[#eaebf0] flex items-center justify-between font-mono">
                 <span className="text-[11px] text-[#73738c]">Indoor Temp</span>
-                <span className="font-bold text-sm text-[#006c49]">+{indoorTemp}°C</span>
+                <span className="font-bold text-sm text-[#006c49]">
+                  {indoorTemp != null ? `${Number(indoorTemp) > 0 ? '+' : ''}${indoorTemp}°C` : '—'}
+                </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-white shadow-xs border border-[#eaebf0] flex items-center justify-between font-mono">
                 <span className="text-[11px] text-[#73738c]">Utilidor Water</span>
-                <span className="font-bold text-sm text-[#4648d4]">{utilidorTemp}°C</span>
+                <span className="font-bold text-sm text-[#4648d4]">
+                  {utilidorTemp != null ? `${utilidorTemp}°C` : '—'}
+                </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-white shadow-xs border border-[#eaebf0] flex items-center justify-between font-mono">
                 <span className="text-[11px] text-[#73738c]">Climate</span>
-                <span className="font-bold text-sm text-[#006577]">{windMps} m/s • {ambientTemp}°C</span>
+                <span className="font-bold text-sm text-[#006577]">
+                  {windMps != null ? `${windMps} m/s` : '—'} • {ambientTemp != null ? `${ambientTemp}°C` : '—'}
+                </span>
               </div>
             </div>
           </div>

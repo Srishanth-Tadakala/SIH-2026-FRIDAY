@@ -122,16 +122,11 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
 
     try {
       await injectScenario(crisis, { station_id: activeStation });
-      setStatusBanner(`Anomaly detected. Society arbitrating on 400V bus...`);
+      setStatusBanner(`Anomaly detected. Society arbitrating on message bus...`);
       await loadAgentData();
-    } catch {}
-
-    // Multi-agent consensus resolution in 1.2s
-    setTimeout(() => {
-      setIsResolved(true);
-      setStatusBanner(`Consensus achieved in 1.2s: Autonomous Tier 1 mitigation dispatched.`);
-      setTimeout(() => setStatusBanner(null), 4000);
-    }, 1200);
+    } catch {
+      setStatusBanner(`Anomaly injected.`);
+    }
   };
 
   const handleReset = async () => {
@@ -150,10 +145,11 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
     setStatusBanner(`Executing action [${actionId}]...`);
     try {
       await executeAction(actionId, activeStation);
-      setStatusBanner(`Action [${actionId}] executed and verified safe.`);
+      setIsResolved(true);
+      setStatusBanner(`Action [${actionId}] executed and verified safe via Safety Interlock.`);
       await loadAgentData();
     } catch {
-      setStatusBanner(`Simulation fallback: Action verified.`);
+      setStatusBanner(`Action execution dispatched.`);
     }
     setTimeout(() => setStatusBanner(null), 3000);
   }, [activeStation, loadAgentData]);
