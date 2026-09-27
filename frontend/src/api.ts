@@ -17,19 +17,7 @@ import {
 
 const API_BASE = '/api';
 
-// Helper for standardized fetch error handling
-async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    let errMsg = res.statusText;
-    try {
-      const errBody = await res.json();
-      if (errBody?.detail) errMsg = typeof errBody.detail === 'string' ? errBody.detail : JSON.stringify(errBody.detail);
-    } catch {}
-    throw new Error(`[API Error ${res.status}] ${errMsg}`);
-  }
-  return res.json();
-}
+import { requestJson } from './api/client';
 
 // ============================================================================
 // 1. STATIONS & SIMULATION CLOCK
