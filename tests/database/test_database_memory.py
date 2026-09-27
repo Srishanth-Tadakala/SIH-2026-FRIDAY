@@ -309,3 +309,139 @@ def test_database_api_routes():
     assert data_sync["status"] == "SUCCESS"
     assert "metrics" in data_sync
 
+
+@pytest.mark.asyncio
+async def test_memory_repository_end_to_end():
+    """Verify complete MemoryRepository pipeline: seeding, saving, filtering, searching, and telemetry."""
+    from backend.database.models import MemoryRecord, MemoryType
+    from backend.database.repositories.memory_repo import MemoryRepository
+
+    db = DatabaseManager()
+    repo = MemoryRepository(db)
+
+    # 1. Initialize baseline memories
+    await repo.initialize_baseline_memories()
+    stats = await repo.get_memory_stats()
+    assert stats["total_memories"] >= 6
+    assert "PLANNING" in stats["counts_by_agent"]
+
+    # 2. Save an agent-scoped memory
+    test_mem = MemoryRecord(
+        memory_id="MEM-TEST-999",
+        memory_type=MemoryType.INCIDENT,
+        agent_role="PLANNING",
+        station_id="bharati",
+        title="BESS Rapid Discharge Thermal Lockout",
+        summary="Prevent battery cell thermal runaway by tapering discharge current at 15% SoC.",
+        content="During rapid discharge at -25°C, internal cell impedance generates thermal gradients. Tapering current limit from 200A to 80A preserves battery lifecycle and avoids bus undervoltage trip.",
+        importance=0.96,
+        severity="CRITICAL",
+        source="AGENT_EXPERIENCE",
+        tags=["battery", "bess", "thermal_runaway", "soc", "microgrid"],
+    )
+    doc_id = await repo.save_memory(test_mem)
+    assert doc_id is not None
+
+    # 3. Retrieve by ID
+    retrieved = await repo.get_memory("MEM-TEST-999")
+    assert retrieved is not None
+    assert retrieved.title == "BESS Rapid Discharge Thermal Lockout"
+    assert retrieved.importance == 0.96
+
+    # 4. Filter by agent role and station
+    planning_mems = await repo.list_memories(agent_role="PLANNING", station_id="bharati")
+    assert len(planning_mems) >= 2
+    assert any(m.memory_id == "MEM-TEST-999" for m in planning_mems)
+
+    # 5. Filter by severity and keyword
+    crit_mems = await repo.list_memories(severity="CRITICAL", search_query="thermal")
+    assert len(crit_mems) >= 1
+    assert any("thermal" in m.title.lower() or "thermal" in m.content.lower() for m in crit_mems)
+
+    # 6. Semantic & keyword relevance search
+    results, event = await repo.search_relevant_memories(
+        agent_role="PLANNING",
+        station_id="bharati",
+        query_text="bess battery discharge current",
+        tags=["battery", "bess"],
+        limit=2,
+    )
+    assert len(results) >= 1
+    assert results[0].memory_id == "MEM-TEST-999"
+    assert event.memories_found >= 1
+    assert "MEM-TEST-999" in event.memory_ids
+    assert event.retrieval_latency_ms >= 0.0
+    assert event.context_size_bytes > 0
+    assert event.memory_injection_success is True
+
+    # 7. Synchronous relevance search for agent runtime loop
+    sync_results, sync_event = repo.search_relevant_sync(
+        agent_role="PLANNING",
+        station_id="bharati",
+        query_text="chp generator cold start",
+        tags=["chp_1", "cold_crank"],
+        limit=2,
+    )
+    assert len(sync_results) >= 1
+    assert sync_event.memories_found >= 1
+    assert sync_event.retrieval_latency_ms >= 0.0
+
+
+def test_memory_and_alerts_api_endpoints():
+    """Verify REST API endpoints for /api/memory and /api/alerts."""
+    from fastapi.testclient import TestClient
+    from backend.server.app import create_app
+    from backend.server.state import reset_server_state
+
+    reset_server_state(seed=42)
+    app = create_app()
+    client = TestClient(app)
+
+    # 1. Test GET /api/memory
+    res_mem = client.get("/api/memory")
+    assert res_mem.status_code == 200
+    mems = res_mem.json()
+    assert isinstance(mems, list)
+    assert len(mems) >= 6
+
+    # 2. Test GET /api/memory/stats/summary
+    res_stats = client.get("/api/memory/stats/summary")
+    assert res_stats.status_code == 200
+    stats_data = res_stats.json()
+    assert "total_memories" in stats_data
+    assert "counts_by_agent" in stats_data
+
+    # 3. Test POST /api/memory/search
+    res_search = client.post(
+        "/api/memory/search",
+        json={"query": "chp generator", "agent_role": "PLANNING", "station_id": "bharati", "tags": ["chp_1"]},
+    )
+    assert res_search.status_code == 200
+    search_data = res_search.json()
+    assert search_data["memories_found"] >= 1
+    assert "retrieval_event" in search_data
+
+    # 4. Test GET /api/memory/agent/PLANNING
+    res_agent_mem = client.get("/api/memory/agent/PLANNING")
+    assert res_agent_mem.status_code == 200
+    assert len(res_agent_mem.json()) >= 1
+
+    # 5. Test GET /api/memory/station/bharati
+    res_station_mem = client.get("/api/memory/station/bharati")
+    assert res_station_mem.status_code == 200
+    assert len(res_station_mem.json()) >= 1
+
+    # 6. Test GET /api/alerts
+    res_alerts = client.get("/api/alerts")
+    assert res_alerts.status_code == 200
+    alerts = res_alerts.json()
+    assert isinstance(alerts, list)
+
+    # 7. Test GET /api/alerts/summary
+    res_alert_sum = client.get("/api/alerts/summary")
+    assert res_alert_sum.status_code == 200
+    sum_data = res_alert_sum.json()
+    assert "total_active_alerts" in sum_data
+    assert "critical_count" in sum_data
+
+

@@ -28,6 +28,7 @@ class SyncStatus(str, Enum):
     PENDING_HQ_SYNC = "PENDING_HQ_SYNC"
     SYNCED_TO_HQ = "SYNCED_TO_HQ"
     FAILED_RETRY = "FAILED_RETRY"
+    DEAD_LETTER = "DEAD_LETTER"
 
 
 class SyncPriority(int, Enum):
@@ -217,3 +218,56 @@ class StationStateSyncRecord(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump()
+
+
+class MemoryType(str, Enum):
+    """Categorization of agent and system persistent memories."""
+    GLOBAL = "GLOBAL"
+    STATION = "STATION"
+    AGENT = "AGENT"
+    INCIDENT = "INCIDENT"
+    EVENT = "EVENT"
+    OPERATOR = "OPERATOR"
+    SOP = "SOP"
+
+
+class MemoryRecord(BaseModel):
+    """Persistent cognitive memory record for agents, stations, and incidents."""
+    memory_id: str = Field(default_factory=lambda: f"MEM-{uuid.uuid4().hex[:8].upper()}")
+    memory_type: MemoryType = Field(default=MemoryType.AGENT)
+    agent_role: str = Field(default="ALL", description="Agent role ownership or 'ALL'")
+    station_id: str = Field(default="bharati", description="'bharati', 'maitri', or 'all'")
+    title: str = Field(..., description="Short title or headline of the memory")
+    summary: str = Field(default="", description="High-level operational summary")
+    content: str = Field(default="", description="Detailed context, lessons, and execution parameters")
+    importance: float = Field(default=0.8, ge=0.0, le=1.0, description="Relevance and retention weight")
+    severity: str = Field(default="INFO", description="'INFO', 'WARNING', or 'CRITICAL'")
+    source: str = Field(default="AGENT_LEARNING", description="Source of memory creation")
+    tags: list[str] = Field(default_factory=list, description="Searchable semantic tags")
+    related_incident_id: str | None = Field(default=None)
+    related_event_id: str | None = Field(default=None)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    sync_status: SyncStatus = Field(default=SyncStatus.PENDING_HQ_SYNC)
+    created_at_utc: str = Field(default_factory=generate_utc_now)
+    updated_at_utc: str = Field(default_factory=generate_utc_now)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+
+
+class MemoryRetrievalEvent(BaseModel):
+    """Telemetry instrumentation event tracking an agent's memory retrieval operation."""
+    event_id: str = Field(default_factory=lambda: f"RET-{uuid.uuid4().hex[:8].upper()}")
+    agent_role: str = Field(..., description="Agent performing the retrieval")
+    station_id: str = Field(default="bharati")
+    query: str = Field(..., description="Query terms or incident context searched")
+    memories_found: int = Field(default=0)
+    memory_ids: list[str] = Field(default_factory=list)
+    retrieval_latency_ms: float = Field(default=0.0)
+    context_size_bytes: int = Field(default=0)
+    memory_injection_success: bool = Field(default=True)
+    timestamp_utc: str = Field(default_factory=generate_utc_now)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+

@@ -62,6 +62,7 @@ class PlanningAgent(BaseSpecializedAgent):
         graph: TwinCausalGraph,
         safety_interlock: SafetyInterlockManager | None = None,
         episodes_repo: Any | None = None,
+        memory_repo: Any | None = None,
     ) -> None:
         super().__init__(
             role=AgentRole.PLANNING,
@@ -71,6 +72,7 @@ class PlanningAgent(BaseSpecializedAgent):
             safety_interlock=safety_interlock,
         )
         self.episodes_repo = episodes_repo
+        self.memory_repo = memory_repo
 
         # Listen to incoming DIAGNOSIS and IMPACT_ASSESSMENT messages
         self.bus.subscribe_type(MessageType.IMPACT_ASSESSMENT, self.on_impact_assessment_received)
@@ -200,11 +202,53 @@ class PlanningAgent(BaseSpecializedAgent):
         brain = GroqBrainEngine.get_instance()
         kpis = self.engine.get_station_kpis() if self.engine else {}
 
-        # Retrieve empirical case precedents from episodic memory repository
+        # Retrieve empirical case precedents from episodic memory repository & persistent memory
         precedents: list[dict[str, Any]] = []
-        if self.episodes_repo:
+        station_id = getattr(self.engine, "station_id", "bharati") if self.engine else "bharati"
+
+        if self.memory_repo:
             try:
-                precedents = self.episodes_repo.find_similar(root_node_id, limit=2)
+                retrieved_memories, ret_event = self.memory_repo.search_relevant_sync(
+                    agent_role="PLANNING",
+                    station_id=station_id,
+                    query_text=root_node_id,
+                    tags=[root_node_id, "chp_1", "hvac", "generator_trip"],
+                    limit=3,
+                )
+                for mem in retrieved_memories:
+                    precedents.append({
+                        "episode_id": mem.memory_id,
+                        "title": mem.title,
+                        "lessons_learned": f"{mem.summary} - {mem.content}",
+                        "importance": mem.importance,
+                    })
+
+                # Broadcast memory retrieval telemetry event on bus for real-time frontend observation
+                self.publish_message(
+                    session_id=session_id or f"SES-MEM-{int(time.time()*1000)}",
+                    recipient="BROADCAST",
+                    message_type=MessageType.EVENT,
+                    severity=SeverityLevel.INFO,
+                    payload={
+                        "event_type": "memory_retrieval_completed",
+                        "agent_role": "PLANNING",
+                        "station_id": station_id,
+                        "query": root_node_id,
+                        "memories_found": ret_event.memories_found,
+                        "memory_ids": ret_event.memory_ids,
+                        "retrieval_latency_ms": ret_event.retrieval_latency_ms,
+                        "context_size_bytes": ret_event.context_size_bytes,
+                        "memory_injection_success": ret_event.memory_injection_success,
+                    },
+                    confidence=1.0,
+                )
+            except Exception:
+                pass
+
+        if not precedents and self.episodes_repo:
+            try:
+                raw_episodes = self.episodes_repo.find_similar(root_node_id, limit=2)
+                precedents = raw_episodes or []
             except Exception:
                 precedents = []
 

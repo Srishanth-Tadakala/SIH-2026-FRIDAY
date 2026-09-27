@@ -9,6 +9,7 @@ from .copilot_repo import CopilotRepository
 from .dialogue_repo import DialogueRepository
 from .episodes_repo import EpisodesRepository
 from .equipment_repo import EquipmentRepository
+from .memory_repo import MemoryRepository
 from .state_sync_repo import StateSyncRepository
 from .telemetry_repo import TelemetryRepository
 
@@ -20,4 +21,6 @@ __all__ = [
     "AuditRepository",
     "CopilotRepository",
     "StateSyncRepository",
+    "MemoryRepository",
 ]
+

@@ -53,6 +53,8 @@ class MessageType(str, Enum):
     SIM_RESULT = "SIM_RESULT"
     CONSENSUS_PLAN = "CONSENSUS_PLAN"
     OPERATOR_COMMAND = "OPERATOR_COMMAND"
+    EVENT = "EVENT"
+    OBSERVATION = "OBSERVATION"
 
 
 class SeverityLevel(str, Enum):
