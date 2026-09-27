@@ -202,16 +202,16 @@ export const AgentsView: React.FC<AgentsViewProps> = ({ activeStation }) => {
 
   // Build React Flow Pro Agent Nodes
   const initialNodes: Node[] = useMemo(() => {
-    const sa = agentsMap['SITUATION_AWARENESS'] || {};
-    const dg = agentsMap['DIAGNOSTIC'] || {};
-    const pr = agentsMap['PREDICTION'] || {};
-    const ri = agentsMap['RISK_IMPACT'] || {};
-    const pl = agentsMap['PLANNING'] || {};
-    const wi = agentsMap['WHAT_IF'] || {};
-    const ro = agentsMap['RESOURCE_OPTIMIZER'] || {};
-    const mn = agentsMap['MAINTENANCE'] || {};
-    const mo = agentsMap['MISSION_OPS'] || {};
-    const fr = agentsMap['FRIDAY_ORCHESTRATOR'] || {};
+    const sa = agentsMap['SITUATION_AWARENESS'] || agentsMap['situation_awareness'] || {};
+    const dg = agentsMap['DIAGNOSTIC'] || agentsMap['diagnostic'] || {};
+    const pr = agentsMap['PREDICTION'] || agentsMap['prediction'] || {};
+    const ri = agentsMap['RISK_IMPACT'] || agentsMap['risk_impact'] || {};
+    const pl = agentsMap['PLANNING'] || agentsMap['planning'] || {};
+    const wi = agentsMap['WHAT_IF'] || agentsMap['what_if'] || {};
+    const ro = agentsMap['RESOURCE_OPTIMIZER'] || agentsMap['resource_optimizer'] || {};
+    const mn = agentsMap['MAINTENANCE'] || agentsMap['maintenance'] || {};
+    const mo = agentsMap['MISSION_OPS'] || agentsMap['mission_ops'] || {};
+    const fr = agentsMap['FRIDAY_ORCHESTRATOR'] || agentsMap['friday_orchestrator'] || {};
 
     return [
       // ========================================================

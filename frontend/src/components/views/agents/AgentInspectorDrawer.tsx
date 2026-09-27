@@ -13,14 +13,16 @@ import {
   AlertTriangle,
   ChevronRight,
   Sliders,
-  Send
+  Send,
+  Activity
 } from 'lucide-react';
-import { fetchAgentDetail, triggerAgentDeliberation } from '../../../api';
+import { StationId, CognitiveLogEntry } from '../../../types';
+import { fetchAgentDetail, triggerAgentDeliberation, fetchCognitiveLogs } from '../../../api';
 
 interface AgentInspectorDrawerProps {
   agentData: any;
   onClose: () => void;
-  activeStation: string;
+  activeStation: StationId;
   onTriggerReasoning?: (role: string) => void;
 }
 
@@ -31,6 +33,7 @@ export const AgentInspectorDrawer: React.FC<AgentInspectorDrawerProps> = ({
   onTriggerReasoning,
 }) => {
   const [detail, setDetail] = useState<any | null>(null);
+  const [cognitiveLogs, setCognitiveLogs] = useState<CognitiveLogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [deliberating, setDeliberating] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -40,8 +43,12 @@ export const AgentInspectorDrawer: React.FC<AgentInspectorDrawerProps> = ({
   const loadDetail = async () => {
     try {
       setLoading(true);
-      const res = await fetchAgentDetail(role);
-      setDetail(res);
+      const [resDetail, resLogs] = await Promise.all([
+        fetchAgentDetail(role).catch(() => null),
+        fetchCognitiveLogs(activeStation, undefined, 10).catch(() => []),
+      ]);
+      if (resDetail) setDetail(resDetail);
+      if (Array.isArray(resLogs)) setCognitiveLogs(resLogs);
     } catch {
       // Offline fallback
     } finally {
@@ -198,7 +205,7 @@ export const AgentInspectorDrawer: React.FC<AgentInspectorDrawerProps> = ({
             No inter-agent messages logged yet in this session.
           </div>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
             {messages.map((m: any, idx: number) => (
               <div
                 key={m.message_id || idx}
@@ -211,6 +218,39 @@ export const AgentInspectorDrawer: React.FC<AgentInspectorDrawerProps> = ({
                 <p className="text-xs text-[#131b2e] leading-snug">
                   {m.summary}
                 </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 9. Live Cognitive Perception Logs (What Was Noticed & Done) */}
+      <div className="pt-3 border-t border-[#eaebf0]">
+        <div className="flex items-center justify-between mb-2 text-xs font-mono">
+          <span className="font-bold text-[#131b2e] flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5 text-[#006577]" />
+            Cognitive Perception Logs
+          </span>
+          <span className="text-[10px] text-[#006c49] font-semibold">1 Hz Ingest</span>
+        </div>
+
+        {cognitiveLogs.length === 0 ? (
+          <div className="py-3 text-center text-xs text-[#73738c] font-mono">
+            No cognitive events recorded for this station.
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            {cognitiveLogs.slice(0, 5).map((log) => (
+              <div
+                key={log.event_id}
+                className="p-2 rounded-xl bg-white border border-[#eaebf0] text-[10px] font-mono"
+              >
+                <div className="flex items-center justify-between text-[#73738c] mb-0.5">
+                  <span className="font-bold text-[#4648d4]">{log.category}</span>
+                  <span className="text-[9px] text-[#73738c]">{new Date(log.timestamp * 1000).toLocaleTimeString()}</span>
+                </div>
+                <div className="font-semibold text-[#131b2e]">{log.title}</div>
+                <div className="text-[9px] text-[#464554] mt-0.5 truncate">{log.details}</div>
               </div>
             ))}
           </div>

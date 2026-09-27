@@ -16,6 +16,8 @@ import { AgentsView } from './components/views/AgentsView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ActionsView } from './components/views/ActionsView';
 import { Footer } from './components/Footer';
+import { CopilotDrawer } from './components/CopilotDrawer';
+import { Sparkles } from 'lucide-react';
 
 const getInitialView = (): NavView => {
   try {
@@ -40,6 +42,7 @@ export function App() {
   const [stationsList, setStationsList] = useState<StationInfo[] | null>(null);
   const [activeCrisis, setActiveCrisis] = useState<string | null>(null);
   const [isResolved, setIsResolved] = useState<boolean>(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState<boolean>(false);
 
   const handleViewChange = (newView: NavView) => {
     setActiveView(newView);
@@ -218,6 +221,24 @@ export function App() {
         {/* Footer */}
         <Footer />
       </div>
+
+      {/* Floating Ask F.R.I.D.A.Y. AI Copilot Button */}
+      <button
+        onClick={() => setIsCopilotOpen((prev) => !prev)}
+        className="fixed bottom-6 right-6 z-40 px-4 py-3 rounded-2xl bg-linear-to-tr from-[#4648d4] to-[#006577] text-white font-mono text-xs font-bold shadow-xl shadow-[#4648d4]/25 hover:shadow-2xl hover:shadow-[#4648d4]/40 hover:scale-[1.03] active:scale-[0.98] transition-all flex items-center gap-2.5 border border-white/20 cursor-pointer"
+        title="Open Interactive F.R.I.D.A.Y. AI Copilot"
+      >
+        <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+        <Sparkles className="w-4 h-4 text-white" />
+        <span>Ask F.R.I.D.A.Y.</span>
+      </button>
+
+      {/* Interactive Copilot Drawer */}
+      <CopilotDrawer
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        activeStation={station}
+      />
     </div>
   );
 }

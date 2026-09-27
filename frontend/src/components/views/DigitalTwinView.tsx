@@ -41,11 +41,13 @@ import { StationId, StationSnapshot, AgentSocietyStatus } from '../../types';
 import { 
   fetchStationSnapshot, 
   fetchAgentSocietyStatus, 
+  fetchStationHistory,
   injectScenario, 
   clearScenario, 
   executeAction,
   triggerAgentDeliberation
 } from '../../api';
+import { useTelemetryStream } from '../../hooks/useTelemetryStream';
 import { customNodeTypes } from './digital-twin/FlowNodes';
 import { ParticleEdge } from './digital-twin/ParticleEdge';
 import { TelemetryDrawer } from './digital-twin/TelemetryDrawer';
@@ -57,9 +59,16 @@ interface DigitalTwinViewProps {
 type LayerFilter = 'ALL' | 'POWER' | 'LIFE_SUPPORT' | 'AGENTS' | 'GATEWAY';
 
 export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation }) => {
-  const [snapshot, setSnapshot] = useState<StationSnapshot | null>(null);
-  const [agentSociety, setAgentSociety] = useState<AgentSocietyStatus | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Multiplexed Real-Time Telemetry Stream (1 Hz WebSocket with auto-reconnect and REST polling fallback)
+  const {
+    connectionMode,
+    snapshot: streamSnapshot,
+    readings: streamReadings,
+    kpis: streamKpis,
+    agentSociety: streamSociety,
+  } = useTelemetryStream(activeStation);
+
+  const [historyPoints, setHistoryPoints] = useState<any[]>([]);
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null);
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('ALL');
 
@@ -71,28 +80,23 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
   // React Flow Instance for programmatic viewpoint controls
   const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
 
-  // Load Real Backend Telemetry & Agent Society Status
-  const loadData = useCallback(async () => {
+  // Load rolling history buffer for live dynamic sparklines
+  const loadHistory = useCallback(async () => {
     try {
-      const [snap, soc] = await Promise.all([
-        fetchStationSnapshot(activeStation),
-        fetchAgentSocietyStatus(),
-      ]);
-      if (snap) setSnapshot(snap);
-      if (soc) setAgentSociety(soc);
+      const hist = await fetchStationHistory(activeStation, 30);
+      if (Array.isArray(hist) && hist.length > 0) {
+        setHistoryPoints(hist);
+      }
     } catch {
-      // Offline fallback nominal
-    } finally {
-      setLoading(false);
+      // Offline nominal
     }
   }, [activeStation]);
 
   useEffect(() => {
-    setLoading(true);
-    loadData();
-    const interval = setInterval(loadData, 2000);
+    loadHistory();
+    const interval = setInterval(loadHistory, 3000);
     return () => clearInterval(interval);
-  }, [loadData]);
+  }, [loadHistory]);
 
   // Handle Crisis Injection with Instant Multi-Node Cascade Reaction
   const handleInjectCrisis = async (crisis: string) => {
@@ -103,7 +107,6 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
     try {
       await injectScenario(crisis, { station_id: activeStation });
       setStatusBanner(`Anomaly detected. 10-Agent society deliberating on bus...`);
-      await loadData();
     } catch {}
 
     // Multi-agent consensus auto-transfer resolution in 1.2s
@@ -121,7 +124,7 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
     try {
       await clearScenario(activeStation);
       setStatusBanner(`Baseline restored: 50.00 Hz nominal.`);
-      await loadData();
+      await loadHistory();
     } catch {}
     setTimeout(() => setStatusBanner(null), 3000);
   };
@@ -130,8 +133,9 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
   const isBlizzard = activeCrisis === 'BLIZZARD_STRIKE';
   const isFreeze = activeCrisis === 'WATER_LINE_FREEZE';
 
-  const kpis = snapshot?.kpis;
-  const readings = snapshot?.readings || {};
+  const snapshot = streamSnapshot;
+  const kpis = streamKpis || snapshot?.kpis;
+  const readings = streamReadings || snapshot?.readings || {};
   const isBharati = activeStation === 'bharati';
   const prefix = isBharati ? 'BHARATI' : 'MAITRI';
 
@@ -139,6 +143,31 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
   const freqHz = (kpis?.grid_frequency_hz ?? 50.00).toFixed(2);
   const windMps = (kpis?.wind_speed_mps ?? (isBlizzard ? 34.0 : 12.0)).toFixed(1);
   const indoorTemp = (kpis?.indoor_temp_living_c ?? (kpis as any)?.indoor_avg_temp_c ?? 20.2).toFixed(1);
+
+  // Dynamic sparkline history vectors from real backend 30-point buffer
+  const chpHistory = useMemo(() => {
+    if (historyPoints.length > 2) {
+      return historyPoints.map(p => {
+        const val = p.readings?.[`${prefix}.CHP.01.POWER`]?.value ?? (p.kpis?.total_load_kw ? p.kpis.total_load_kw * 0.5 : 75.0);
+        return Number(val);
+      });
+    }
+    return [74.5, 74.8, 75.2, 75.0, 74.9, 75.1, 75.0];
+  }, [historyPoints, prefix]);
+
+  const busHistory = useMemo(() => {
+    if (historyPoints.length > 2) {
+      return historyPoints.map(p => Number(p.kpis?.total_load_kw ?? 148.2));
+    }
+    return [146.0, 147.2, 148.5, 148.2, 149.0, 148.2];
+  }, [historyPoints]);
+
+  const hvacHistory = useMemo(() => {
+    if (historyPoints.length > 2) {
+      return historyPoints.map(p => Number(p.kpis?.indoor_temp_living_c ?? 20.2));
+    }
+    return [20.1, 20.2, 20.2, 20.3, 20.2, 20.2];
+  }, [historyPoints]);
 
   // Real backend CHP sensor streams
   const rawChp1 = readings[`${prefix}.CHP.01.POWER`]?.value ?? readings['BHARATI.CHP.01.POWER']?.value ?? 75.0;
@@ -971,17 +1000,29 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
             <span>{activeStation === 'bharati' ? '69°24\'S, 76°11\'E' : '70°45\'S, 11°43\'E'}</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#006c49] font-mono text-xs font-semibold shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-            <span>505 Sensors Active</span>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-semibold shadow-2xs border ${
+            connectionMode === 'WEBSOCKET'
+              ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#006c49]'
+              : connectionMode === 'REST_POLLING'
+              ? 'bg-[#fffbeb] border-[#fef3c7] text-[#d97706]'
+              : 'bg-[#f2f3ff] border-[#eaedff] text-[#4648d4]'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              connectionMode === 'WEBSOCKET'
+                ? 'bg-[#10b981] animate-pulse'
+                : connectionMode === 'REST_POLLING'
+                ? 'bg-[#f59e0b]'
+                : 'bg-[#4648d4] animate-ping'
+            }`} />
+            <span>{connectionMode === 'WEBSOCKET' ? '1 Hz WebSocket Stream' : connectionMode === 'REST_POLLING' ? 'REST Fallback Loop' : 'Connecting Stream...'}</span>
           </div>
 
           <button
-            onClick={loadData}
+            onClick={loadHistory}
             className="p-2 rounded-xl bg-white border border-[#eaebf0] hover:bg-[#f2f3ff] text-[#464554] transition-colors shadow-2xs"
-            title="Refresh Telemetry Stream"
+            title="Refresh Telemetry History"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1275,7 +1316,7 @@ export const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ activeStation 
             nodeData={selectedNodeData}
             onClose={() => setSelectedNodeData(null)}
             activeStation={activeStation}
-            onRefresh={loadData}
+            onRefresh={loadHistory}
           />
         )}
       </div>

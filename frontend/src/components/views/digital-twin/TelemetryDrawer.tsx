@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   CheckCircle2, 
@@ -14,14 +14,23 @@ import {
   Lock,
   ArrowUpRight,
   RefreshCw,
-  Play
+  Play,
+  Cpu,
+  Wind
 } from 'lucide-react';
-import { executeAction, triggerAgentDeliberation, injectScenario } from '../../../api';
+import { StationId, ActuatorState } from '../../../types';
+import { 
+  executeAction, 
+  triggerAgentDeliberation, 
+  injectScenario, 
+  fetchStationActuators, 
+  executeActuatorCommand 
+} from '../../../api';
 
 interface TelemetryDrawerProps {
   nodeData: any;
   onClose: () => void;
-  activeStation: string;
+  activeStation: StationId;
   onRefresh?: () => void;
 }
 
@@ -33,12 +42,43 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({
 }) => {
   const [actionPending, setActionPending] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [actuators, setActuators] = useState<ActuatorState | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchStationActuators(activeStation)
+      .then(res => {
+        if (isMounted && res) {
+          setActuators(res);
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, [activeStation]);
 
   if (!nodeData) return null;
 
   const isTripped = nodeData.status === 'TRIPPED';
   const isRecovering = nodeData.status === 'RECOVERING';
   const isAlert = nodeData.status === 'ALERT';
+
+  // Execute physical actuator hardware commands directly
+  const handleActuatorCommand = async (command: string, params: Record<string, any> = {}, pin?: string) => {
+    setActionPending(true);
+    setActionFeedback(`Dispatching physical command [${command}]...`);
+    try {
+      const res = await executeActuatorCommand(activeStation, command, params, pin);
+      setActionFeedback(`Actuator response: ${res.message || 'DISPATCHED_AND_CONFIRMED'}`);
+      const updated = await fetchStationActuators(activeStation).catch(() => null);
+      if (updated) setActuators(updated);
+      onRefresh?.();
+    } catch (err: any) {
+      setActionFeedback(`Error: ${err.message || 'Actuator rejected command'}`);
+    } finally {
+      setActionPending(false);
+      setTimeout(() => setActionFeedback(null), 3500);
+    }
+  };
 
   // Execute quick direct actions from the drawer
   const handleQuickCommand = async (actionType: string) => {
@@ -53,8 +93,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({
         await injectScenario('GENERATOR_TRIP', { station_id: activeStation });
         setActionFeedback('Breaker trip injected into digital twin.');
       } else if (actionType === 'heat_boost') {
-        await executeAction('HEAT_TRACE_MAX', activeStation as any);
-        setActionFeedback('Trace heat boost energized at 24 kWth.');
+        await handleActuatorCommand('SET_TRACE_HEATING', { mode: 'BOOST', setpoint_c: 12.0 });
       } else {
         await executeAction(actionType, activeStation as any);
         setActionFeedback(`Command [${actionType}] executed successfully.`);
@@ -208,7 +247,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({
             <>
               <button
                 disabled={actionPending}
-                onClick={() => handleQuickCommand(isTripped ? 'RESET_TRIP' : 'trip')}
+                onClick={() => handleActuatorCommand(isTripped ? 'START_CHP' : 'STOP_CHP', { chp_id: nodeData.id === 'chp2' ? 'CHP-02' : 'CHP-01' })}
                 className={`p-2.5 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 border transition-all ${
                   isTripped
                     ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#006c49] hover:bg-[#d1fae5]'
@@ -216,28 +255,70 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({
                 }`}
               >
                 {isTripped ? <RotateCcw className="w-3.5 h-3.5" /> : <Flame className="w-3.5 h-3.5" />}
-                <span>{isTripped ? 'Reset Trip' : 'Simulate Trip'}</span>
+                <span>{isTripped ? 'Start Baseload' : 'Stop Baseload'}</span>
               </button>
 
               <button
                 disabled={actionPending}
-                onClick={() => handleQuickCommand('ATS_TRANSFER')}
+                onClick={() => handleActuatorCommand('START_CHP', { chp_id: 'CHP-02' })}
                 className="p-2.5 rounded-xl text-xs font-mono font-bold bg-[#f2f3ff] border border-[#eaedff] text-[#4648d4] hover:bg-[#eaedff] flex items-center justify-center gap-1.5 transition-all"
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>ATS Transfer</span>
+                <span>Start Standby CHP-02</span>
               </button>
             </>
           )}
 
           {nodeData.iconType === 'utilidor' && (
+            <>
+              <button
+                disabled={actionPending}
+                onClick={() => handleActuatorCommand('SET_TRACE_HEATING', { mode: 'BOOST', setpoint_c: 12.0 })}
+                className="p-2.5 rounded-xl text-xs font-mono font-bold bg-[#ecfeff] border border-[#a5f3fc] text-[#0891b2] hover:bg-[#cffafe] flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Force 100% Boost</span>
+              </button>
+              <button
+                disabled={actionPending}
+                onClick={() => handleActuatorCommand('SET_TRACE_HEATING', { mode: 'NOMINAL', setpoint_c: 4.0 })}
+                className="p-2.5 rounded-xl text-xs font-mono font-bold bg-[#f0fdf4] border border-[#bbf7d0] text-[#16a34a] hover:bg-[#dcfce7] flex items-center justify-center gap-1.5 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Set Nominal 4°C</span>
+              </button>
+            </>
+          )}
+
+          {nodeData.iconType === 'hvac' && (
+            <>
+              <button
+                disabled={actionPending}
+                onClick={() => handleActuatorCommand('SET_BLIZZARD_DAMPERS', { position_pct: 0 })}
+                className="p-2.5 rounded-xl text-xs font-mono font-bold bg-[#fff1f2] border border-[#fecdd3] text-[#e11d48] hover:bg-[#ffe4e6] flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Wind className="w-3.5 h-3.5" />
+                <span>Seal Dampers (0%)</span>
+              </button>
+              <button
+                disabled={actionPending}
+                onClick={() => handleActuatorCommand('SET_BLIZZARD_DAMPERS', { position_pct: 100 })}
+                className="p-2.5 rounded-xl text-xs font-mono font-bold bg-[#ecfdf5] border border-[#bbf7d0] text-[#006c49] hover:bg-[#dcfce7] flex items-center justify-center gap-1.5 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Open Dampers (100%)</span>
+              </button>
+            </>
+          )}
+
+          {nodeData.iconType === 'lab' && (
             <button
               disabled={actionPending}
-              onClick={() => handleQuickCommand('heat_boost')}
-              className="col-span-2 p-2.5 rounded-xl text-xs font-mono font-bold bg-[#ecfeff] border border-[#a5f3fc] text-[#0891b2] hover:bg-[#cffafe] flex items-center justify-center gap-1.5 transition-all"
+              onClick={() => handleActuatorCommand('TOGGLE_SCIENCE_LOAD_SHED', { shed: true })}
+              className="col-span-2 p-2.5 rounded-xl text-xs font-mono font-bold bg-[#fffbeb] border border-[#fef3c7] text-[#d97706] hover:bg-[#fef9c3] flex items-center justify-center gap-1.5 transition-all"
             >
               <Zap className="w-3.5 h-3.5" />
-              <span>Force Trace Heat 100% Boost</span>
+              <span>Shed Non-Critical Science Loads</span>
             </button>
           )}
 
