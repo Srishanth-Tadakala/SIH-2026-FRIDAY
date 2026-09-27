@@ -17,7 +17,7 @@
 [![Groq LPU](https://img.shields.io/badge/Groq%20LPU-Llama--3.3--70B%20%5BSub--400ms%5D-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
 [![Universal State Sync](https://img.shields.io/badge/State%20Sync-Never%20Starts%20Fresh-10b981?style=for-the-badge&logo=databricks&logoColor=white)](#7-universal-data-storage--automatic-state-synchronization)
 [![Defense Security](https://img.shields.io/badge/Security-PBKDF2%20%2B%20HMAC--SHA256-a855f7?style=for-the-badge&logo=auth0&logoColor=white)](#9-defense-grade-safety-interlocks--tiered-autonomy)
-[![Tests Passing](https://img.shields.io/badge/Tests-329%20Passed%20%5B100%25%5D-10b981?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-352%20Backend%20%2B%208%20Frontend%20Passed%20%5B100%25%5D-10b981?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 <br/>
@@ -37,18 +37,11 @@
 <p align="center">
   <a href="#1-executive-summary--mission-mandate"><b>[ 🚀 Executive Summary ]</b></a> &nbsp;•&nbsp;
   <a href="#2-sih-2026-problem-sih26060-alignment--competitive-edge"><b>[ ⚖️ Competitive Edge ]</b></a> &nbsp;•&nbsp;
-  <a href="#3-dual-interface-modern-architecture"><b>[ 🎨 Dual-Interface UI ]</b></a> &nbsp;•&nbsp;
-  <a href="#4-master-system-architecture"><b>[ 🏛️ Master Architecture ]</b></a> &nbsp;•&nbsp;
-  <a href="#5-the-10-agent-cognitive-society--deliberation-pipeline"><b>[ 🧠 10-Agent Society ]</b></a> &nbsp;•&nbsp;
-  <a href="#6-mathematical-formulations--physics-foundations"><b>[ 📐 Physics & Math ]</b></a> &nbsp;•&nbsp;
-  <a href="#7-universal-data-storage--automatic-state-synchronization"><b>[ 💾 Universal State Sync ]</b></a> &nbsp;•&nbsp;
-  <a href="#8-topological-causal-graph--bayesian-root-cause-analysis"><b>[ 🕸️ Causal Graph ]</b></a> &nbsp;•&nbsp;
-  <a href="#9-defense-grade-safety-interlocks--tiered-autonomy"><b>[ 🔐 Defense Interlocks ]</b></a> &nbsp;•&nbsp;
-  <a href="#10-polar-satcom-differential-delta-protocol--blackout-continuity"><b>[ 🛰️ Satcom Protocol ]</b></a> &nbsp;•&nbsp;
-  <a href="#11-complete-rest-api--websocket-reference"><b>[ 🔌 API Catalog ]</b></a> &nbsp;•&nbsp;
-  <a href="#12-5-minute-hackathon-jury-demonstration-playbook"><b>[ 🎮 Jury Playbook ]</b></a> &nbsp;•&nbsp;
+  <a href="ARCHITECTURE.md"><b>[ 🏛️ Architecture Doc ]</b></a> &nbsp;•&nbsp;
+  <a href="SECURITY.md"><b>[ 🔐 Security Doc ]</b></a> &nbsp;•&nbsp;
+  <a href="DEPLOYMENT.md"><b>[ 🐳 Deployment Doc ]</b></a> &nbsp;•&nbsp;
   <a href="#13-installation-quickstart--deployment"><b>[ ⚡ Quickstart ]</b></a> &nbsp;•&nbsp;
-  <a href="#14-verification--benchmarks"><b>[ 📊 Test Suite (329/329) ]</b></a>
+  <a href="#14-verification--benchmarks"><b>[ 📊 Test Suite (352/352) ]</b></a>
 </p>
 
 </div>
@@ -624,7 +617,7 @@ Benchmarked on standard industrial IPC hardware representative of Antarctic stat
 | **Groq LPU LLM Inference** | **$<380\text{ ms}$** (`llama-3.3-70b`) | $>2500\text{ ms}$ (Cloud API) | **$6.5\times$ Faster** |
 | **Satcom Data Compression** | **$94.2\%$ Bandwidth Reduction** | $>80.0\%$ | **Superior Efficiency** |
 | **State Disk Flush Latency** | **$<1.80\text{ ms}$** (Atomic Rename) | $<25.0\text{ ms}$ | **Zero Contention** |
-| **Full Regression Test Suite** | **$329\text{ Passed (100\%)}$** | $100\%$ Target | **Zero Failures** |
+| **Full Regression Test Suite** | **$352\text{ Passed (100\%)}$** (Backend) + **$8\text{ Passed}$** (Frontend) | $100\%$ Target | **Zero Failures** |
 
 ---
 
@@ -708,7 +701,7 @@ SIH-2026-FRIDAY/
 │   └── vite.config.ts              # Vite bundler & reverse proxy configuration
 ├── data/
 │   └── edge_storage/               # Local persistent atomic JSON document stores
-├── tests/                          # Automated Pytest Suite (329 Tests)
+├── tests/                          # Automated Pytest Suite (352 Tests) + Frontend Vitest (8 Tests)
 │   ├── agents/                     # Deliberation pipeline & cognitive tests
 │   ├── core/                       # Physics engine & causal DAG validation
 │   ├── database/                   # Edge store, replication, & CBR memory tests
