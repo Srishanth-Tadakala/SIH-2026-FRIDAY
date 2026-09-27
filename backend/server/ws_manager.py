@@ -66,10 +66,10 @@ class WebSocketClientSession:
     messages_sent: int = 0
     messages_received: int = 0
 
-    async def send_json_safe(self, data: dict[str, Any]) -> bool:
-        """Send JSON payload safely across the WebSocket."""
+    async def send_json_safe(self, data: dict[str, Any], timeout_seconds: float = 2.0) -> bool:
+        """Send JSON payload safely across the WebSocket with non-blocking timeout backpressure."""
         try:
-            await self.websocket.send_json(data)
+            await asyncio.wait_for(self.websocket.send_json(data), timeout=timeout_seconds)
             self.messages_sent += 1
             return True
         except Exception as e:

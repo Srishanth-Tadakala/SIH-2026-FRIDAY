@@ -18,6 +18,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
+from ..auth import decode_access_token
+from ..config import get_settings
 from ..state import get_server_state
 from ..ws_manager import get_ws_manager
 
@@ -33,13 +35,36 @@ async def telemetry_websocket_endpoint(
 ) -> None:
     """Persistent bidirectional WebSocket connection for multiplexed telemetry streaming."""
     state = get_server_state()
+    settings = get_settings()
     sid = station_id.lower()
 
     if sid not in state.stations:
         await websocket.close(code=1008, reason=f"Unknown station ID: {sid}")
         return
 
+    # 1. Security & Handshake Authentication
+    token = websocket.query_params.get("token")
+    if token:
+        try:
+            payload = decode_access_token(token)
+            user_station = payload.get("station_id")
+            if user_station and user_station.lower() != sid:
+                await websocket.close(code=1008, reason=f"Unauthorized for station: {sid}")
+                return
+        except Exception:
+            await websocket.close(code=1008, reason="Invalid or expired authentication token")
+            return
+    elif settings.ENVIRONMENT == "production":
+        await websocket.close(code=1008, reason="Production mode requires Bearer authentication token")
+        return
+
+    # 2. Connection Limit Defense
     manager = get_ws_manager()
+    total_clients = sum(len(c) for c in manager._clients.values())
+    if total_clients >= settings.WS_MAX_CONNECTIONS:
+        await websocket.close(code=1013, reason="Maximum concurrent WebSocket connections reached")
+        return
+
     session = await manager.connect(websocket, sid)
 
     try:

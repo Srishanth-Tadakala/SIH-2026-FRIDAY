@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+import logging
 import os
+import secrets
 import time
 from typing import Any, AsyncGenerator
 
@@ -20,11 +22,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .config import get_settings
 from .routes.actions import router as actions_router
 from .routes.agents import router as agents_router
+from .routes.alerts import router as alerts_router
+from .routes.auth import router as auth_router
 from .routes.copilot import router as copilot_router
 from .routes.database import router as database_router
 from .routes.deliberations import router as deliberations_router
+from .routes.health import router as health_router
+from .routes.memory import router as memory_router
 from .routes.satcom import router as satcom_router
 from .routes.scenarios import router as scenarios_router
 from .routes.stations import router as stations_router
@@ -33,6 +40,8 @@ from .routes.telemetry import router as telemetry_router
 from .routes.telemetry_ingest import router as telemetry_ingest_router
 from .routes.ws import router as ws_router
 from .state import get_server_state
+
+logger = logging.getLogger("friday.server")
 
 
 @asynccontextmanager
@@ -68,16 +77,20 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Enable CORS for local and remote frontend clients (Vite, React Flow, mobile tablets)
+    settings = get_settings()
+
+    # Enable CORS for validated local and remote frontend origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=settings.CORS_ALLOWED_ORIGINS,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
     )
 
     # Register API Routers
+    app.include_router(auth_router)
+    app.include_router(health_router)
     app.include_router(stations_router)
     app.include_router(telemetry_router)
     app.include_router(telemetry_ingest_router)
@@ -90,6 +103,8 @@ def create_app() -> FastAPI:
     app.include_router(database_router)
     app.include_router(copilot_router)
     app.include_router(sync_router)
+    app.include_router(alerts_router)
+    app.include_router(memory_router)
 
     # Luminous Scandi-Tech React Frontend Mount
     frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
@@ -146,14 +161,17 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        """Global fallback exception handler."""
+        """Global fallback exception handler ensuring no internal stack or exception details leak."""
+        req_id = secrets.token_hex(6)
+        logger.error(f"[REQ-{req_id}] Internal server exception at {request.url.path}: {exc}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={
-                "status": "INTERNAL_SERVER_ERROR",
-                "error": type(exc).__name__,
-                "message": str(exc),
-                "path": request.url.path,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "An unexpected error occurred while processing the operational command.",
+                    "request_id": req_id,
+                }
             },
         )
 

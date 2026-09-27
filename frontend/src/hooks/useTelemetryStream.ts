@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { StationId, StationSnapshot, StationKPIs, AgentSocietyStatus } from '../types';
 import { fetchStationSnapshot, fetchAgentSocietyStatus } from '../api';
 
+import { getStoredToken } from '../api/client';
+
 export type ConnectionMode = 'WEBSOCKET' | 'REST_POLLING' | 'CONNECTING';
 
 export interface UseTelemetryStreamResult {
@@ -13,6 +15,8 @@ export interface UseTelemetryStreamResult {
   satcomData: any | null;
   connectionMode: ConnectionMode;
   lastUpdateTimestamp: number;
+  isStale: boolean;
+  recentMemoryEvent?: any;
   triggerStep: (dtSeconds?: number) => void;
   refresh: () => void;
 }
@@ -21,6 +25,7 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
   const [snapshot, setSnapshot] = useState<StationSnapshot | null>(null);
   const [agentSociety, setAgentSociety] = useState<AgentSocietyStatus | null>(null);
   const [satcomData, setSatcomData] = useState<any | null>(null);
+  const [recentMemoryEvent, setRecentMemoryEvent] = useState<any | null>(null);
   const [connectionMode, setConnectionMode] = useState<ConnectionMode>('CONNECTING');
   const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(Date.now());
 
@@ -30,7 +35,7 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
   const fallbackIntervalRef = useRef<any>(null);
   const isMountedRef = useRef<boolean>(true);
 
-  // Helper to resolve WebSocket endpoint URL
+  // Helper to resolve WebSocket endpoint URL with token
   const getWsUrl = useCallback((sid: string) => {
     const isHttps = window.location.protocol === 'https:';
     const proto = isHttps ? 'wss:' : 'ws:';
@@ -38,7 +43,9 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
     // If running in Vite dev on 5173, target backend on 8000
     const port = window.location.port === '5173' ? '8000' : window.location.port;
     const hostAndPort = port ? `${host}:${port}` : host;
-    return `${proto}//${hostAndPort}/ws/telemetry/${sid}`;
+    const token = getStoredToken();
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${proto}//${hostAndPort}/ws/telemetry/${sid}${tokenQuery}`;
   }, []);
 
   // REST Polling Fallback (1.5s interval)
@@ -82,10 +89,10 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
           didConnect = true;
           setConnectionMode('WEBSOCKET');
 
-          // Subscribe to all 5 multiplexed channels
+          // Subscribe to all 6 multiplexed channels
           const subscribeMsg = JSON.stringify({
             action: 'subscribe',
-            channels: ['kpis', 'sensors', 'alerts', 'deliberations', 'satcom'],
+            channels: ['kpis', 'sensors', 'alerts', 'deliberations', 'satcom', 'memory'],
           });
           ws?.send(subscribeMsg);
 
@@ -150,6 +157,8 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
               });
             } else if (channel === 'satcom' && data.satcom) {
               setSatcomData(data.satcom);
+            } else if (channel === 'memory' || data.event?.startsWith('memory_')) {
+              setRecentMemoryEvent(data);
             }
           } catch {}
         };
@@ -217,6 +226,7 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
     }
   }, [pollRestFallback]);
 
+  const isStale = Boolean(snapshot && (Date.now() - lastUpdateTimestamp) > 8000);
   const kpis = snapshot?.kpis || null;
   const readings = snapshot?.readings || {};
   const alerts = snapshot?.alerts || [];
@@ -230,6 +240,8 @@ export function useTelemetryStream(stationId: StationId = 'bharati'): UseTelemet
     satcomData,
     connectionMode,
     lastUpdateTimestamp,
+    isStale,
+    recentMemoryEvent,
     triggerStep,
     refresh: pollRestFallback,
   };

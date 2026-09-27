@@ -48,6 +48,9 @@ from backend.database import (
     OperatorAuditRecord,
     StationStateSyncRecord,
     TelemetryTimeSeriesRecord,
+    MemoryRecord,
+    MemoryRetrievalEvent,
+    MemoryType,
     SyncStatus,
 )
 from backend.database.repositories import (
@@ -56,6 +59,7 @@ from backend.database.repositories import (
     DialogueRepository,
     EpisodesRepository,
     EquipmentRepository,
+    MemoryRepository,
     StateSyncRepository,
     TelemetryRepository,
 )
@@ -95,6 +99,7 @@ class ServerState:
         self.audit_repo = AuditRepository(self.db_manager)
         self.copilot_repo = CopilotRepository(self.db_manager)
         self.state_sync_repo = StateSyncRepository(self.db_manager)
+        self.memory_repo = MemoryRepository(self.db_manager)
         self._current_episode_id: str | None = None
         self._current_episode_sim_start: float = 0.0
 
@@ -117,6 +122,7 @@ class ServerState:
             graph=self.graph,
             safety_interlock=self.safety_interlock,
             episodes_repo=self.episodes_repo,
+            memory_repo=self.memory_repo,
         )
         self.what_if = WhatIfSimulationAgent(
             bus=self.bus, engine=self.bharati_engine, graph=self.graph
@@ -184,6 +190,15 @@ class ServerState:
             self.db_manager,
             is_link_connected_fn=lambda: not self.orchestrator.edge_blackout_mode,
         )
+
+        # 6c. Modular Domain Services
+        from .services.station_service import StationService
+        from .services.satcom_service import SatcomService
+        from .services.actuator_service import ActuatorService
+
+        self.station_service = StationService(self)
+        self.satcom_service = SatcomService(self)
+        self.actuator_service = ActuatorService(self)
 
         # Server start timestamp
         self.server_start_time = time.time()
@@ -373,6 +388,7 @@ class ServerState:
         try:
             await self.db_manager.probe_connections()
             await self.episodes_repo.initialize_precedents()
+            await self.memory_repo.initialize_baseline_memories()
             await self.equipment_repo.initialize_station_assets("bharati")
             await self.equipment_repo.initialize_station_assets("maitri")
             self.db_sync_worker.start()
