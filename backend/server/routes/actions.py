@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import time
 from typing import Any
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from backend.agents.framework.models import ActionProposal, AutonomyTier, ProposalStatus
+from ..auth import User, UserRole, ROLE_HIERARCHY, get_current_user
 from ..state import get_server_state
 
 router = APIRouter(prefix="/api/actions", tags=["Actions"])
@@ -43,7 +44,10 @@ class PinAuthorizationPayload(BaseModel):
 
 
 @router.post("/execute")
-def execute_action(payload: ActionProposalPayload) -> dict[str, Any]:
+def execute_action(
+    payload: ActionProposalPayload,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """Submit an action proposal for execution according to its Autonomy Tier."""
     state = get_server_state()
 
@@ -58,6 +62,19 @@ def execute_action(payload: ActionProposalPayload) -> dict[str, Any]:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid autonomy tier '{payload.autonomy_tier}'. Valid tiers: TIER_1, TIER_2, TIER_3",
+        )
+
+    # Enforce RBAC permissions by autonomy tier
+    user_level = ROLE_HIERARCHY.get(current_user.role, 0)
+    if tier == AutonomyTier.TIER_2_SUPERVISED and user_level < ROLE_HIERARCHY[UserRole.ENGINEER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: Tier 2 actions require at least ENGINEER role (current role: {current_user.role.value}).",
+        )
+    if tier == AutonomyTier.TIER_1_AUTONOMOUS and user_level < ROLE_HIERARCHY[UserRole.OPERATOR]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: Tier 1 actions require at least OPERATOR role (current role: {current_user.role.value}).",
         )
 
     proposal = ActionProposal(

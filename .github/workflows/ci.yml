@@ -1,0 +1,100 @@
+name: F.R.I.D.A.Y. CI/CD & Automated Verification Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Backend Verification (Python 3.12, 3.14)
+  # ----------------------------------------------------------------------------
+  backend-verification:
+    name: Backend Lint, Security & Pytest Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.14"]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest-cov ruff
+
+      - name: Code Quality & Linting (Ruff)
+        run: |
+          ruff check backend/ tests/ --ignore E501,E402,B008
+
+      - name: Run Backend Test Suite with Coverage
+        run: |
+          python -m pytest tests/ --maxfail=1
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Frontend Verification (Node.js 22)
+  # ----------------------------------------------------------------------------
+  frontend-verification:
+    name: Frontend TypeScript, Lint, Vitest & Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Node Dependencies
+        run: npm ci || npm install
+
+      - name: Fast Linting (oxlint)
+        run: npm run lint
+
+      - name: Run Vitest Unit Tests
+        run: npm test
+
+      - name: TypeScript Typecheck & Production Vite Bundle
+        run: npm run build
+
+  # ----------------------------------------------------------------------------
+  # Job 3: Containerization & Dockerfile Validation
+  # ----------------------------------------------------------------------------
+  docker-build-verification:
+    name: Multi-Stage Dockerfile Build Validation
+    runs-on: ubuntu-latest
+    needs: [backend-verification, frontend-verification]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Production Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: friday-antarctica:ci-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

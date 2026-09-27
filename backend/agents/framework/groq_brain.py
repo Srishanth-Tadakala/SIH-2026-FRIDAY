@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 import json
 import logging
 import os
@@ -31,6 +32,13 @@ except ImportError:
     GROQ_SDK_AVAILABLE = False
 
 logger = logging.getLogger("friday.agents.groq_brain")
+
+
+class CircuitState(str, Enum):
+    """Operational states for LLM API Circuit Breaker."""
+    CLOSED = "CLOSED"
+    OPEN = "OPEN"
+    HALF_OPEN = "HALF_OPEN"
 
 
 class GroqBrainEngine:
@@ -61,6 +69,14 @@ class GroqBrainEngine:
         self.total_inferences: int = 0
         self.last_latency_ms: float = 0.0
         self.last_model_used: str = self.model_name
+
+        # Circuit Breaker & Resilience State
+        self.circuit_state: CircuitState = CircuitState.CLOSED
+        self.consecutive_failures: int = 0
+        self.max_failures: int = 3
+        self.circuit_cooldown_seconds: float = 60.0
+        self.circuit_opened_at: float = 0.0
+        self.timeout_seconds: float = 12.0
 
     @classmethod
     def get_instance(cls) -> GroqBrainEngine:
@@ -118,6 +134,36 @@ class GroqBrainEngine:
             logger.warning("run_sync execution error or timeout: %s", e)
             return None
 
+    def is_circuit_open(self) -> bool:
+        """Evaluate circuit breaker state with automatic transition to HALF_OPEN after cooldown."""
+        if self.circuit_state == CircuitState.OPEN:
+            if time.time() - self.circuit_opened_at >= self.circuit_cooldown_seconds:
+                self.circuit_state = CircuitState.HALF_OPEN
+                logger.info("Groq Circuit Breaker cool-down elapsed. Transitioned to HALF_OPEN probe state.")
+                return False
+            return True
+        return False
+
+    def _record_success(self) -> None:
+        """Record successful inference and reset circuit breaker to nominal CLOSED."""
+        self.consecutive_failures = 0
+        if self.circuit_state != CircuitState.CLOSED:
+            logger.info("Groq Circuit Breaker restored to nominal CLOSED state after successful response.")
+            self.circuit_state = CircuitState.CLOSED
+
+    def _record_failure(self, error: Exception) -> None:
+        """Record inference failure and trip circuit breaker to OPEN if threshold exceeded."""
+        self.consecutive_failures += 1
+        if self.consecutive_failures >= self.max_failures or self.circuit_state == CircuitState.HALF_OPEN:
+            self.circuit_state = CircuitState.OPEN
+            self.circuit_opened_at = time.time()
+            logger.warning(
+                "Groq Circuit Breaker tripped to OPEN after %d errors (%s). Failing fast for %.1fs.",
+                self.consecutive_failures,
+                error,
+                self.circuit_cooldown_seconds,
+            )
+
     async def _execute_json_inference(
         self,
         system_prompt: str,
@@ -125,13 +171,13 @@ class GroqBrainEngine:
         temperature: float = 0.2,
         max_tokens: int = 1500,
     ) -> dict[str, Any] | None:
-        """Execute structured JSON inference on Groq LPU."""
-        if not self.is_live_available():
+        """Execute structured JSON inference on Groq LPU with bounded timeout and circuit breaker protection."""
+        if not self.is_live_available() or self.is_circuit_open():
             return None
 
         t0 = time.perf_counter()
         try:
-            response = await self.client.chat.completions.create(
+            call_coro = self.client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -141,6 +187,7 @@ class GroqBrainEngine:
                 max_tokens=max_tokens,
                 response_format={"type": "json_object"},
             )
+            response = await asyncio.wait_for(call_coro, timeout=self.timeout_seconds)
             dt_ms = (time.perf_counter() - t0) * 1000.0
             self.last_latency_ms = round(dt_ms, 1)
             self.total_inferences += 1
@@ -149,8 +196,11 @@ class GroqBrainEngine:
                 self.total_tokens_out += getattr(response.usage, "completion_tokens", 0)
 
             content = response.choices[0].message.content
-            return json.loads(content)
+            parsed = json.loads(content)
+            self._record_success()
+            return parsed
         except Exception as e:
+            self._record_failure(e)
             logger.warning("Groq LPU inference error (%s): %s. Engaging edge neural fallback.", self.model_name, e)
             return None
 

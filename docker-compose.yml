@@ -1,0 +1,123 @@
+version: "3.8"
+
+# ==============================================================================
+# F.R.I.D.A.Y. Antarctic Station Edge <-> Satcom <-> Mainland HQ Topology
+# Part of SIH 2026 Project SIH26060: F.R.I.D.A.Y.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. ANTARCTIC STATION EDGE: Bharati Research Station (Larsemann Hills)
+  # ----------------------------------------------------------------------------
+  friday-edge-bharati:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: friday-edge-bharati
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - LOCAL_MONGO_URI=mongodb://mongo-edge:27017
+      - CLOUD_MONGO_URI=mongodb://mongo-cloud:27017
+      - JWT_SECRET_KEY=friday-antarctic-hardened-station-production-key-2026
+      - COMMANDER_PIN=BHARATI-CMD-2026
+      - FRIDAY_EDGE_STORAGE_DIR=/app/data/edge_storage
+    volumes:
+      - edge_storage_bharati:/app/data/edge_storage
+    networks:
+      - antarctic-edge-net
+      - satcom-mesh-net
+    depends_on:
+      mongo-edge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/liveness"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 2. LOCAL STATION EDGE DATABASE (MongoDB with Automated JSON Fallback)
+  # ----------------------------------------------------------------------------
+  mongo-edge:
+    image: mongo:7.0-jammy
+    container_name: friday-mongo-edge
+    restart: unless-stopped
+    volumes:
+      - mongo_edge_data:/data/db
+    networks:
+      - antarctic-edge-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 3. MAINLAND COMMAND HQ (NCPOR Goa / MoES Mirror Twin Platform)
+  # ----------------------------------------------------------------------------
+  friday-cloud-hq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: friday-cloud-hq
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - ENVIRONMENT=production
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - LOCAL_MONGO_URI=mongodb://mongo-cloud:27017
+      - JWT_SECRET_KEY=friday-mainland-cloud-hq-production-secret-key-2026
+      - COMMANDER_PIN=GOA-HQ-CMD-2026
+      - FRIDAY_EDGE_STORAGE_DIR=/app/data/edge_storage
+    volumes:
+      - cloud_storage_hq:/app/data/edge_storage
+    networks:
+      - satcom-mesh-net
+    depends_on:
+      mongo-cloud:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/liveness"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 4. MAINLAND HQ CLOUD DATABASE (MongoDB Atlas Emulation)
+  # ----------------------------------------------------------------------------
+  mongo-cloud:
+    image: mongo:7.0-jammy
+    container_name: friday-mongo-cloud
+    restart: unless-stopped
+    volumes:
+      - mongo_cloud_data:/data/db
+    networks:
+      - satcom-mesh-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  antarctic-edge-net:
+    driver: bridge
+  satcom-mesh-net:
+    driver: bridge
+
+volumes:
+  edge_storage_bharati:
+  cloud_storage_hq:
+  mongo_edge_data:
+  mongo_cloud_data:

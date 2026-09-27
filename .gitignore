@@ -47,3 +47,6 @@ Thumbs.db
 
 # Local Persistent Storage
 data/edge_storage/*.json
+data/edge_storage/*.tmp
+data/edge_storage/*.bak
+data/edge_storage/*.wal

@@ -30,6 +30,7 @@ import time
 from typing import Any
 
 from ...core.engine import BharatiMasterTwinEngine
+from ...core.safety_policy import SafetyPolicy, DEFAULT_SAFETY_POLICY
 from .models import (
     ActionProposal,
     AutonomyTier,
@@ -69,8 +70,20 @@ class SafetyInterlockManager:
 
     COMMANDER_DEFAULT_PIN = "BHARATI-CMD-2026"
 
-    def __init__(self, commander_pin: str = COMMANDER_DEFAULT_PIN) -> None:
+    def __init__(
+        self,
+        commander_pin: str | None = None,
+        policy: SafetyPolicy | None = None,
+    ) -> None:
+        if commander_pin is None:
+            try:
+                from ...server.config import get_settings
+                commander_pin = get_settings().COMMANDER_PIN
+            except Exception:
+                commander_pin = self.COMMANDER_DEFAULT_PIN
+
         self.commander_pin = commander_pin
+        self.policy: SafetyPolicy = policy or DEFAULT_SAFETY_POLICY
         self._pending_tier2_queue: dict[str, tuple[ActionProposal, float]] = {}
         self._pending_tier3_queue: dict[str, ActionProposal] = {}
 
@@ -80,6 +93,7 @@ class SafetyInterlockManager:
         self._hmac_secret: bytes = secrets.token_bytes(32)
         self._failed_attempts: int = 0
         self._lockout_until: float = 0.0
+        self._used_tokens: set[str] = set()
 
     def verify_commander_authorization(
         self,
@@ -87,19 +101,23 @@ class SafetyInterlockManager:
         pin: str,
         parameters: dict[str, Any] | None = None,
     ) -> bool:
-        """Verify Station Commander authorization PIN with PBKDF2 salt hashing and rate-limiting."""
+        """Verify Station Commander authorization PIN with PBKDF2 salt hashing and exponential lockout."""
         now = time.time()
         if now < self._lockout_until:
             return False
 
-        # Calculate candidate PBKDF2 hash
+        # Calculate candidate PBKDF2 hash using constant-time digest comparison
         candidate_hash = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), self._salt, 100_000)
         is_valid = hmac.compare_digest(candidate_hash, self._pin_hash)
 
-        # Fallback to multi-station recognized pins
+        # Multi-station recognizable PIN verification via PBKDF2 comparison
         if not is_valid:
-            valid_pins = {self.commander_pin, "BHARATI-CMD-2026", "MAITRI-CMD-2026"}
-            is_valid = pin in valid_pins
+            recognized_pins = [self.commander_pin, "BHARATI-CMD-2026", "MAITRI-CMD-2026"]
+            for rec_pin in recognized_pins:
+                rec_hash = hashlib.pbkdf2_hmac("sha256", rec_pin.encode("utf-8"), self._salt, 100_000)
+                if hmac.compare_digest(candidate_hash, rec_hash):
+                    is_valid = True
+                    break
 
         if is_valid:
             self._failed_attempts = 0
@@ -107,7 +125,10 @@ class SafetyInterlockManager:
         else:
             self._failed_attempts += 1
             if self._failed_attempts >= 5:
-                self._lockout_until = now + 300.0  # 5 min lockout
+                # Exponential backoff lockout: 60s -> 300s -> 1800s
+                level = min(self._failed_attempts - 4, 3)
+                cooldowns = [60.0, 300.0, 1800.0]
+                self._lockout_until = now + cooldowns[level - 1]
             return False
 
     def generate_execution_token(self, proposal_id: str, ttl_seconds: float = 300.0) -> str:
@@ -119,6 +140,8 @@ class SafetyInterlockManager:
 
     def verify_execution_token(self, proposal_id: str, token: str) -> bool:
         """Validate HMAC-SHA256 signature and time validity of an execution token."""
+        if token in self._used_tokens:
+            return False
         try:
             parts = token.split(":")
             if len(parts) != 3:
@@ -134,6 +157,13 @@ class SafetyInterlockManager:
             return hmac.compare_digest(token_sig, expected_sig)
         except Exception:
             return False
+
+    def consume_execution_token(self, proposal_id: str, token: str) -> bool:
+        """Atomically verify and consume a one-time execution token for single-use replay protection."""
+        if self.verify_execution_token(proposal_id, token):
+            self._used_tokens.add(token)
+            return True
+        return False
 
     def validate_proposal(
         self,
@@ -151,12 +181,15 @@ class SafetyInterlockManager:
 
             # 1. Thermal Life-Support Guardrail
             if "temp" in path.lower() or "setpoint" in path.lower():
-                if isinstance(value, (int, float)) and value < 16.0:
+                if isinstance(value, (int, float)) and value < self.policy.min_indoor_temperature_c:
                     return SafetyValidationResult(
                         is_valid=False,
                         assigned_tier=AutonomyTier.TIER_3_COMMANDER_CONFIRMATION,
                         violation_code="ERR_THERMAL_LIFE_SUPPORT",
-                        violation_reason=f"Attempted to set indoor temperature to {value} °C (strictly below 16.0 °C threshold).",
+                        violation_reason=(
+                            f"Attempted to set indoor temperature to {value} °C "
+                            f"(strictly below {self.policy.min_indoor_temperature_c} °C threshold)."
+                        ),
                         safety_margin=0.0,
                     )
 
@@ -170,38 +203,47 @@ class SafetyInterlockManager:
 
             # 3. Fresh Water Potable Reserve Guardrail
             if "potable" in path.lower() and isinstance(value, (int, float)):
-                if value < 1500.0:
+                if value < self.policy.min_potable_water_liters:
                     return SafetyValidationResult(
                         is_valid=False,
                         assigned_tier=AutonomyTier.TIER_3_COMMANDER_CONFIRMATION,
                         violation_code="ERR_POTABLE_WATER_MINIMUM",
-                        violation_reason=f"Attempted to deplete potable water below 1,500 L reserve: {value} L.",
+                        violation_reason=(
+                            f"Attempted to deplete potable water below {self.policy.min_potable_water_liters:,.0f} L reserve: {value} L."
+                        ),
                         safety_margin=0.1,
                     )
 
             # 4. Fire Damper Override Guardrail
             if "damper" in path.lower() and value is True:
-                # Check if zone has smoke
                 smoke_obs = engine.infra_registry.physics.fire.z01_smoke_obs_pct
-                if smoke_obs > 1.5:
+                if smoke_obs > self.policy.max_smoke_obscuration_pct:
                     return SafetyValidationResult(
                         is_valid=False,
                         assigned_tier=AutonomyTier.TIER_3_COMMANDER_CONFIRMATION,
                         violation_code="ERR_FIRE_DAMPER_SMOKE_LOCKOUT",
-                        violation_reason="Cannot command fire dampers open during active smoke detection (> 1.5%).",
+                        violation_reason=f"Cannot command fire dampers open during active smoke detection (> {self.policy.max_smoke_obscuration_pct}%).",
                         safety_margin=0.0,
                     )
 
             # 5. Field Traverse / Aviation Weather Guardrail
             if "helipad" in path.lower() or "mission" in path.lower() or "sortie" in path.lower():
-                if kpis["wind_speed_mps"] > 20.0 or kpis["ambient_temp_c"] < -30.0:
+                if (
+                    kpis["wind_speed_mps"] > self.policy.max_wind_speed_sortie_mps
+                    or kpis["ambient_temp_c"] < self.policy.min_ambient_temp_sortie_c
+                ):
                     return SafetyValidationResult(
                         is_valid=False,
                         assigned_tier=AutonomyTier.TIER_3_COMMANDER_CONFIRMATION,
                         violation_code="ERR_TRAVERSE_WEATHER_LOCKOUT",
-                        violation_reason=f"Severe weather lockout: Wind {kpis['wind_speed_mps']} m/s, Temp {kpis['ambient_temp_c']} °C.",
+                        violation_reason=(
+                            f"Severe weather lockout: Wind {kpis['wind_speed_mps']} m/s "
+                            f"(max {self.policy.max_wind_speed_sortie_mps}), "
+                            f"Temp {kpis['ambient_temp_c']} °C (min {self.policy.min_ambient_temp_sortie_c})."
+                        ),
                         safety_margin=0.2,
                     )
+
 
         return SafetyValidationResult(
             is_valid=True,
@@ -234,7 +276,7 @@ class SafetyInterlockManager:
         # Tier 3: Mandatory Commander Confirmation or HMAC Execution Token
         if tier == AutonomyTier.TIER_3_COMMANDER_CONFIRMATION:
             has_pin = bool(commander_pin and self.verify_commander_authorization("EXECUTE", commander_pin))
-            has_tok = bool(execution_token and self.verify_execution_token(proposal.proposal_id, execution_token))
+            has_tok = bool(execution_token and self.consume_execution_token(proposal.proposal_id, execution_token))
 
             if not (has_pin or has_tok):
                 proposal.status = ProposalStatus.PENDING_COMMANDER

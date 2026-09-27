@@ -123,22 +123,35 @@ class AgentMessageBus:
         if session is not None:
             session.transcript.append(message)
 
-        # 3. Dispatch to Global broadcast subscribers
-        for cb in self._broadcast_subscribers:
-            cb(message)
+        # 3. Dispatch to Global broadcast subscribers with exception isolation
+        for cb in list(self._broadcast_subscribers):
+            try:
+                cb(message)
+            except Exception as e:
+                # Subscriber isolation: ensure one faulty listener cannot take down message routing
+                pass
 
         # 4. Dispatch to Type-based subscribers
-        for cb in self._type_subscribers.get(message.message_type, []):
-            cb(message)
+        for cb in list(self._type_subscribers.get(message.message_type, [])):
+            try:
+                cb(message)
+            except Exception:
+                pass
 
         # 5. Dispatch to Role-based recipient
         if message.recipient == "BROADCAST":
-            for role_subscribers in self._role_subscribers.values():
-                for cb in role_subscribers:
-                    cb(message)
+            for role_subscribers in list(self._role_subscribers.values()):
+                for cb in list(role_subscribers):
+                    try:
+                        cb(message)
+                    except Exception:
+                        pass
         elif isinstance(message.recipient, AgentRole):
-            for cb in self._role_subscribers.get(message.recipient, []):
-                cb(message)
+            for cb in list(self._role_subscribers.get(message.recipient, [])):
+                try:
+                    cb(message)
+                except Exception:
+                    pass
 
     def get_session_transcript(self, session_id: str) -> list[AgentMessage]:
         """Return the chronological dialogue transcript for a deliberation session."""

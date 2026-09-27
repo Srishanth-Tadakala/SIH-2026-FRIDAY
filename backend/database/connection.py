@@ -239,6 +239,16 @@ class DatabaseManager:
 
         self._probed: bool = False
 
+    @property
+    def is_initialized(self) -> bool:
+        """Indicate whether database services are ready (live MongoDB or verified embedded store)."""
+        return self.is_local_mongo_connected or (self.embedded_store is not None)
+
+    @property
+    def is_fallback_active(self) -> bool:
+        """Indicate whether the system is operating on local embedded JSON store fallback."""
+        return not self.is_local_mongo_connected
+
     @classmethod
     def get_instance(cls) -> DatabaseManager:
         """Access singleton DatabaseManager instance."""

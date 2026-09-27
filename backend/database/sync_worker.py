@@ -45,6 +45,7 @@ class SatcomDatabaseSyncWorker:
         # Live metrics
         self.total_synced_records: int = 0
         self.total_spooled_records: int = 0
+        self.total_dead_letter_records: int = 0
         self.last_sync_utc: str | None = None
         self.last_sync_status: str = "INITIALIZED"
 
@@ -135,6 +136,29 @@ class SatcomDatabaseSyncWorker:
                     )
                     self.total_synced_records += 1
                     synced_this_pass += 1
+                else:
+                    # Bounded retry and dead-letter queue handling
+                    retries = doc.get("sync_retries", 0) + 1
+                    is_dead_letter = retries >= 5
+                    new_status = SyncStatus.DEAD_LETTER.value if is_dead_letter else SyncStatus.FAILED_RETRY.value
+                    if is_dead_letter:
+                        self.total_dead_letter_records += 1
+                        logger.error(
+                            "Database sync item %s in %s exceeded 5 retry attempts. Transitioned to DEAD_LETTER queue.",
+                            doc_id,
+                            col_name,
+                        )
+                    await self.db.update_record(
+                        col_name,
+                        {"_id": doc_id},
+                        {
+                            "$set": {
+                                "sync_retries": retries,
+                                "sync_status": new_status,
+                                "last_sync_attempt_utc": generate_utc_now(),
+                            }
+                        },
+                    )
 
         if synced_this_pass > 0:
             self.last_sync_utc = generate_utc_now()
@@ -150,6 +174,7 @@ class SatcomDatabaseSyncWorker:
         return {
             "synced_count": synced,
             "pending_count": self.total_spooled_records,
+            "dead_letter_count": self.total_dead_letter_records,
             "link_connected": is_online,
             "status": self.last_sync_status,
         }
@@ -160,6 +185,7 @@ class SatcomDatabaseSyncWorker:
             "sync_worker_active": self.is_running,
             "spooled_records_count": self.total_spooled_records,
             "total_synced_to_hq": self.total_synced_records,
+            "dead_letter_records_count": self.total_dead_letter_records,
             "last_sync_status": self.last_sync_status,
             "last_sync_timestamp": self.last_sync_utc,
             "is_blackout_buffering": not self.is_link_connected_fn(),
