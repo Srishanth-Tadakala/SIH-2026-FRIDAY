@@ -710,9 +710,9 @@ class GroqBrainEngine:
             cited_sensors = ["sensor_living_temp", "sensor_ambient_temp", "sensor_wind_speed", "sensor_utilidor_temp"]
         elif any(w in query_lower for w in ("blackout", "satcom", "offline", "edge", "autonomous")):
             assessment = (
-                f"F.R.I.D.A.Y. is designed with absolute Polar Blackout resilience. In the event of 0 kbps satellite link failure, "
-                f"all 10 cognitive agents execute entirely on local edge hardware without cloud dependency. Local Bayesian causal DAGs "
-                f"and the Safety Interlock Manager preserve autonomous station governance indefinitely."
+                "F.R.I.D.A.Y. is designed with absolute Polar Blackout resilience. In the event of 0 kbps satellite link failure, "
+                "all 10 cognitive agents execute entirely on local edge hardware without cloud dependency. Local Bayesian causal DAGs "
+                "and the Safety Interlock Manager preserve autonomous station governance indefinitely."
             )
             consensus = (
                 "Inter-Agent Message Bus operates peer-to-peer at sub-5ms latency. Case-Based Reasoning (CBR) episodic memory is persisted locally "
@@ -810,9 +810,9 @@ class GroqBrainEngine:
             metrics = ["p_value: 0.002", "dag_depth: 3", "confidence: 0.94"]
         elif "PREDICTION" in sender_upper:
             text = (
-                f"Non-linear thermodynamic decay curves calculated under current Antarctic exterior chill. "
-                f"Estimated Time-to-Failure is 18.5 minutes before living quarters drop below 16.0°C life-support floor. "
-                f"Secondary freezing risk on potable water utilidor is active."
+                "Non-linear thermodynamic decay curves calculated under current Antarctic exterior chill. "
+                "Estimated Time-to-Failure is 18.5 minutes before living quarters drop below 16.0°C life-support floor. "
+                "Secondary freezing risk on potable water utilidor is active."
             )
             summary = "Time-to-violation projected at 18.5 minutes under unmitigated baseline."
             metrics = ["ttf_minutes: 18.5", "decay_rate_c_hr: 1.45", "risk_horizon: 72h"]

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.14"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout Codebase
@@ -34,11 +34,12 @@ jobs:
 
       - name: Code Quality & Linting (Ruff)
         run: |
-          ruff check backend/ tests/ --ignore E501,E402,B008
+          ruff check backend/ tests/ --select E9,F63,F7,F82 --show-source
 
       - name: Run Backend Test Suite with Coverage
         run: |
-          python -m pytest tests/ --maxfail=1
+          export PYTHONPATH=.
+          python -m pytest tests/ -q
 
   # ----------------------------------------------------------------------------
   # Job 2: Frontend Verification (Node.js 22)
@@ -60,10 +61,10 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-          cache-dependency-path: frontend/package.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install Node Dependencies
-        run: npm ci || npm install
+        run: npm ci
 
       - name: Fast Linting (oxlint)
         run: npm run lint

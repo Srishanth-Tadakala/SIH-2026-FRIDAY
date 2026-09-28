@@ -150,7 +150,7 @@ class TestActuatorsAndAutonomy:
         # Check that new cognitive events were logged describing what was noticed and diagnosed
         res_logs = client.get("/api/actions/cognitive_logs/bharati?limit=20")
         logs_after = res_logs.json()
-        titles = [l["title"] for l in logs_after]
+        titles = [entry["title"] for entry in logs_after]
         assert any("CHP" in t or "Generator" in t or "Anomaly" in t for t in titles)
 
     def test_polar_blackout_edge_command_authority(self, setup_client: TestClient) -> None:
@@ -183,7 +183,7 @@ class TestActuatorsAndAutonomy:
         # Check cognitive log records blackout transition
         res_logs = client.get("/api/actions/cognitive_logs/bharati?category=EDGE_AUTHORITY")
         blackout_logs = res_logs.json()
-        assert any("BLACKOUT" in l["title"] for l in blackout_logs)
+        assert any("BLACKOUT" in entry["title"] for entry in blackout_logs)
 
     def test_autonomous_mode_configuration(self, setup_client: TestClient) -> None:
         """Verify configuring autonomous mode parameters and speed."""

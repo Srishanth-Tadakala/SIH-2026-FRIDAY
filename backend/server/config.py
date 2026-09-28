@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 import os
-from typing import List
+from typing import Any, List
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
