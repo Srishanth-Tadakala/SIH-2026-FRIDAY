@@ -34,7 +34,7 @@ jobs:
 
       - name: Code Quality & Linting (Ruff)
         run: |
-          ruff check backend/ tests/ --select E9,F63,F7,F82 --show-source
+          ruff check backend/ tests/ --select E9,F63,F7,F82
 
       - name: Run Backend Test Suite with Coverage
         run: |
