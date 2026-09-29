@@ -26,6 +26,7 @@ from .config import get_settings
 from .routes.actions import router as actions_router
 from .routes.agents import router as agents_router
 from .routes.alerts import router as alerts_router
+from .routes.alerts_sovereign import router as alerts_sovereign_router
 from .routes.auth import router as auth_router
 from .routes.copilot import router as copilot_router
 from .routes.database import router as database_router
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(copilot_router)
     app.include_router(sync_router)
     app.include_router(alerts_router)
+    app.include_router(alerts_sovereign_router)
     app.include_router(memory_router)
     app.include_router(environmental_router)
 
