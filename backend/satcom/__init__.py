@@ -60,4 +60,20 @@ __all__ = [
     # Mirror Twin
     "MirrorTwinEngine",
     "MirrorTwinMetrics",
+    # DTN Bundle Protocol (RFC 9171)
+    "BundlePriority",
+    "BundleProcessingFlags",
+    "CustodyReceipt",
+    "DtnBundle",
+    "DtnAgentConfig",
+    "DtnBundleAgent",
 ]
+
+from .dtn_bundle import (
+    BundlePriority,
+    BundleProcessingFlags,
+    CustodyReceipt,
+    DtnAgentConfig,
+    DtnBundle,
+    DtnBundleAgent,
+)
