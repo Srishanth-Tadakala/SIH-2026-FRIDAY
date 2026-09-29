@@ -231,6 +231,14 @@ class ServerState:
             bus=self.bus,
         )
 
+        # 6f. Antarctic Mesoscale Prediction System (AMPS) Weather Engine
+        from ..environmental.amps_weather import PolarWeatherConfig, AmpsWeatherEngine
+        self.amps_weather_engine = AmpsWeatherEngine(
+            config=PolarWeatherConfig(station_id="bharati", enable_live_poll=False),
+            engine=self.bharati_engine,
+            bus=self.bus,
+        )
+
         # Server start timestamp
         self.server_start_time = time.time()
 
