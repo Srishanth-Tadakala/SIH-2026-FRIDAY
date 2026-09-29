@@ -139,6 +139,9 @@ class ModbusTelemetryBridge:
                     self.config.host,
                     self.config.port,
                 )
+            else:
+                self.last_error = f"Connection failed: host unreachable at {self.config.host}:{self.config.port}"
+                self.reconnect_count += 1
             return self.is_connected
         except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
             self.last_error = f"Connection failed: {e}"
