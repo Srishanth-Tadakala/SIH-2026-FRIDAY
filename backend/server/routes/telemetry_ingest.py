@@ -114,6 +114,7 @@ def get_ingestion_status() -> dict[str, Any]:
     modbus_status = server_state.modbus_bridge.get_status() if hasattr(server_state, "modbus_bridge") else {}
     opcua_status = server_state.opcua_bridge.get_status() if hasattr(server_state, "opcua_bridge") else {}
     mqtt_status = server_state.mqtt_bridge.get_status() if hasattr(server_state, "mqtt_bridge") else {}
+    bacnet_status = server_state.bacnet_bridge.get_status() if hasattr(server_state, "bacnet_bridge") else {}
 
     return {
         "status": "OPERATIONAL",
@@ -123,10 +124,11 @@ def get_ingestion_status() -> dict[str, Any]:
         "last_source": _ingestion_stats["last_source"],
         "last_ingested_timestamp": _ingestion_stats["last_ingested_timestamp"],
         "total_twin_registered_sensors": total_twin_sensors,
-        "supported_protocols": ["REST/JSON", "Modbus-TCP Bridge", "MQTT-Sparkplug B", "OPC-UA"],
+        "supported_protocols": ["REST/JSON", "Modbus-TCP Bridge", "MQTT-Sparkplug B", "OPC-UA", "BACnet/IP"],
         "modbus_bridge": modbus_status,
         "opcua_bridge": opcua_status,
         "mqtt_bridge": mqtt_status,
+        "bacnet_bridge": bacnet_status,
     }
 
 
@@ -298,5 +300,82 @@ async def publish_mqtt_message(payload: MqttPublishRequest) -> dict[str, Any]:
         "topic": payload.topic,
         "timestamp": time.time(),
     }
+
+
+# ==============================================================================
+# BACnet/IP HVAC & Utilidor Heat-Tracing Endpoints (ANSI/ASHRAE 135)
+# ==============================================================================
+
+class BacnetWriteRequest(BaseModel):
+    object_type: str = Field(..., description="BACnet Object Type: ANALOG_OUTPUT, BINARY_OUTPUT")
+    instance_id: int = Field(..., ge=0, description="BACnet Object Instance ID")
+    value: float = Field(..., description="Numeric setpoint or contactor state (0.0 or 1.0)")
+
+
+@router.get("/bacnet/status")
+def get_bacnet_status() -> dict[str, Any]:
+    """Return operational telemetry and health metrics for the BACnet/IP bridge."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "bacnet_bridge"):
+        raise HTTPException(status_code=503, detail="BACnet bridge not initialized.")
+    return server_state.bacnet_bridge.get_status()
+
+
+@router.get("/bacnet/objects")
+def get_bacnet_object_catalog() -> dict[str, Any]:
+    """Return configured BACnet object catalog for station HVAC and utilidor lines."""
+    from ...sensors.bridges.bacnet_map import BHARATI_BACNET_OBJECT_MAP
+    return {
+        "total_objects": len(BHARATI_BACNET_OBJECT_MAP),
+        "objects": [
+            {
+                "object_type": obj.object_type.value,
+                "instance_id": obj.instance_id,
+                "sensor_id": obj.sensor_id,
+                "description": obj.description,
+                "unit": obj.unit,
+                "writable": obj.writable,
+                "default_value": obj.default_value,
+            }
+            for obj in BHARATI_BACNET_OBJECT_MAP.values()
+        ],
+    }
+
+
+@router.post("/bacnet/write")
+async def write_bacnet_property(payload: BacnetWriteRequest) -> dict[str, Any]:
+    """Write setpoint or contactor state to a BACnet Analog/Binary Output."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "bacnet_bridge"):
+        raise HTTPException(status_code=503, detail="BACnet bridge not initialized.")
+
+    from ...sensors.bridges.bacnet_map import BacnetObjectType
+
+    try:
+        obj_type = BacnetObjectType(payload.object_type)
+    except ValueError:
+        valid_types = [t.value for t in BacnetObjectType]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid BACnet object type: {payload.object_type}. Valid: {valid_types}",
+        )
+
+    success = await server_state.bacnet_bridge.write_property(
+        object_type=obj_type,
+        instance_id=payload.instance_id,
+        value=payload.value,
+    )
+    if not success:
+        last_err = server_state.bacnet_bridge.last_error or "BACnet write failed."
+        raise HTTPException(status_code=502, detail=f"BACnet write error: {last_err}")
+
+    return {
+        "status": "COMMAND_DISPATCHED",
+        "object_type": payload.object_type,
+        "instance_id": payload.instance_id,
+        "value": payload.value,
+        "timestamp": time.time(),
+    }
+
 
 

@@ -204,6 +204,7 @@ class ServerState:
         from ..sensors.bridges.modbus_bridge import ModbusBridgeConfig, ModbusTelemetryBridge
         from ..sensors.bridges.opcua_bridge import OpcUaBridgeConfig, OpcUaTelemetryBridge
         from ..sensors.bridges.mqtt_bridge import MqttBridgeConfig, MqttTelemetryBridge
+        from ..sensors.bridges.bacnet_bridge import BacnetBridgeConfig, BacnetTelemetryBridge
 
         self.modbus_bridge = ModbusTelemetryBridge(
             config=ModbusBridgeConfig(station_id="bharati", enabled=False),
@@ -215,6 +216,10 @@ class ServerState:
         )
         self.mqtt_bridge = MqttTelemetryBridge(
             config=MqttBridgeConfig(station_id="bharati", enabled=False),
+            engine=self.bharati_engine,
+        )
+        self.bacnet_bridge = BacnetTelemetryBridge(
+            config=BacnetBridgeConfig(station_id="bharati", enabled=False),
             engine=self.bharati_engine,
         )
 
