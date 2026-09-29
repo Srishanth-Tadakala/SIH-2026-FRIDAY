@@ -111,6 +111,7 @@ def get_ingestion_status() -> dict[str, Any]:
     server_state = get_server_state()
     active_engine = server_state.get_engine()
     total_twin_sensors = active_engine.sensor_count if active_engine else 0
+    modbus_status = server_state.modbus_bridge.get_status() if hasattr(server_state, "modbus_bridge") else {}
 
     return {
         "status": "OPERATIONAL",
@@ -121,4 +122,71 @@ def get_ingestion_status() -> dict[str, Any]:
         "last_ingested_timestamp": _ingestion_stats["last_ingested_timestamp"],
         "total_twin_registered_sensors": total_twin_sensors,
         "supported_protocols": ["REST/JSON", "Modbus-TCP Bridge", "MQTT-Sparkplug B", "OPC-UA"],
+        "modbus_bridge": modbus_status,
     }
+
+
+class ModbusCoilRequest(BaseModel):
+    address: int = Field(..., ge=0, description="Coil address (0-indexed)")
+    value: bool = Field(..., description="Coil state (True=ON/Start, False=OFF/Stop)")
+    station_id: str = Field(default="bharati", description="Station ID")
+
+
+@router.get("/modbus/status")
+def get_modbus_status() -> dict[str, Any]:
+    """Return real-time operational status of the native Modbus TCP bridge."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "modbus_bridge"):
+        raise HTTPException(status_code=503, detail="Modbus bridge not initialized.")
+    return server_state.modbus_bridge.get_status()
+
+
+@router.get("/modbus/registers")
+def get_modbus_register_catalog() -> dict[str, Any]:
+    """Return configured Modbus register map catalog and coil definitions."""
+    from ...sensors.bridges.modbus_map import (
+        BHARATI_MODBUS_COIL_MAP,
+        BHARATI_MODBUS_REGISTER_MAP,
+    )
+    return {
+        "holding_registers": [
+            {
+                "address": r.address,
+                "sensor_id": r.sensor_id,
+                "data_type": r.data_type.value,
+                "unit": r.unit,
+                "description": r.description,
+            }
+            for r in BHARATI_MODBUS_REGISTER_MAP
+        ],
+        "coils": [
+            {"address": addr, "actuator_id": name}
+            for addr, name in sorted(BHARATI_MODBUS_COIL_MAP.items())
+        ],
+    }
+
+
+@router.post("/modbus/coil")
+async def write_modbus_coil(payload: ModbusCoilRequest) -> dict[str, Any]:
+    """Write discrete actuator coil via Modbus FC05 (e.g. generator start/stop, trace heat)."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "modbus_bridge"):
+        raise HTTPException(status_code=503, detail="Modbus bridge not initialized.")
+
+    success = await server_state.modbus_bridge.write_coil(payload.address, payload.value)
+    if not success:
+        last_err = server_state.modbus_bridge.last_error or "Coil write failed or bridge not connected."
+        raise HTTPException(status_code=502, detail=f"Modbus write coil error: {last_err}")
+
+    from ...sensors.bridges.modbus_map import BHARATI_MODBUS_COIL_MAP
+    coil_name = BHARATI_MODBUS_COIL_MAP.get(payload.address, f"COIL_{payload.address}")
+
+    return {
+        "status": "COMMAND_DISPATCHED",
+        "address": payload.address,
+        "actuator_id": coil_name,
+        "value": payload.value,
+        "station_id": payload.station_id,
+        "timestamp": time.time(),
+    }
+

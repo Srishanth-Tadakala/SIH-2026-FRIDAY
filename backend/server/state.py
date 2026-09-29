@@ -200,6 +200,13 @@ class ServerState:
         self.satcom_service = SatcomService(self)
         self.actuator_service = ActuatorService(self)
 
+        # 6d. Industrial Fieldbus Protocol Bridges
+        from ..sensors.bridges.modbus_bridge import ModbusBridgeConfig, ModbusTelemetryBridge
+        self.modbus_bridge = ModbusTelemetryBridge(
+            config=ModbusBridgeConfig(station_id="bharati", enabled=False),
+            engine=self.bharati_engine,
+        )
+
         # Server start timestamp
         self.server_start_time = time.time()
 

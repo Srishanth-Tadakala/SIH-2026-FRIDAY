@@ -210,3 +210,37 @@ class TestCopilotAndSCADAIngest:
         result = brain.run_sync(dummy_coro())
         assert result == "ok"
 
+    def test_modbus_api_endpoints(self, setup_client: TestClient) -> None:
+        """Verify Modbus status, register catalog, and coil write endpoints."""
+        client = setup_client
+        # 1. Ingest status includes modbus_bridge
+        resp = client.get("/api/telemetry/ingest/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "modbus_bridge" in data
+        assert data["modbus_bridge"]["station_id"] == "bharati"
+
+        # 2. Modbus status endpoint
+        resp_status = client.get("/api/telemetry/modbus/status")
+        assert resp_status.status_code == 200
+        status_data = resp_status.json()
+        assert status_data["station_id"] == "bharati"
+        assert "total_polls" in status_data
+        assert "registered_point_count" in status_data
+        assert status_data["registered_point_count"] >= 15
+
+        # 3. Modbus registers catalog endpoint
+        resp_catalog = client.get("/api/telemetry/modbus/registers")
+        assert resp_catalog.status_code == 200
+        catalog = resp_catalog.json()
+        assert "holding_registers" in catalog
+        assert "coils" in catalog
+        assert len(catalog["holding_registers"]) >= 15
+        assert len(catalog["coils"]) >= 5
+
+        # Verify specific catalog entry
+        reg_ids = [r["sensor_id"] for r in catalog["holding_registers"]]
+        assert "BHARATI.CHP.01.ACTIVE_POWER" in reg_ids
+        assert "BHARATI-PIPE-WATER01-TEMP" in reg_ids
+
+

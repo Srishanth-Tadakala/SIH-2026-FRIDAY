@@ -1,0 +1,22 @@
+"""Industrial SCADA, Fieldbus and Hardware Protocol Bridges for F.R.I.D.A.Y.
+
+Part of SIH 2026 Project SIH26060: F.R.I.D.A.Y.
+Digital Platform for Efficient Remote Management of Indian Antarctic Research Stations.
+
+Provides native asynchronous bridges to physical and industrial protocol layers:
+- Modbus TCP/RTU Master (Woodward/Cummins generator controllers, switchgear)
+- OPC-UA Client/Server (Siemens S7, Schneider PLCs, SCADA gateways)
+- MQTT v5 / Sparkplug B (Edge LoRaWAN, environmental micro-stations)
+"""
+
+from __future__ import annotations
+
+from .modbus_bridge import ModbusTelemetryBridge, ModbusBridgeConfig
+from .modbus_map import BHARATI_MODBUS_REGISTER_MAP, ModbusRegisterDef
+
+__all__ = [
+    "ModbusTelemetryBridge",
+    "ModbusBridgeConfig",
+    "BHARATI_MODBUS_REGISTER_MAP",
+    "ModbusRegisterDef",
+]
