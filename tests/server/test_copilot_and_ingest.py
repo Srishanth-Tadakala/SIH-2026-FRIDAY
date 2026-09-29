@@ -243,4 +243,40 @@ class TestCopilotAndSCADAIngest:
         assert "BHARATI.CHP.01.ACTIVE_POWER" in reg_ids
         assert "BHARATI-PIPE-WATER01-TEMP" in reg_ids
 
+    def test_opcua_and_mqtt_api_endpoints(self, setup_client: TestClient) -> None:
+        """Verify OPC-UA and MQTT telemetry status and catalog endpoints."""
+        client = setup_client
+
+        # 1. Ingest status includes opcua_bridge and mqtt_bridge
+        resp = client.get("/api/telemetry/ingest/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "opcua_bridge" in data
+        assert "mqtt_bridge" in data
+        assert data["opcua_bridge"]["station_id"] == "bharati"
+        assert data["mqtt_bridge"]["station_id"] == "bharati"
+
+        # 2. OPC-UA Status & Node catalog
+        opc_status_resp = client.get("/api/telemetry/opcua/status")
+        assert opc_status_resp.status_code == 200
+        opc_status = opc_status_resp.json()
+        assert opc_status["station_id"] == "bharati"
+        assert "registered_node_count" in opc_status
+
+        opc_nodes_resp = client.get("/api/telemetry/opcua/nodes")
+        assert opc_nodes_resp.status_code == 200
+        nodes_data = opc_nodes_resp.json()
+        assert nodes_data["total_nodes"] >= 10
+        node_ids = [n["node_id"] for n in nodes_data["nodes"]]
+        assert "ns=2;s=Bharati.CHP1.ActivePower" in node_ids
+        assert "ns=2;s=Bharati.LifeSupport.UtilidorWaterTemp" in node_ids
+
+        # 3. MQTT Status
+        mqtt_status_resp = client.get("/api/telemetry/mqtt/status")
+        assert mqtt_status_resp.status_code == 200
+        mqtt_status = mqtt_status_resp.json()
+        assert mqtt_status["station_id"] == "bharati"
+        assert "subscribed_topics" in mqtt_status
+
+
 

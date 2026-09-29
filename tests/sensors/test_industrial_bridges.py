@@ -236,3 +236,183 @@ def test_modbus_bridge_status_metrics() -> None:
     assert status["total_polls"] == 0
     assert status["total_points_ingested"] == 0
     assert status["registered_point_count"] == len(BHARATI_MODBUS_REGISTER_MAP)
+
+
+# ==============================================================================
+# OPC-UA Industrial Gateway Tests (IEC 62541)
+# ==============================================================================
+
+from backend.sensors.bridges.opcua_map import BHARATI_OPCUA_NODE_MAP, OpcUaNodeDef
+from backend.sensors.bridges.opcua_bridge import (
+    OpcUaBridgeConfig,
+    OpcUaTelemetryBridge,
+    ASYNCUA_AVAILABLE,
+)
+from tools.virtual_opcua_server import VirtualOpcUaStationController
+
+
+def test_opcua_node_map_integrity() -> None:
+    """Verify OPC-UA node mappings are well-formed and unique."""
+    assert len(BHARATI_OPCUA_NODE_MAP) >= 10
+    node_ids = list(BHARATI_OPCUA_NODE_MAP.keys())
+    assert len(node_ids) == len(set(node_ids))
+
+    for node_id, node_def in BHARATI_OPCUA_NODE_MAP.items():
+        assert node_id.startswith("ns=2;s=Bharati.")
+        assert node_def.sensor_id.startswith("BHARATI")
+        assert node_def.data_type in ("Float", "Double", "Boolean", "Int32")
+        assert node_def.deadband >= 0.0
+
+
+def test_opcua_bridge_config_and_status() -> None:
+    """Verify OPC-UA configuration defaults and status structure."""
+    config = OpcUaBridgeConfig(endpoint="opc.tcp://localhost:4840/freeopcua/server/")
+    assert config.station_id == "bharati"
+    assert config.subscription_mode is True
+
+    bridge = OpcUaTelemetryBridge(config=config)
+    status = bridge.get_status()
+    assert status["status"] == "DISCONNECTED"
+    assert status["is_running"] is False
+    assert status["endpoint"] == "opc.tcp://localhost:4840/freeopcua/server/"
+    assert status["registered_node_count"] == len(BHARATI_OPCUA_NODE_MAP)
+
+
+@pytest.mark.asyncio
+async def test_virtual_opcua_server_and_bridge_integration() -> None:
+    """Test full HIL loop: Virtual OPC-UA Server -> OpcUaTelemetryBridge -> Twin."""
+    if not ASYNCUA_AVAILABLE:
+        pytest.skip("asyncua not available in this test environment")
+
+    test_port = 14842
+    server = VirtualOpcUaStationController(host="127.0.0.1", port=test_port)
+    await server.start()
+
+    engine = BharatiMasterTwinEngine()
+    config = OpcUaBridgeConfig(
+        endpoint=f"opc.tcp://127.0.0.1:{test_port}/freeopcua/server/",
+        subscription_mode=False,
+        connect_timeout_seconds=2.0,
+    )
+    bridge = OpcUaTelemetryBridge(config=config, engine=engine)
+
+    try:
+        connected = await bridge._ensure_connected()
+        assert connected is True
+        assert bridge.is_connected is True
+
+        # Explicit poll of all nodes
+        polled = await bridge.poll_all_nodes()
+        assert polled > 0
+
+        # Verify values in twin engine
+        readings = engine.get_all_readings()
+        pwr = readings.get("BHARATI.CHP.01.ACTIVE_POWER")
+        val = pwr.value if hasattr(pwr, "value") else pwr.get("value")
+        assert abs(float(val) - 74.5) < 0.1
+
+        # Test writing variable through bridge
+        success = await bridge.write_node_value(
+            node_id="ns=2;s=Bharati.CHP1.ActivePower",
+            value=88.2,
+            data_type="Float",
+        )
+        assert success is True
+
+        # Verify updated value on server
+        updated = await server.get_variable_value("ns=2;s=Bharati.CHP1.ActivePower")
+        assert abs(float(updated) - 88.2) < 0.1
+    finally:
+        await bridge.stop()
+        await server.stop()
+
+
+@pytest.mark.asyncio
+async def test_opcua_bridge_offline_resilience() -> None:
+    """Verify OPC-UA bridge handles offline server gracefully."""
+    config = OpcUaBridgeConfig(
+        endpoint="opc.tcp://127.0.0.1:14849/freeopcua/server/",
+        connect_timeout_seconds=0.5,
+    )
+    bridge = OpcUaTelemetryBridge(config=config)
+
+    connected = await bridge._ensure_connected()
+    assert connected is False
+    assert bridge.is_connected is False
+    assert bridge.reconnect_count >= 1
+    assert bridge.last_error is not None
+
+
+# ==============================================================================
+# MQTT v5 & Sparkplug B Tests
+# ==============================================================================
+
+from backend.sensors.bridges.mqtt_bridge import (
+    MqttBridgeConfig,
+    MqttTelemetryBridge,
+    PAHO_AVAILABLE,
+)
+
+
+def test_mqtt_bridge_config_and_status() -> None:
+    """Verify MQTT bridge configuration defaults and diagnostic status."""
+    config = MqttBridgeConfig(host="127.0.0.1", port=1883)
+    assert config.station_id == "bharati"
+    assert len(config.topics) >= 2
+
+    bridge = MqttTelemetryBridge(config=config)
+    status = bridge.get_status()
+    assert status["status"] == "DISCONNECTED"
+    assert status["is_running"] is False
+    assert status["client_id"] == "friday-polar-twin-mqtt"
+    assert status["total_messages_received"] == 0
+
+
+def test_mqtt_telemetry_and_sparkplug_message_handling() -> None:
+    """Verify payload parsing for standard JSON and Sparkplug B frames."""
+    engine = BharatiMasterTwinEngine()
+    bridge = MqttTelemetryBridge(engine=engine)
+
+    # 1. Standard Single Sensor JSON
+    bridge._handle_standard_telemetry(
+        topic="antarctica/bharati/telemetry/chp1",
+        payload_str='{"sensor_id": "BHARATI.CHP.01.ACTIVE_POWER", "value": 76.8}',
+    )
+    readings = engine.get_all_readings()
+    pwr = readings.get("BHARATI.CHP.01.ACTIVE_POWER")
+    val = pwr.value if hasattr(pwr, "value") else pwr.get("value")
+    assert abs(float(val) - 76.8) < 0.1
+
+    # 2. Standard Multi-Metric Dictionary
+    bridge._handle_standard_telemetry(
+        topic="antarctica/bharati/telemetry/environment",
+        payload_str='{"BHARATI.ENV.OUTSIDE_TEMP": -31.5, "BHARATI.ENV.WIND_SPEED": 18.2}',
+    )
+    readings = engine.get_all_readings()
+    temp = readings.get("BHARATI.ENV.OUTSIDE_TEMP")
+    val_temp = temp.value if hasattr(temp, "value") else temp.get("value")
+    assert abs(float(val_temp) - (-31.5)) < 0.1
+
+    # 3. Sparkplug B Node Birth (NBIRTH)
+    bridge._handle_sparkplug_message(
+        topic="spBv1.0/Antarctica/NBIRTH/bharati/meteo_mast_01",
+        payload_str="{}",
+    )
+    assert "meteo_mast_01" in bridge.active_nodes
+    assert bridge.active_nodes["meteo_mast_01"]["status"] == "ONLINE"
+
+    # 4. Sparkplug B Device Data (DDATA)
+    bridge._handle_sparkplug_message(
+        topic="spBv1.0/Antarctica/DDATA/bharati/meteo_mast_01",
+        payload_str='{"metrics": [{"name": "BarometricPressure", "value": 988.5, "type": "Float"}]}',
+    )
+    readings = engine.get_all_readings()
+    assert "SPB.METEO_MAST_01.BAROMETRICPRESSURE" in readings
+
+    # 5. Sparkplug B Node Death (NDEATH)
+    bridge._handle_sparkplug_message(
+        topic="spBv1.0/Antarctica/NDEATH/bharati/meteo_mast_01",
+        payload_str="{}",
+    )
+    assert bridge.active_nodes["meteo_mast_01"]["status"] == "OFFLINE"
+
