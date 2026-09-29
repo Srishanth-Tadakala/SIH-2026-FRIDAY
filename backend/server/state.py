@@ -202,8 +202,19 @@ class ServerState:
 
         # 6d. Industrial Fieldbus Protocol Bridges
         from ..sensors.bridges.modbus_bridge import ModbusBridgeConfig, ModbusTelemetryBridge
+        from ..sensors.bridges.opcua_bridge import OpcUaBridgeConfig, OpcUaTelemetryBridge
+        from ..sensors.bridges.mqtt_bridge import MqttBridgeConfig, MqttTelemetryBridge
+
         self.modbus_bridge = ModbusTelemetryBridge(
             config=ModbusBridgeConfig(station_id="bharati", enabled=False),
+            engine=self.bharati_engine,
+        )
+        self.opcua_bridge = OpcUaTelemetryBridge(
+            config=OpcUaBridgeConfig(station_id="bharati", enabled=False),
+            engine=self.bharati_engine,
+        )
+        self.mqtt_bridge = MqttTelemetryBridge(
+            config=MqttBridgeConfig(station_id="bharati", enabled=False),
             engine=self.bharati_engine,
         )
 

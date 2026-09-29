@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -112,6 +112,8 @@ def get_ingestion_status() -> dict[str, Any]:
     active_engine = server_state.get_engine()
     total_twin_sensors = active_engine.sensor_count if active_engine else 0
     modbus_status = server_state.modbus_bridge.get_status() if hasattr(server_state, "modbus_bridge") else {}
+    opcua_status = server_state.opcua_bridge.get_status() if hasattr(server_state, "opcua_bridge") else {}
+    mqtt_status = server_state.mqtt_bridge.get_status() if hasattr(server_state, "mqtt_bridge") else {}
 
     return {
         "status": "OPERATIONAL",
@@ -123,6 +125,8 @@ def get_ingestion_status() -> dict[str, Any]:
         "total_twin_registered_sensors": total_twin_sensors,
         "supported_protocols": ["REST/JSON", "Modbus-TCP Bridge", "MQTT-Sparkplug B", "OPC-UA"],
         "modbus_bridge": modbus_status,
+        "opcua_bridge": opcua_status,
+        "mqtt_bridge": mqtt_status,
     }
 
 
@@ -189,4 +193,110 @@ async def write_modbus_coil(payload: ModbusCoilRequest) -> dict[str, Any]:
         "station_id": payload.station_id,
         "timestamp": time.time(),
     }
+
+
+# ==============================================================================
+# OPC-UA Industrial Gateway Endpoints (IEC 62541)
+# ==============================================================================
+
+class OpcUaWriteRequest(BaseModel):
+    node_id: str = Field(..., description="OPC-UA NodeId string (e.g. ns=2;s=Bharati.CHP1.ActivePower)")
+    value: Any = Field(..., description="Value to write to PLC variable")
+    data_type: Optional[str] = Field(default=None, description="Optional type hint: Boolean, Float, Int32")
+
+
+@router.get("/opcua/status")
+def get_opcua_status() -> dict[str, Any]:
+    """Return real-time operational status of the OPC-UA industrial gateway."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "opcua_bridge"):
+        raise HTTPException(status_code=503, detail="OPC-UA bridge not initialized.")
+    return server_state.opcua_bridge.get_status()
+
+
+@router.get("/opcua/nodes")
+def get_opcua_node_catalog() -> dict[str, Any]:
+    """Return registered OPC-UA node mappings for station PLC subsystems."""
+    from ...sensors.bridges.opcua_map import BHARATI_OPCUA_NODE_MAP
+    return {
+        "total_nodes": len(BHARATI_OPCUA_NODE_MAP),
+        "nodes": [
+            {
+                "node_id": node.node_id,
+                "sensor_id": node.sensor_id,
+                "description": node.description,
+                "unit": node.engineering_unit,
+                "data_type": node.data_type,
+                "deadband": node.deadband,
+            }
+            for node in BHARATI_OPCUA_NODE_MAP.values()
+        ],
+    }
+
+
+@router.post("/opcua/write")
+async def write_opcua_variable(payload: OpcUaWriteRequest) -> dict[str, Any]:
+    """Write setpoint or control command to an OPC-UA PLC Variable Node."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "opcua_bridge"):
+        raise HTTPException(status_code=503, detail="OPC-UA bridge not initialized.")
+
+    success = await server_state.opcua_bridge.write_node_value(
+        payload.node_id, payload.value, payload.data_type
+    )
+    if not success:
+        last_err = server_state.opcua_bridge.last_error or "OPC-UA write failed or bridge not connected."
+        raise HTTPException(status_code=502, detail=f"OPC-UA write error: {last_err}")
+
+    return {
+        "status": "COMMAND_DISPATCHED",
+        "node_id": payload.node_id,
+        "value": payload.value,
+        "timestamp": time.time(),
+    }
+
+
+# ==============================================================================
+# MQTT v5 & Sparkplug B Edge Connector Endpoints
+# ==============================================================================
+
+class MqttPublishRequest(BaseModel):
+    topic: str = Field(..., description="Target MQTT topic")
+    payload: Any = Field(..., description="Payload data (dict, list, or string)")
+    qos: int = Field(default=1, ge=0, le=2, description="MQTT QoS level")
+    retain: bool = Field(default=False, description="MQTT Retain flag")
+
+
+@router.get("/mqtt/status")
+def get_mqtt_status() -> dict[str, Any]:
+    """Return operational status and metrics for the MQTT / Sparkplug B edge connector."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "mqtt_bridge"):
+        raise HTTPException(status_code=503, detail="MQTT bridge not initialized.")
+    return server_state.mqtt_bridge.get_status()
+
+
+@router.post("/mqtt/publish")
+async def publish_mqtt_message(payload: MqttPublishRequest) -> dict[str, Any]:
+    """Publish control command or telemetry frame to an edge MQTT topic."""
+    server_state = get_server_state()
+    if not hasattr(server_state, "mqtt_bridge"):
+        raise HTTPException(status_code=503, detail="MQTT bridge not initialized.")
+
+    success = await server_state.mqtt_bridge.publish(
+        topic=payload.topic,
+        payload=payload.payload,
+        qos=payload.qos,
+        retain=payload.retain,
+    )
+    if not success:
+        last_err = server_state.mqtt_bridge.last_error or "MQTT publish failed or client disconnected."
+        raise HTTPException(status_code=502, detail=f"MQTT publish error: {last_err}")
+
+    return {
+        "status": "MESSAGE_PUBLISHED",
+        "topic": payload.topic,
+        "timestamp": time.time(),
+    }
+
 
