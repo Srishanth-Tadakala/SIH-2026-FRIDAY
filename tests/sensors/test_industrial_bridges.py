@@ -416,3 +416,114 @@ def test_mqtt_telemetry_and_sparkplug_message_handling() -> None:
     )
     assert bridge.active_nodes["meteo_mast_01"]["status"] == "OFFLINE"
 
+
+# ==============================================================================
+# BACnet/IP HVAC & Utilidor Trace Heating Tests (ANSI/ASHRAE 135)
+# ==============================================================================
+
+from backend.sensors.bridges.bacnet_map import (
+    BHARATI_BACNET_OBJECT_MAP,
+    BacnetObjectDef,
+    BacnetObjectType,
+)
+from backend.sensors.bridges.bacnet_bridge import (
+    BacnetBridgeConfig,
+    BacnetTelemetryBridge,
+)
+
+
+def test_bacnet_object_map_integrity() -> None:
+    """Verify BACnet object map covers HVAC and trace heating points."""
+    assert len(BHARATI_BACNET_OBJECT_MAP) >= 8
+
+    # Verify Analog Inputs
+    ai_keys = [k for k in BHARATI_BACNET_OBJECT_MAP.keys() if k[0] == BacnetObjectType.ANALOG_INPUT]
+    assert len(ai_keys) >= 4
+
+    # Verify Writable Outputs (Analog Output & Binary Output)
+    ao_keys = [k for k in BHARATI_BACNET_OBJECT_MAP.keys() if k[0] == BacnetObjectType.ANALOG_OUTPUT]
+    bo_keys = [k for k in BHARATI_BACNET_OBJECT_MAP.keys() if k[0] == BacnetObjectType.BINARY_OUTPUT]
+    assert len(ao_keys) >= 2
+    assert len(bo_keys) >= 2
+
+    for key, obj in BHARATI_BACNET_OBJECT_MAP.items():
+        assert obj.sensor_id.startswith("BHARATI")
+        assert len(obj.description) > 0
+
+
+def test_bacnet_bridge_config_and_status() -> None:
+    """Verify BACnet bridge defaults and diagnostic status."""
+    config = BacnetBridgeConfig(port=47808, device_id=26060)
+    assert config.station_id == "bharati"
+    assert config.port == 47808
+    assert config.device_id == 26060
+
+    bridge = BacnetTelemetryBridge(config=config)
+    status = bridge.get_status()
+    assert status["status"] == "DISCONNECTED"
+    assert status["target"] == "127.0.0.1:47808"
+    assert status["registered_objects_count"] == len(BHARATI_BACNET_OBJECT_MAP)
+
+
+@pytest.mark.asyncio
+async def test_bacnet_telemetry_polling_and_twin_injection() -> None:
+    """Verify polling all BACnet objects injects valid metrics into the digital twin."""
+    engine = BharatiMasterTwinEngine()
+    bridge = BacnetTelemetryBridge(engine=engine)
+
+    polled = await bridge.poll_all_objects()
+    assert polled >= len(BHARATI_BACNET_OBJECT_MAP)
+
+    readings = engine.get_all_readings()
+
+    # 1. Check Outside Air Intake Temp
+    air_reading = readings.get("BHARATI.HVAC.OUTSIDE_AIR_INTAKE_TEMP")
+    val_air = air_reading.value if hasattr(air_reading, "value") else air_reading.get("value")
+    assert abs(float(val_air) - (-22.4)) < 0.1
+
+    # 2. Check Utilidor Water Temp
+    water_reading = readings.get("BHARATI-PIPE-WATER01-TEMP")
+    val_water = water_reading.value if hasattr(water_reading, "value") else water_reading.get("value")
+    assert abs(float(val_water) - 4.6) < 0.1
+
+
+@pytest.mark.asyncio
+async def test_bacnet_write_property_and_actuation() -> None:
+    """Verify writing setpoints and binary contactors via BACnet WriteProperty."""
+    engine = BharatiMasterTwinEngine()
+    bridge = BacnetTelemetryBridge(engine=engine)
+
+    # 1. Write Analog Output (Heating Coil Setpoint 201)
+    success = await bridge.write_property(
+        object_type=BacnetObjectType.ANALOG_OUTPUT,
+        instance_id=201,
+        value=25.5,
+    )
+    assert success is True
+    assert bridge.read_property(BacnetObjectType.ANALOG_OUTPUT, 201) == 25.5
+
+    # Verify reflected in twin
+    readings = engine.get_all_readings()
+    sp_reading = readings.get("BHARATI.HVAC.HEATING_COIL_SETPOINT")
+    val_sp = sp_reading.value if hasattr(sp_reading, "value") else sp_reading.get("value")
+    assert abs(float(val_sp) - 25.5) < 0.1
+
+    # 2. Write Binary Output (Trace Heater Contactor 401)
+    success_bo = await bridge.write_property(
+        object_type=BacnetObjectType.BINARY_OUTPUT,
+        instance_id=401,
+        value=0.0,
+    )
+    assert success_bo is True
+    assert bridge.read_property(BacnetObjectType.BINARY_OUTPUT, 401) == 0.0
+
+    # 3. Reject Write to Read-Only Analog Input (101)
+    fail_ro = await bridge.write_property(
+        object_type=BacnetObjectType.ANALOG_INPUT,
+        instance_id=101,
+        value=15.0,
+    )
+    assert fail_ro is False
+    assert "read-only" in (bridge.last_error or "").lower()
+
+

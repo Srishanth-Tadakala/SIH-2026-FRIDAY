@@ -278,5 +278,53 @@ class TestCopilotAndSCADAIngest:
         assert mqtt_status["station_id"] == "bharati"
         assert "subscribed_topics" in mqtt_status
 
+    def test_bacnet_api_endpoints(self, setup_client: TestClient) -> None:
+        """Verify BACnet telemetry status, objects catalog, and write property endpoints."""
+        client = setup_client
+
+        # 1. Status endpoint
+        resp = client.get("/api/telemetry/bacnet/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["station_id"] == "bharati"
+        assert data["device_id"] == 26060
+        assert data["registered_objects_count"] >= 8
+
+        # 2. Objects catalog endpoint
+        catalog_resp = client.get("/api/telemetry/bacnet/objects")
+        assert catalog_resp.status_code == 200
+        catalog = catalog_resp.json()
+        assert catalog["total_objects"] >= 8
+        sensor_ids = [o["sensor_id"] for o in catalog["objects"]]
+        assert "BHARATI.HVAC.OUTSIDE_AIR_INTAKE_TEMP" in sensor_ids
+        assert "BHARATI-PIPE-WATER01-TEMP" in sensor_ids
+        assert "BHARATI.HVAC.HEATING_COIL_SETPOINT" in sensor_ids
+
+        # 3. Write property endpoint (valid Analog Output)
+        write_resp = client.post(
+            "/api/telemetry/bacnet/write",
+            json={
+                "object_type": "ANALOG_OUTPUT",
+                "instance_id": 201,
+                "value": 24.5,
+            },
+        )
+        assert write_resp.status_code == 200
+        write_data = write_resp.json()
+        assert write_data["status"] == "COMMAND_DISPATCHED"
+        assert write_data["value"] == 24.5
+
+        # 4. Write property endpoint (invalid object type rejection)
+        bad_resp = client.post(
+            "/api/telemetry/bacnet/write",
+            json={
+                "object_type": "INVALID_TYPE",
+                "instance_id": 201,
+                "value": 10.0,
+            },
+        )
+        assert bad_resp.status_code == 400
+
+
 
 
