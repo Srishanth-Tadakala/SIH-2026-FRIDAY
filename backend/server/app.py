@@ -30,6 +30,7 @@ from .routes.auth import router as auth_router
 from .routes.copilot import router as copilot_router
 from .routes.database import router as database_router
 from .routes.deliberations import router as deliberations_router
+from .routes.environmental import router as environmental_router
 from .routes.health import router as health_router
 from .routes.memory import router as memory_router
 from .routes.satcom import router as satcom_router
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(sync_router)
     app.include_router(alerts_router)
     app.include_router(memory_router)
+    app.include_router(environmental_router)
 
     # Luminous Scandi-Tech React Frontend Mount
     frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))

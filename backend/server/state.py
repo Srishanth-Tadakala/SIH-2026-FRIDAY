@@ -223,6 +223,14 @@ class ServerState:
             engine=self.bharati_engine,
         )
 
+        # 6e. Polar Environmental & Space Weather Engine
+        from ..environmental.space_weather import SpaceWeatherConfig, SpaceWeatherFeedEngine
+        self.space_weather_engine = SpaceWeatherFeedEngine(
+            config=SpaceWeatherConfig(station_id="bharati", enable_live_poll=False),
+            engine=self.bharati_engine,
+            bus=self.bus,
+        )
+
         # Server start timestamp
         self.server_start_time = time.time()
 
