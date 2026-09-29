@@ -17,6 +17,8 @@ websockets>=12.0
 
 # Industrial SCADA & Fieldbus Protocols
 pymodbus>=3.6.0
+paho-mqtt>=2.0.0
+asyncua>=1.1.0
 
 # Testing & Verification Suite
 pytest>=8.0.0
