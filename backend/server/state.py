@@ -191,14 +191,18 @@ class ServerState:
             is_link_connected_fn=lambda: not self.orchestrator.edge_blackout_mode,
         )
 
-        # 6c. Modular Domain Services
+        # 6c. Modular Domain Services & DTN Bundle Protocol Agent
         from .services.station_service import StationService
         from .services.satcom_service import SatcomService
         from .services.actuator_service import ActuatorService
+        from ..satcom.dtn_bundle import DtnAgentConfig, DtnBundleAgent
 
         self.station_service = StationService(self)
         self.satcom_service = SatcomService(self)
         self.actuator_service = ActuatorService(self)
+        self.dtn_agent = DtnBundleAgent(
+            config=DtnAgentConfig(local_eid="dtn://bharati.station/node01", enabled=False)
+        )
 
         # 6d. Industrial Fieldbus Protocol Bridges
         from ..sensors.bridges.modbus_bridge import ModbusBridgeConfig, ModbusTelemetryBridge
