@@ -182,3 +182,114 @@ def trigger_keyframe_resync(station_id: str) -> dict[str, Any]:
         "state_checksum": mirror.get_state_checksum(),
         "tx_stats": tx_stats,
     }
+
+
+# ==============================================================================
+# DTN Bundle Protocol Endpoints (RFC 9171 / BPv7)
+# ==============================================================================
+
+class DtnSendBundleRequest(BaseModel):
+    destination_eid: str = Field(..., description="Destination Endpoint ID (e.g. dtn://ncpor.gov.in/telemetry)")
+    payload: Any = Field(..., description="Payload data (dict, list, or string)")
+    source_eid: str | None = Field(default=None, description="Optional custom source EID")
+    priority: int = Field(default=1, ge=0, le=2, description="Priority: 0=BULK, 1=NORMAL, 2=EXPEDITE_EMERGENCY")
+    lifetime_seconds: int = Field(default=86400, ge=60, description="Bundle TTL in seconds")
+    custody_transfer_requested: bool = Field(default=True, description="Request custodial handover confirmation")
+
+
+class DtnContactWindowRequest(BaseModel):
+    carrier_eid: str = Field(
+        default="dtn://sat.cartosat-2f/transponder01",
+        description="Flyby satellite or convoy carrier EID",
+    )
+    bandwidth_bytes_limit: int = Field(default=5_000_000, description="Max bytes transmittable during pass")
+    max_bundles: int = Field(default=50, description="Max bundles to dispatch")
+
+
+@router.get("/dtn/status")
+def get_dtn_agent_status() -> dict[str, Any]:
+    """Retrieve operational status, queue counts, and metrics for the DTN Bundle Agent."""
+    state = get_server_state()
+    if not hasattr(state, "dtn_agent"):
+        raise HTTPException(status_code=503, detail="DTN Bundle Agent not initialized.")
+
+    return state.dtn_agent.get_status()
+
+
+@router.get("/dtn/bundles")
+def list_dtn_bundles() -> dict[str, Any]:
+    """Inspect queued bundles by priority level."""
+    state = get_server_state()
+    if not hasattr(state, "dtn_agent"):
+        raise HTTPException(status_code=503, detail="DTN Bundle Agent not initialized.")
+
+    agent = state.dtn_agent
+    return {
+        "local_eid": agent.local_eid,
+        "queues": {
+            p.name: [b.model_dump() for b in q]
+            for p, q in agent._queues.items()
+        },
+        "delivered_count": len(agent._delivered_bundles),
+    }
+
+
+@router.post("/dtn/send")
+def send_dtn_bundle(req: DtnSendBundleRequest) -> dict[str, Any]:
+    """Enqueue a new RFC 9171 bundle for store-carry-forward transmission."""
+    state = get_server_state()
+    if not hasattr(state, "dtn_agent"):
+        raise HTTPException(status_code=503, detail="DTN Bundle Agent not initialized.")
+
+    from ...satcom.dtn_bundle import BundlePriority
+    priority_enum = BundlePriority(req.priority)
+
+    bundle = state.dtn_agent.create_and_enqueue_bundle(
+        destination_eid=req.destination_eid,
+        payload=req.payload,
+        source_eid=req.source_eid,
+        priority=priority_enum,
+        lifetime_seconds=req.lifetime_seconds,
+        custody_transfer_requested=req.custody_transfer_requested,
+    )
+
+    return {
+        "status": "QUEUED",
+        "bundle_id": bundle.bundle_id,
+        "source_eid": bundle.source_eid,
+        "destination_eid": bundle.destination_eid,
+        "priority": priority_enum.name,
+        "payload_size_bytes": bundle.payload_size_bytes,
+        "payload_sha256": bundle.payload_sha256,
+        "lifetime_seconds": bundle.lifetime_seconds,
+    }
+
+
+@router.post("/dtn/contact-window")
+def simulate_dtn_contact_window(req: DtnContactWindowRequest) -> dict[str, Any]:
+    """Simulate an opportunistic LEO satellite flyby or convoy contact to flush bundles."""
+    state = get_server_state()
+    if not hasattr(state, "dtn_agent"):
+        raise HTTPException(status_code=503, detail="DTN Bundle Agent not initialized.")
+
+    dispatched = state.dtn_agent.dispatch_contact_window(
+        carrier_eid=req.carrier_eid,
+        bandwidth_bytes_limit=req.bandwidth_bytes_limit,
+        max_bundles=req.max_bundles,
+    )
+
+    return {
+        "status": "CONTACT_WINDOW_COMPLETED",
+        "carrier_eid": req.carrier_eid,
+        "dispatched_count": len(dispatched),
+        "dispatched_bundles": [
+            {
+                "bundle_id": b.bundle_id,
+                "priority": b.priority.name,
+                "destination_eid": b.destination_eid,
+                "size_bytes": b.payload_size_bytes,
+            }
+            for b in dispatched
+        ],
+    }
+
