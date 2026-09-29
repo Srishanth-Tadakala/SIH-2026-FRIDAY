@@ -7,6 +7,7 @@ Provides native asynchronous bridges to physical and industrial protocol layers:
 - Modbus TCP/RTU Master (Woodward/Cummins generator controllers, switchgear)
 - OPC-UA Client/Server (Siemens S7-1500, Schneider M580 PLCs, SCADA gateways)
 - MQTT v5 / Sparkplug B (Edge LoRaWAN, environmental micro-stations)
+- BACnet/IP (Building automation, HVAC heat recovery, utilidor trace heating)
 """
 
 from __future__ import annotations
@@ -16,6 +17,8 @@ from .modbus_map import BHARATI_MODBUS_REGISTER_MAP, ModbusRegisterDef
 from .opcua_bridge import OpcUaTelemetryBridge, OpcUaBridgeConfig
 from .opcua_map import BHARATI_OPCUA_NODE_MAP, OpcUaNodeDef
 from .mqtt_bridge import MqttTelemetryBridge, MqttBridgeConfig
+from .bacnet_bridge import BacnetTelemetryBridge, BacnetBridgeConfig
+from .bacnet_map import BHARATI_BACNET_OBJECT_MAP, BacnetObjectDef, BacnetObjectType
 
 __all__ = [
     "ModbusTelemetryBridge",
@@ -28,4 +31,9 @@ __all__ = [
     "OpcUaNodeDef",
     "MqttTelemetryBridge",
     "MqttBridgeConfig",
+    "BacnetTelemetryBridge",
+    "BacnetBridgeConfig",
+    "BHARATI_BACNET_OBJECT_MAP",
+    "BacnetObjectDef",
+    "BacnetObjectType",
 ]
