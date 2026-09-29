@@ -6,6 +6,7 @@ Digital Platform for Efficient Remote Management of Indian Antarctic Research St
 Provides:
 - NOAA Space Weather Prediction Center (SWPC) Live Ingestion & Geomagnetic Analysis
 - Antarctic Mesoscale Prediction System (AMPS) Polar Numerical Weather Ingestion
+- Polar Wind Chill Index & Expedition Safety Condition Lockout Engine
 - Polar Cap Absorption (PCA) & Auroral Riometer Attenuation Calculators
 """
 
@@ -19,6 +20,13 @@ from .space_weather import (
     SpaceWeatherFeedEngine,
     SpaceWeatherMetrics,
 )
+from .amps_weather import (
+    AmpsWeatherEngine,
+    PolarForecastHour,
+    PolarSafetyCondition,
+    PolarWeatherConfig,
+    PolarWeatherObservation,
+)
 
 __all__ = [
     "GeomagneticStormScale",
@@ -27,4 +35,9 @@ __all__ = [
     "SpaceWeatherMetrics",
     "SpaceWeatherConfig",
     "SpaceWeatherFeedEngine",
+    "AmpsWeatherEngine",
+    "PolarSafetyCondition",
+    "PolarWeatherObservation",
+    "PolarForecastHour",
+    "PolarWeatherConfig",
 ]
