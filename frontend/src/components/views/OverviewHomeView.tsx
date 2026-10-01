@@ -31,6 +31,7 @@ import {
   Compass
 } from 'lucide-react';
 import { StationId, StationSnapshot, StationInfo, SpaceWeatherMetrics, PolarWeatherObservation } from '../../types';
+import { HeroSection } from '../HeroSection';
 import { 
   fetchSpaceWeatherCurrent, 
   fetchPolarWeatherCurrent, 
@@ -360,170 +361,18 @@ export const OverviewHomeView: React.FC<OverviewHomeViewProps> = ({
         ))}
       </div>
 
-      {/* ================= SECTION 1: 6-PILLAR MICRO-TELEMETRY MATRIX ================= */}
-      <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3" id="overview">
-        {/* Pillar 1: GRID LOAD */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">GRID LOAD</span>
-            <span className={`w-2 h-2 rounded-full ${isGenTrip ? 'bg-[#ba1a1a] animate-pulse' : 'bg-[#10b981]'}`} />
-          </div>
-          <div className="my-2">
-            <div className="text-xl font-mono font-bold text-[#0d1c2f] tracking-tight tabular-nums">
-              {gridLoadKw.toFixed(1)} <span className="text-xs font-normal text-[#767586]">kW</span>
-            </div>
-            <div className={`text-[11px] font-mono font-medium mt-0.5 ${isGenTrip ? 'text-[#ba1a1a]' : 'text-[#006c49]'}`}>
-              {gridLoadCap}% Cap • {isGenTrip ? 'BESS Primary' : '+2.1kW flux'}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-300 ${isGenTrip ? 'bg-[#ba1a1a]' : 'bg-[#4648d4]'}`} 
-                style={{ width: `${gridLoadCap}%` }} 
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>HYBRID BESS</span>
-              <span>180 kW MAX</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pillar 2: LIVING CORE TEMP */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">LIVING CORE TEMP</span>
-            <span className={`w-2 h-2 rounded-full ${isFreeze ? 'bg-[#ba1a1a] animate-pulse' : 'bg-[#10b981]'}`} />
-          </div>
-          <div className="my-2">
-            <div className="text-xl font-mono font-bold text-[#0d1c2f] tracking-tight tabular-nums">
-              +{livingTempC.toFixed(1)} <span className="text-xs font-normal text-[#767586]">°C</span>
-            </div>
-            <div className="text-[11px] font-mono text-[#767586] mt-0.5">
-              Setpoint 22.0°C (Δ {(22.0 - livingTempC).toFixed(1)})
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-300 ${isFreeze ? 'bg-[#ba1a1a]' : 'bg-[#10b981]'}`} 
-                style={{ width: `${Math.min(100, Math.max(20, (livingTempC / 25) * 100))}%` }} 
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>HAB A/B WING</span>
-              <span>THERMAL BAL</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pillar 3: WIND CHILL / AMBIENT */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">WIND CHILL / AMB</span>
-            <span className={`w-2 h-2 rounded-full ${isGale ? 'bg-[#ba1a1a] animate-ping' : 'bg-[#f59e0b] pip-amber-pulse'}`} />
-          </div>
-          <div className="my-2">
-            <div className={`text-xl font-mono font-bold tracking-tight tabular-nums ${isGale ? 'text-[#ba1a1a]' : 'text-[#4648d4]'}`}>
-              {windChillC.toFixed(1)} <span className="text-xs font-normal text-[#767586]">°C</span>
-            </div>
-            <div className={`text-[11px] font-mono font-medium truncate mt-0.5 ${isGale ? 'text-[#ba1a1a]' : 'text-[#b45309]'}`}>
-              {windGustSpeed}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-300 ${isGale ? 'bg-[#ba1a1a]' : 'bg-[#f59e0b]'}`} 
-                style={{ width: isGale ? '96%' : '68%' }} 
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>AMB -28.2°C</span>
-              <span>{isGale ? 'KATABATIC GALE' : 'KATABATIC MOD'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pillar 4: UTILIDOR VELOCITY */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">UTILIDOR VELOCITY</span>
-            <span className={`w-2 h-2 rounded-full ${isFreeze ? 'bg-[#ba1a1a] animate-pulse' : 'bg-[#10b981]'}`} />
-          </div>
-          <div className="my-2">
-            <div className={`text-xl font-mono font-bold tracking-tight tabular-nums ${isFreeze ? 'text-[#ba1a1a]' : 'text-[#0d1c2f]'}`}>
-              {utilidorFlow.toFixed(1)} <span className="text-xs font-normal text-[#767586]">m/s</span>
-            </div>
-            <div className={`text-[11px] font-mono font-medium mt-0.5 truncate ${isFreeze ? 'text-[#ba1a1a]' : 'text-[#006c49]'}`}>
-              {utilidorRisk}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-300 ${isFreeze ? 'bg-[#ba1a1a]' : 'bg-[#006577]'}`} 
-                style={{ width: isFreeze ? '28%' : '58%' }} 
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>TRACE ACTIVE</span>
-              <span>{isFreeze ? 'RESTRICTED' : 'NOMINAL LOOP'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pillar 5: AUTONOMOUS FUEL DAYS */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">AUTONOMOUS FUEL</span>
-            <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-          </div>
-          <div className="my-2">
-            <div className="text-xl font-mono font-bold text-[#0d1c2f] tracking-tight tabular-nums">
-              {fuelDays} <span className="text-xs font-normal text-[#767586]">Days</span>
-            </div>
-            <div className="text-[11px] font-mono text-[#767586] mt-0.5">
-              410,000L Bulk Jet-A1
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div className="bg-[#4648d4] h-full rounded-full" style={{ width: '78%' }} />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>POLAR DIESEL</span>
-              <span>WINTER SECURE</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pillar 6: CONSENSUS INTEGRITY */}
-        <div className="bg-white border border-[#eaebf0] rounded-lg p-3 flex flex-col justify-between hover:border-[#4648d4] transition-colors shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-semibold text-[#767586]">CONSENSUS INTEGRITY</span>
-            <span className="w-2 h-2 rounded-full bg-[#10b981] pulse-emerald" />
-          </div>
-          <div className="my-2">
-            <div className="text-xl font-mono font-bold text-[#006c49] tracking-tight tabular-nums">
-              10/10 <span className="text-xs font-normal text-[#767586]">Agents</span>
-            </div>
-            <div className="text-[11px] font-mono text-[#006c49] font-medium mt-0.5">
-              99.94% Synced State
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="w-full bg-[#e6eeff] h-1.5 rounded-full overflow-hidden">
-              <div className="bg-[#10b981] h-full rounded-full" style={{ width: '100%' }} />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-[#767586]">
-              <span>ZERO ANOMALY</span>
-              <span>QUORUM VALID</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ================= SECTION 1: INTERACTIVE POLAR COMMAND HERO SECTION ================= */}
+      <HeroSection
+        activeStation={activeStation}
+        onStationChange={onStationChange}
+        snapshot={snapshot}
+        activeCrisis={activeCrisis}
+        onInjectCrisis={onInjectCrisis}
+        onResetCrisis={onResetCrisis}
+        onLaunchCockpit={onLaunchCockpit}
+        onOpenDigitalTwin={onOpenDigitalTwin}
+        onOpenAgents={onOpenAgents}
+      />
 
       {/* ================= SECTION 2: INTERACTIVE 4-SUBSYSTEM TWIN MATRIX ================= */}
       <section className="space-y-3" id="twins">

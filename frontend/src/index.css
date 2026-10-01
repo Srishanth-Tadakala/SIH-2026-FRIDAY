@@ -103,3 +103,22 @@
   50% { opacity: 0.3; }
 }
 
+/* Radar Sweep & Status Pulse Animations */
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.radar-sweep-arm {
+  transform-origin: center center;
+  animation: radarSweep 6s linear infinite;
+}
+
+@keyframes subtlePing {
+  0% { transform: scale(0.95); opacity: 0.9; }
+  50% { transform: scale(1.1); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.9; }
+}
+.status-pulse {
+  animation: subtlePing 2s infinite ease-in-out;
+}
+
