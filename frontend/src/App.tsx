@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StationId, StationInfo, StationSnapshot } from './types';
 import { fetchStationSnapshot, fetchStations, injectScenario, clearScenario } from './api';
 import { SidebarNavigation, NavView } from './components/SidebarNavigation';
+import { TopMissionHeader } from './components/TopMissionHeader';
 import { OverviewHomeView } from './components/views/OverviewHomeView';
 import { StationFleetView } from './components/views/StationFleetView';
 import { DigitalTwinView } from './components/views/DigitalTwinView';
@@ -37,6 +38,8 @@ export function App() {
   const [activeCrisis, setActiveCrisis] = useState<string | null>(null);
   const [isResolved, setIsResolved] = useState<boolean>(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState<boolean>(false);
+  const [opMode, setOpMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   const handleViewChange = (newView: NavView) => {
     setActiveView(newView);
@@ -110,20 +113,53 @@ export function App() {
     window.location.href = '/legacy-ui';
   };
 
+  const handleEmergencyOverride = () => {
+    const confirmed = window.confirm(
+      'ATTENTION: Trigger EMERGENCY OVERRIDE on Antarctic station life support loops?\n\nThis will force all secondary generators into parallel dispatch and hold utilidor valves open.'
+    );
+    if (confirmed) {
+      handleInjectCrisis('EMERGENCY_OVERRIDE');
+    }
+  };
+
+  const handleLockdown = () => {
+    const confirmed = window.confirm(
+      'INITIATE STATION LOCKDOWN?\n\nExternal utilidor blast seals will close and autonomous containment will arm.'
+    );
+    if (confirmed) {
+      handleInjectCrisis('STATION_LOCKDOWN');
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#faf8ff] text-[#131b2e] antialiased selection:bg-[#4648d4]/15 selection:text-[#4648d4]">
-      {/* 1. Left Sidebar Navigation */}
+    <div className="flex min-h-screen bg-[#faf8ff] text-[#0d1c2f] antialiased selection:bg-[#4648d4] selection:text-white">
+      {/* 1. Fixed Top Mission Header (Polaris Antarctic Command) */}
+      <TopMissionHeader
+        activeStation={station}
+        onStationChange={setStation}
+        activeCrisis={activeCrisis}
+        opMode={opMode}
+        onOpModeChange={setOpMode}
+        onEmergencyOverride={handleEmergencyOverride}
+        onMobileMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
+        mobileMenuOpen={mobileMenuOpen}
+      />
+
+      {/* 2. Fixed Left Sidebar Navigation */}
       <SidebarNavigation
         activeStation={station}
         onStationChange={setStation}
         onLaunchCockpit={handleLaunchCockpit}
         activeView={activeView}
         onViewChange={handleViewChange}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+        onLockdown={handleLockdown}
       />
 
-      {/* 2. Main Content Area */}
-      <div className="flex-1 md:ml-64 lg:ml-72 min-h-screen flex flex-col justify-between overflow-x-hidden pt-16 md:pt-0">
-        <main className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 scandi-aura">
+      {/* 3. Main Command Content Area */}
+      <div className="flex-1 md:ml-64 lg:ml-72 min-h-screen flex flex-col justify-between overflow-x-hidden pt-14">
+        <main className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-5 scandi-aura">
           {/* ================= VIEW ROUTING ================= */}
           {activeView === 'overview' && (
             <OverviewHomeView
@@ -177,11 +213,11 @@ export function App() {
       {/* Floating Ask F.R.I.D.A.Y. AI Copilot Button */}
       <button
         onClick={() => setIsCopilotOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-40 px-4 py-3 rounded-2xl bg-linear-to-tr from-[#4648d4] to-[#006577] text-white font-mono text-xs font-bold shadow-xl shadow-[#4648d4]/25 hover:shadow-2xl hover:shadow-[#4648d4]/40 hover:scale-[1.03] active:scale-[0.98] transition-all flex items-center gap-2.5 border border-white/20 cursor-pointer"
+        className="fixed bottom-14 right-6 z-40 px-4 py-2.5 rounded-xl bg-gradient-to-tr from-[#4648d4] to-[#006577] text-white font-mono text-xs font-bold shadow-lg shadow-[#4648d4]/25 hover:shadow-xl hover:shadow-[#4648d4]/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 border border-white/20 cursor-pointer"
         title="Open Interactive F.R.I.D.A.Y. AI Copilot"
       >
         <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-        <Sparkles className="w-4 h-4 text-white" />
+        <Sparkles className="w-3.5 h-3.5 text-white" />
         <span>Ask F.R.I.D.A.Y.</span>
       </button>
 

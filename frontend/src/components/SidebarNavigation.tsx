@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Cpu, 
   LayoutDashboard, 
   Compass, 
   Activity, 
@@ -8,10 +7,10 @@ import {
   BarChart3, 
   ShieldCheck, 
   ArrowUpRight, 
-  Menu, 
-  X,
+  Database,
   Radio,
-  Database
+  Lock,
+  X
 } from 'lucide-react';
 import { StationId } from '../types';
 
@@ -23,6 +22,9 @@ interface SidebarNavigationProps {
   onLaunchCockpit: () => void;
   activeView: NavView;
   onViewChange: (view: NavView) => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+  onLockdown?: () => void;
 }
 
 export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
@@ -31,130 +33,103 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   onLaunchCockpit,
   activeView,
   onViewChange,
+  mobileOpen = false,
+  onMobileClose = () => {},
+  onLockdown = () => {},
 }) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   const navItems: Array<{ id: NavView; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'overview', label: 'Overview Telemetry', icon: LayoutDashboard },
+    { id: 'digital_twin', label: 'Subsystem Twins', icon: Activity },
     { id: 'stations', label: 'Station Fleet', icon: Compass },
-    { id: 'digital_twin', label: 'Digital Twin', icon: Activity },
-    { id: 'agents', label: 'Agents', icon: Users },
-    { id: 'memory', label: 'Memory', icon: Database },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'actions', label: 'Actions', icon: ShieldCheck },
+    { id: 'agents', label: 'Agent Consensus', icon: Users },
+    { id: 'memory', label: 'Sovereign Memory', icon: Database },
+    { id: 'analytics', label: 'Polar Intelligence', icon: BarChart3 },
+    { id: 'actions', label: 'Command Actions', icon: ShieldCheck },
   ];
 
   return (
     <>
-      {/* Mobile Top Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-[#eaebf0] z-50 px-4 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/20 font-bold text-xs">
-            DT
-          </div>
-          <div>
-            <span className="font-display font-bold text-base text-[#131b2e] leading-none">DTIARS</span>
-            <span className="block text-[9px] font-mono text-[#464554]">POLAR DIGITAL TWIN</span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg text-[#464554] hover:bg-[#eaedff] transition-colors"
-          aria-label="Toggle navigation menu"
-        >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-
-      {/* Mobile Drawer Overlay */}
+      {/* Mobile Backdrop Overlay */}
       {mobileOpen && (
         <div 
-          onClick={() => setMobileOpen(false)} 
-          className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-xs z-40"
+          onClick={onMobileClose} 
+          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity"
         />
       )}
 
       {/* Main Sidebar Navigation */}
       <aside 
-        className={`fixed top-0 bottom-0 left-0 w-64 lg:w-72 bg-white/95 backdrop-blur-xl border-r border-[#eaebf0] z-50 flex flex-col justify-between p-5 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed top-14 bottom-0 left-0 w-64 lg:w-72 bg-white/95 backdrop-blur-xl border-r border-[#eaebf0] z-40 flex flex-col justify-between p-4 transition-transform duration-300 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        <div className="flex flex-col gap-5">
-          {/* Brand Logo & System Status */}
-          <div className="pt-1">
-            <button 
-              onClick={() => {
-                onViewChange('overview');
-                setMobileOpen(false);
-              }}
-              className="w-full flex items-center gap-3 group text-left"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/25 group-hover:scale-105 transition-transform font-bold text-sm">
-                DT
+        <div className="flex flex-col gap-4">
+          {/* Station Ops Header & Subsystem Uplink */}
+          <div className="flex items-center justify-between px-2 py-2 border-b border-[#eaebf0]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded bg-[#4648d4] text-white flex items-center justify-center font-bold text-xs">
+                ICE
               </div>
-              <div className="flex flex-col">
-                <span className="font-display font-black text-2xl text-[#131b2e] tracking-tight leading-none">
-                  DTIARS
-                </span>
-                <span className="text-[9px] font-mono font-bold text-[#4648d4] tracking-wide mt-1 uppercase leading-tight line-clamp-1">
-                  INDIAN ANTARCTIC DIGITAL TWIN
-                </span>
+              <div>
+                <div className="text-xs font-mono font-bold text-[#0d1c2f] tracking-wide leading-none">
+                  STATION OPS
+                </div>
+                <div className="text-[10px] font-mono text-[#006c49] font-medium mt-0.5">
+                  UPLINK NOMINAL 99.8%
+                </div>
               </div>
-            </button>
-
-            {/* Defense Status Pill */}
-            <div className="mt-4 px-3 py-1.5 rounded-lg bg-[#f2f3ff] border border-[#eaedff] flex items-center justify-between text-[11px] font-semibold text-[#4648d4]">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-                DEFENSE OPERATIONAL
-              </span>
-              <span className="font-mono text-[10px] text-[#464554]">505 CH</span>
             </div>
+
+            {/* Mobile close button inside drawer */}
+            <button
+              onClick={onMobileClose}
+              className="md:hidden p-1 rounded text-[#767586] hover:text-[#0d1c2f]"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Station Context Switcher (Quick Toggle) */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#73738c]">
-              Target Station Context
+          {/* Station Switcher Context (Available in Drawer for mobile/tablet) */}
+          <div className="flex flex-col gap-1.5 px-1">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-[#767586]">
+              Target Station
             </span>
-            <div className="grid grid-cols-2 p-1 bg-[#f2f3ff] rounded-xl border border-[#eaedff] text-xs font-semibold">
+            <div className="grid grid-cols-2 p-1 bg-[#f8f9ff] rounded-lg border border-[#eaebf0] text-xs font-mono font-semibold">
               <button
                 onClick={() => {
                   onStationChange('bharati');
-                  setMobileOpen(false);
+                  onMobileClose();
                 }}
-                className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-1 px-2 rounded flex items-center justify-center gap-1.5 transition-all ${
                   activeStation === 'bharati'
-                    ? 'bg-white text-[#4648d4] shadow-sm font-bold'
-                    : 'text-[#464554] hover:text-[#131b2e]'
+                    ? 'bg-white text-[#2c2abc] shadow-xs font-bold border border-[#4648d4]/30'
+                    : 'text-[#464554] hover:text-[#0d1c2f]'
                 }`}
               >
-                <Compass className="w-3.5 h-3.5 text-[#4648d4]" />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeStation === 'bharati' ? 'bg-[#10b981]' : 'bg-[#767586]'}`} />
                 Bharati
               </button>
               <button
                 onClick={() => {
                   onStationChange('maitri');
-                  setMobileOpen(false);
+                  onMobileClose();
                 }}
-                className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-1 px-2 rounded flex items-center justify-center gap-1.5 transition-all ${
                   activeStation === 'maitri'
-                    ? 'bg-white text-[#4648d4] shadow-sm font-bold'
-                    : 'text-[#464554] hover:text-[#131b2e]'
+                    ? 'bg-white text-[#2c2abc] shadow-xs font-bold border border-[#4648d4]/30'
+                    : 'text-[#464554] hover:text-[#0d1c2f]'
                 }`}
               >
-                <Compass className="w-3.5 h-3.5 text-[#4648d4]" />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeStation === 'maitri' ? 'bg-[#10b981]' : 'bg-[#767586]'}`} />
                 Maitri
               </button>
             </div>
           </div>
 
-          {/* Navigation Links (Module Tabs) */}
-          <nav className="flex flex-col gap-1 text-sm font-medium">
-            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#73738c] mb-1">
-              Navigation Console
+          {/* Navigation Items (Minimal Technical UI) */}
+          <nav className="flex flex-col gap-1">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-[#767586] px-1 mb-1">
+              Command Modules
             </span>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -164,59 +139,70 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                   key={item.id}
                   onClick={() => {
                     onViewChange(item.id);
-                    setMobileOpen(false);
+                    onMobileClose();
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left text-sm font-medium ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left transition-all text-xs font-mono ${
                     isActive
-                      ? 'bg-[#4648d4] text-white font-semibold shadow-xs'
-                      : 'text-[#464554] hover:text-[#4648d4] hover:bg-[#f2f3ff]'
+                      ? 'border-l-2 border-[#4648d4] bg-[#f8f9ff] text-[#2c2abc] font-bold shadow-2xs'
+                      : 'text-[#464554] hover:text-[#0d1c2f] hover:bg-[#f8f9ff]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#73738c]'}`} />
-                  <span>{item.label}</span>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#4648d4]' : 'text-[#767586]'}`} />
+                  <span className="tracking-wide">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Live Telemetry Health Mini Capsule */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-[#faf8ff] to-[#f2f3ff] border border-[#eaedff] flex flex-col gap-2">
-            <div className="flex items-center justify-between text-[11px] text-[#464554] font-medium">
+          {/* Telemetry Quick Status Strip */}
+          <div className="p-2.5 rounded bg-[#f8f9ff] border border-[#eaebf0] flex flex-col gap-1.5 text-[11px] font-mono">
+            <div className="flex items-center justify-between text-[#464554]">
               <span className="flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-[#006577]" />
                 Satcom Link
               </span>
-              <span className="text-[#006c49] font-semibold">94.2% Delta</span>
+              <span className="text-[#006c49] font-bold">94.2% Synced</span>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#464554] font-medium">
-              <span>Cognitive Society</span>
-              <span className="font-semibold text-[#4648d4]">10 Agents Active</span>
+            <div className="flex items-center justify-between text-[#464554]">
+              <span>Society Quorum</span>
+              <span className="font-bold text-[#4648d4]">10/10 Online</span>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#464554] font-medium">
-              <span>Grid Frequency</span>
-              <span className="font-mono font-semibold text-[#10b981]">50.00 Hz</span>
+            <div className="flex items-center justify-between text-[#464554]">
+              <span>Microgrid Freq</span>
+              <span className="font-bold text-[#10b981]">50.02 Hz</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom Actions & Institutional Attribution */}
-        <div className="flex flex-col gap-3 pt-4 border-t border-[#eaebf0]">
+        {/* Bottom Actions: Lockdown, Cockpit & Institutional Attribution */}
+        <div className="flex flex-col gap-2.5 pt-3 border-t border-[#eaebf0]">
+          {/* System Lockdown Action */}
+          <button
+            onClick={onLockdown}
+            className="w-full py-2 px-3 rounded bg-white border border-[#ba1a1a] text-[#ba1a1a] hover:bg-[#ba1a1a] hover:text-white transition-colors text-[10px] font-mono font-bold tracking-wider flex items-center justify-center gap-2 shadow-2xs"
+            title="Arm Station Lockdown Protocol"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>SYSTEM LOCKDOWN</span>
+          </button>
+
           {/* Launch Mission Cockpit Button */}
           <button
             onClick={onLaunchCockpit}
-            className="w-full h-11 px-4 rounded-xl bg-[#4648d4] text-white text-xs font-semibold hover:bg-[#6063ee] shadow-[0_4px_14px_rgba(70,72,212,0.22)] transition-all flex items-center justify-between active:scale-[0.98]"
+            className="w-full h-10 px-3 rounded bg-[#4648d4] text-white text-xs font-mono font-semibold hover:bg-[#3537b8] transition-all flex items-center justify-between shadow-xs active:scale-[0.98]"
+            title="Open Fullscreen Legacy Mission Cockpit"
           >
-            <span>Launch Mission Cockpit</span>
+            <span>Mission Cockpit</span>
             <ArrowUpRight className="w-4 h-4" />
           </button>
 
-          {/* Institutional Badge */}
-          <div className="flex items-center justify-between px-2 text-[11px] text-[#73738c]">
-            <span className="flex items-center gap-1 font-medium text-[#006c49]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#006c49]" />
+          {/* Sovereign Attribution */}
+          <div className="flex items-center justify-between px-1 text-[10px] font-mono text-[#767586]">
+            <span className="flex items-center gap-1 text-[#006c49] font-semibold">
+              <ShieldCheck className="w-3 h-3 text-[#006c49]" />
               NCPOR / MoES
             </span>
-            <span className="font-mono text-[10px]">DTIARS</span>
+            <span>SIH-2026</span>
           </div>
         </div>
       </aside>
