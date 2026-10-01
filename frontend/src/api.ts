@@ -468,3 +468,32 @@ export async function operatorLogin(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+// ============================================================================
+// 11. SPACE WEATHER & POLAR METEOROLOGICAL ENGINES
+// ============================================================================
+
+export async function fetchSpaceWeatherCurrent(): Promise<any> {
+  return requestJson<any>(`${API_BASE}/environmental/space-weather/current`);
+}
+
+export async function simulateGeomagneticStorm(gLevel: string = 'G4'): Promise<any> {
+  return requestJson<any>(`${API_BASE}/environmental/space-weather/simulate-storm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ g_level: gLevel }),
+  });
+}
+
+export async function fetchPolarWeatherCurrent(): Promise<any> {
+  return requestJson<any>(`${API_BASE}/environmental/weather/current`);
+}
+
+export async function simulatePolarBlizzard(condition: string = 'CONDITION_1_LOCKOUT'): Promise<any> {
+  return requestJson<any>(`${API_BASE}/environmental/weather/simulate-blizzard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ condition }),
+  });
+}
+

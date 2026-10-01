@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StationId, StationInfo, StationSnapshot } from './types';
 import { fetchStationSnapshot, fetchStations, injectScenario, clearScenario } from './api';
 import { SidebarNavigation, NavView } from './components/SidebarNavigation';
-import { TopTitleSection } from './components/TopTitleSection';
-import { StationCardsSection } from './components/StationCardsSection';
-import { PolarCommandCanvas } from './components/PolarCommandCanvas';
-import { InteractiveCrisisBar } from './components/InteractiveCrisisBar';
-import { PartnerCloud } from './components/PartnerCloud';
-import { BentoCapabilities } from './components/BentoCapabilities';
-import { MetricRoiCards } from './components/MetricRoiCards';
-import { HeroCtaBanner } from './components/HeroCtaBanner';
+import { OverviewHomeView } from './components/views/OverviewHomeView';
 import { StationFleetView } from './components/views/StationFleetView';
 import { DigitalTwinView } from './components/views/DigitalTwinView';
 import { AgentsView } from './components/views/AgentsView';
@@ -133,64 +126,20 @@ export function App() {
         <main className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 scandi-aura">
           {/* ================= VIEW ROUTING ================= */}
           {activeView === 'overview' && (
-            <>
-              {/* Clean Minimalist Top Title Section */}
-              <TopTitleSection
-                onTriggerDemo={() => {
-                  const el = document.getElementById('simulator');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-                onLaunchCockpit={handleLaunchCockpit}
-              />
-
-              {/* 2 Interactive Station Cards (Bharati & Maitri) */}
-              <StationCardsSection
-                activeStation={station}
-                onStationChange={setStation}
-                onSelectStationTwin={(st) => {
-                  setStation(st);
-                  handleViewChange('digital_twin');
-                }}
-                stationsData={stationsList}
-              />
-
-              {/* Digital Twin Command Canvas */}
-              <div id="canvas" className="mb-10">
-                <PolarCommandCanvas
-                  activeStation={station}
-                  snapshot={snapshot}
-                  activeCrisis={activeCrisis}
-                  isResolved={isResolved}
-                  onOpenDigitalTwin={() => handleViewChange('digital_twin')}
-                />
-              </div>
-
-              {/* Interactive Tactile Crisis Bar */}
-              <div id="simulator">
-                <InteractiveCrisisBar
-                  onInject={handleInjectCrisis}
-                  onReset={handleReset}
-                  activeCrisis={activeCrisis}
-                  isResolved={isResolved}
-                />
-              </div>
-
-              {/* Scientific Partner Cloud */}
-              <PartnerCloud />
-
-              {/* 4 Core Capabilities Bento Grid */}
-              <div id="capabilities">
-                <BentoCapabilities />
-              </div>
-
-              {/* Live Metric ROI Cards */}
-              <div id="metrics">
-                <MetricRoiCards />
-              </div>
-
-              {/* Bottom Radiant Launch Banner */}
-              <HeroCtaBanner onLaunchCockpit={handleLaunchCockpit} />
-            </>
+            <OverviewHomeView
+              activeStation={station}
+              onStationChange={setStation}
+              snapshot={snapshot}
+              stationsList={stationsList}
+              activeCrisis={activeCrisis}
+              isResolved={isResolved}
+              onOpenDigitalTwin={() => handleViewChange('digital_twin')}
+              onOpenAgents={() => handleViewChange('agents')}
+              onOpenActions={() => handleViewChange('actions')}
+              onLaunchCockpit={handleLaunchCockpit}
+              onInjectCrisis={handleInjectCrisis}
+              onResetCrisis={handleReset}
+            />
           )}
 
           {activeView === 'stations' && (

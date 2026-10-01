@@ -282,3 +282,29 @@ export interface TelemetryHistoryPoint {
   kpis: Record<string, number>;
   alert_count: number;
 }
+
+export interface SpaceWeatherMetrics {
+  kp_index: number;
+  geomagnetic_scale: string;
+  solar_wind_speed_kms: number;
+  imf_bz_nt: number;
+  auroral_absorption_db: number;
+  hf_absorption_risk: string;
+  bgan_link_margin_db: number;
+  source?: string;
+  timestamp: number;
+}
+
+export interface PolarWeatherObservation {
+  station_id: string;
+  temperature_c: number;
+  wind_speed_ms: number;
+  wind_gust_ms: number;
+  wind_direction_deg: number;
+  pressure_hpa: number;
+  wind_chill_c: number;
+  safety_condition: string;
+  blizzard_imminent: boolean;
+  timestamp: number;
+}
+
