@@ -35,7 +35,7 @@
                 "health"
               ]
             },
-            "description": "Audited endpoint for /api/health. Measured latency: 6.9 ms."
+            "description": "Audited endpoint for /api/health. Measured latency: 25.38 ms."
           },
           "event": [
             {
@@ -83,7 +83,7 @@
                 "stations"
               ]
             },
-            "description": "Audited endpoint for /api/stations. Measured latency: 1.46 ms."
+            "description": "Audited endpoint for /api/stations. Measured latency: 2.52 ms."
           },
           "event": [
             {
@@ -138,7 +138,7 @@
                 "bharati"
               ]
             },
-            "description": "Audited endpoint for /api/stations/bharati. Measured latency: 1.29 ms."
+            "description": "Audited endpoint for /api/stations/bharati. Measured latency: 1.31 ms."
           },
           "event": [
             {
@@ -187,7 +187,7 @@
                 "maitri"
               ]
             },
-            "description": "Audited endpoint for /api/stations/maitri. Measured latency: 0.8 ms."
+            "description": "Audited endpoint for /api/stations/maitri. Measured latency: 1.44 ms."
           },
           "event": [
             {
@@ -237,7 +237,7 @@
                 "bharati"
               ]
             },
-            "description": "Audited endpoint for /api/stations/active/bharati. Measured latency: 1.02 ms.",
+            "description": "Audited endpoint for /api/stations/active/bharati. Measured latency: 1.25 ms.",
             "body": {
               "mode": "raw",
               "raw": "{}"
@@ -291,7 +291,7 @@
                 "step"
               ]
             },
-            "description": "Audited endpoint for /api/stations/bharati/step. Measured latency: 14.42 ms.",
+            "description": "Audited endpoint for /api/stations/bharati/step. Measured latency: 14.73 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"dt_seconds\": 1.0\n}"
@@ -351,7 +351,7 @@
                 "snapshot"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/snapshot. Measured latency: 5.4 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/snapshot. Measured latency: 9.51 ms."
           },
           "event": [
             {
@@ -401,7 +401,7 @@
                 "kpis"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/kpis. Measured latency: 1.16 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/kpis. Measured latency: 2.54 ms."
           },
           "event": [
             {
@@ -451,7 +451,7 @@
                 "alerts"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/alerts. Measured latency: 0.86 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/alerts. Measured latency: 1.64 ms."
           },
           "event": [
             {
@@ -501,7 +501,7 @@
                 "history"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/history. Measured latency: 0.79 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/history. Measured latency: 1.28 ms."
           },
           "event": [
             {
@@ -552,7 +552,7 @@
                 "energy"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/pillars/energy. Measured latency: 2.86 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/pillars/energy. Measured latency: 3.35 ms."
           },
           "event": [
             {
@@ -603,7 +603,7 @@
                 "infrastructure"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/pillars/infrastructure. Measured latency: 2.91 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/pillars/infrastructure. Measured latency: 4.45 ms."
           },
           "event": [
             {
@@ -654,7 +654,7 @@
                 "environment"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/pillars/environment. Measured latency: 2.32 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/pillars/environment. Measured latency: 3.17 ms."
           },
           "event": [
             {
@@ -705,7 +705,7 @@
                 "logistics"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/pillars/logistics. Measured latency: 2.29 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/pillars/logistics. Measured latency: 2.77 ms."
           },
           "event": [
             {
@@ -756,7 +756,7 @@
                 "BHARATI.CHP.01.POWER"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/bharati/sensors/BHARATI.CHP.01.POWER. Measured latency: 0.89 ms."
+            "description": "Audited endpoint for /api/telemetry/bharati/sensors/BHARATI.CHP.01.POWER. Measured latency: 1.39 ms."
           },
           "event": [
             {
@@ -811,7 +811,7 @@
                 "ingest"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/ingest. Measured latency: 1.25 ms.",
+            "description": "Audited endpoint for /api/telemetry/ingest. Measured latency: 1.39 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"station_id\": \"{{station_id}}\",\n  \"source\": \"FIELD_PLC_SCHNEIDER_M340\",\n  \"readings\": [\n    {\n      \"sensor_id\": \"BHARATI.CHP.01.POWER\",\n      \"value\": 68.4,\n      \"quality\": \"GOOD\"\n    }\n  ]\n}"
@@ -865,7 +865,7 @@
                 "status"
               ]
             },
-            "description": "Audited endpoint for /api/telemetry/ingest/status. Measured latency: 0.97 ms."
+            "description": "Audited endpoint for /api/telemetry/ingest/status. Measured latency: 0.92 ms."
           },
           "event": [
             {
@@ -920,7 +920,7 @@
                 "status"
               ]
             },
-            "description": "Audited endpoint for /api/agents/status. Measured latency: 1.56 ms."
+            "description": "Audited endpoint for /api/agents/status. Measured latency: 1.87 ms."
           },
           "event": [
             {
@@ -969,7 +969,7 @@
                 "diagnostic"
               ]
             },
-            "description": "Audited endpoint for /api/agents/diagnostic. Measured latency: 1.01 ms."
+            "description": "Audited endpoint for /api/agents/diagnostic. Measured latency: 1.94 ms."
           },
           "event": [
             {
@@ -1019,7 +1019,7 @@
                 "stats"
               ]
             },
-            "description": "Audited endpoint for /api/agents/bus/stats. Measured latency: 0.7 ms."
+            "description": "Audited endpoint for /api/agents/bus/stats. Measured latency: 1.02 ms."
           },
           "event": [
             {
@@ -1068,7 +1068,7 @@
                 "causal_graph"
               ]
             },
-            "description": "Audited endpoint for /api/agents/causal_graph. Measured latency: 0.99 ms."
+            "description": "Audited endpoint for /api/agents/causal_graph. Measured latency: 1.09 ms."
           },
           "event": [
             {
@@ -1119,7 +1119,7 @@
                 "chp_1"
               ]
             },
-            "description": "Audited endpoint for /api/agents/causal_graph/blast_radius/chp_1. Measured latency: 0.85 ms."
+            "description": "Audited endpoint for /api/agents/causal_graph/blast_radius/chp_1. Measured latency: 0.99 ms."
           },
           "event": [
             {
@@ -1168,7 +1168,7 @@
                 "groq_status"
               ]
             },
-            "description": "Audited endpoint for /api/agents/groq_status. Measured latency: 300.55 ms."
+            "description": "Audited endpoint for /api/agents/groq_status. Measured latency: 202.13 ms."
           },
           "event": [
             {
@@ -1217,7 +1217,7 @@
                 "set_groq_key"
               ]
             },
-            "description": "Audited endpoint for /api/agents/set_groq_key. Measured latency: 218.49 ms.",
+            "description": "Audited endpoint for /api/agents/set_groq_key. Measured latency: 191.96 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"api_key\": \"{{groq_api_key}}\"\n}"
@@ -1275,7 +1275,7 @@
                 "deliberations"
               ]
             },
-            "description": "Audited endpoint for /api/deliberations. Measured latency: 1.28 ms."
+            "description": "Audited endpoint for /api/deliberations. Measured latency: 1.59 ms."
           },
           "event": [
             {
@@ -1298,7 +1298,7 @@
           ]
         },
         {
-          "name": "GET /api/deliberations/SES-AB034425",
+          "name": "GET /api/deliberations/SES-C489E806",
           "request": {
             "method": "GET",
             "header": [
@@ -1314,17 +1314,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/deliberations/SES-AB034425",
+              "raw": "{{base_url}}/api/deliberations/SES-C489E806",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "deliberations",
-                "SES-AB034425"
+                "SES-C489E806"
               ]
             },
-            "description": "Audited endpoint for /api/deliberations/SES-AB034425. Measured latency: 1.1 ms."
+            "description": "Audited endpoint for /api/deliberations/SES-C489E806. Measured latency: 1.14 ms."
           },
           "event": [
             {
@@ -1347,7 +1347,7 @@
           ]
         },
         {
-          "name": "GET /api/deliberations/SES-AB034425/briefing_card",
+          "name": "GET /api/deliberations/SES-C489E806/briefing_card",
           "request": {
             "method": "GET",
             "header": [
@@ -1363,18 +1363,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/deliberations/SES-AB034425/briefing_card",
+              "raw": "{{base_url}}/api/deliberations/SES-C489E806/briefing_card",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "deliberations",
-                "SES-AB034425",
+                "SES-C489E806",
                 "briefing_card"
               ]
             },
-            "description": "Audited endpoint for /api/deliberations/SES-AB034425/briefing_card. Measured latency: 1.45 ms."
+            "description": "Audited endpoint for /api/deliberations/SES-C489E806/briefing_card. Measured latency: 1.12 ms."
           },
           "event": [
             {
@@ -1430,7 +1430,7 @@
                 "bharati"
               ]
             },
-            "description": "Audited endpoint for /api/actions/actuators/bharati. Measured latency: 1.38 ms."
+            "description": "Audited endpoint for /api/actions/actuators/bharati. Measured latency: 1.69 ms."
           },
           "event": [
             {
@@ -1479,7 +1479,7 @@
                 "pending"
               ]
             },
-            "description": "Audited endpoint for /api/actions/pending. Measured latency: 0.78 ms."
+            "description": "Audited endpoint for /api/actions/pending. Measured latency: 0.72 ms."
           },
           "event": [
             {
@@ -1528,7 +1528,7 @@
                 "pending_tier3"
               ]
             },
-            "description": "Audited endpoint for /api/actions/pending_tier3. Measured latency: 0.82 ms."
+            "description": "Audited endpoint for /api/actions/pending_tier3. Measured latency: 0.63 ms."
           },
           "event": [
             {
@@ -1577,7 +1577,7 @@
                 "autonomous_mode"
               ]
             },
-            "description": "Audited endpoint for /api/actions/autonomous_mode. Measured latency: 0.86 ms.",
+            "description": "Audited endpoint for /api/actions/autonomous_mode. Measured latency: 0.89 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"autonomous_enabled\": true\n}"
@@ -1631,7 +1631,7 @@
                 "bharati"
               ]
             },
-            "description": "Audited endpoint for /api/actions/cognitive_logs/bharati. Measured latency: 0.82 ms."
+            "description": "Audited endpoint for /api/actions/cognitive_logs/bharati. Measured latency: 0.73 ms."
           },
           "event": [
             {
@@ -1681,7 +1681,7 @@
                 "bharati"
               ]
             },
-            "description": "Audited endpoint for /api/actions/edge_status/bharati. Measured latency: 0.74 ms."
+            "description": "Audited endpoint for /api/actions/edge_status/bharati. Measured latency: 0.66 ms."
           },
           "event": [
             {
@@ -1730,7 +1730,7 @@
                 "authorize_pin"
               ]
             },
-            "description": "Audited endpoint for /api/actions/authorize_pin. Measured latency: 57.75 ms.",
+            "description": "Audited endpoint for /api/actions/authorize_pin. Measured latency: 42.51 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"pin\": \"BHARATI-CMD-2026\",\n  \"command\": \"COMMANDER_EMERGENCY_DISPATCH\"\n}"
@@ -1783,7 +1783,7 @@
                 "execute"
               ]
             },
-            "description": "Audited endpoint for /api/actions/execute. Measured latency: 5.45 ms.",
+            "description": "Audited endpoint for /api/actions/execute. Measured latency: 5.11 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plan_name\": \"Adjust Damper Position\",\n  \"strategy\": \"OPERATIONAL_MITIGATION\",\n  \"autonomy_tier\": \"TIER_1\",\n  \"actions\": [\n    {\n      \"command\": \"SET_BLIZZARD_DAMPERS\",\n      \"parameters\": {\n        \"damper_position_pct\": 80.0\n      }\n    }\n  ],\n  \"expected_outcome\": \"Restore nominal fresh air airflow\",\n  \"resource_cost\": 0.05,\n  \"confidence\": 0.95\n}"
@@ -1841,7 +1841,7 @@
                 "scenarios"
               ]
             },
-            "description": "Audited endpoint for /api/scenarios. Measured latency: 1.99 ms."
+            "description": "Audited endpoint for /api/scenarios. Measured latency: 1.25 ms."
           },
           "event": [
             {
@@ -1890,7 +1890,7 @@
                 "inject"
               ]
             },
-            "description": "Audited endpoint for /api/scenarios/inject. Measured latency: 8802.0 ms.",
+            "description": "Audited endpoint for /api/scenarios/inject. Measured latency: 6206.66 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"scenario\": \"BLIZZARD_STRIKE\",\n  \"station_id\": \"{{station_id}}\"\n}"
@@ -1943,7 +1943,7 @@
                 "clear"
               ]
             },
-            "description": "Audited endpoint for /api/scenarios/clear. Measured latency: 10.16 ms.",
+            "description": "Audited endpoint for /api/scenarios/clear. Measured latency: 20.77 ms.",
             "body": {
               "mode": "raw",
               "raw": "{}"
@@ -2002,7 +2002,7 @@
                 "status"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/status. Measured latency: 2.69 ms."
+            "description": "Audited endpoint for /api/satcom/status. Measured latency: 5.05 ms."
           },
           "event": [
             {
@@ -2051,7 +2051,7 @@
                 "profile"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/profile. Measured latency: 0.77 ms.",
+            "description": "Audited endpoint for /api/satcom/profile. Measured latency: 2.3 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"profile\": \"INMARSAT_STANDARD\"\n}"
@@ -2105,7 +2105,7 @@
                 "summary"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/bharati/summary. Measured latency: 1.89 ms."
+            "description": "Audited endpoint for /api/satcom/bharati/summary. Measured latency: 3.23 ms."
           },
           "event": [
             {
@@ -2155,7 +2155,7 @@
                 "mirror"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/bharati/mirror. Measured latency: 1.56 ms."
+            "description": "Audited endpoint for /api/satcom/bharati/mirror. Measured latency: 3.6 ms."
           },
           "event": [
             {
@@ -2205,7 +2205,7 @@
                 "sync"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/bharati/sync. Measured latency: 19.27 ms.",
+            "description": "Audited endpoint for /api/satcom/bharati/sync. Measured latency: 28.4 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"force_keyframe\": false\n}"
@@ -2259,7 +2259,7 @@
                 "resync"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/bharati/resync. Measured latency: 4.5 ms.",
+            "description": "Audited endpoint for /api/satcom/bharati/resync. Measured latency: 8.97 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"force_keyframe\": false\n}"
@@ -2313,7 +2313,7 @@
                 "recover"
               ]
             },
-            "description": "Audited endpoint for /api/satcom/bharati/recover. Measured latency: 2.01 ms.",
+            "description": "Audited endpoint for /api/satcom/bharati/recover. Measured latency: 3.42 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"new_profile\": \"INMARSAT_STANDARD\"\n}"
@@ -2372,7 +2372,7 @@
                 "status"
               ]
             },
-            "description": "Audited endpoint for /api/database/status. Measured latency: 2.45 ms."
+            "description": "Audited endpoint for /api/database/status. Measured latency: 3.41 ms."
           },
           "event": [
             {
@@ -2421,7 +2421,7 @@
                 "episodes"
               ]
             },
-            "description": "Audited endpoint for /api/database/episodes. Measured latency: 1.92 ms."
+            "description": "Audited endpoint for /api/database/episodes. Measured latency: 2.14 ms."
           },
           "event": [
             {
@@ -2470,7 +2470,7 @@
                 "equipment"
               ]
             },
-            "description": "Audited endpoint for /api/database/equipment. Measured latency: 0.85 ms."
+            "description": "Audited endpoint for /api/database/equipment. Measured latency: 1.58 ms."
           },
           "event": [
             {
@@ -2519,7 +2519,7 @@
                 "audits"
               ]
             },
-            "description": "Audited endpoint for /api/database/audits. Measured latency: 0.87 ms."
+            "description": "Audited endpoint for /api/database/audits. Measured latency: 1.82 ms."
           },
           "event": [
             {
@@ -2568,7 +2568,7 @@
                 "sync"
               ]
             },
-            "description": "Audited endpoint for /api/database/sync. Measured latency: 5.03 ms.",
+            "description": "Audited endpoint for /api/database/sync. Measured latency: 1.33 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"force_keyframe\": false\n}"
@@ -2627,7 +2627,7 @@
                 "status"
               ]
             },
-            "description": "Audited endpoint for /api/copilot/status. Measured latency: 2.84 ms."
+            "description": "Audited endpoint for /api/copilot/status. Measured latency: 2.61 ms."
           },
           "event": [
             {
@@ -2676,7 +2676,7 @@
                 "suggested_queries"
               ]
             },
-            "description": "Audited endpoint for /api/copilot/suggested_queries. Measured latency: 1.65 ms."
+            "description": "Audited endpoint for /api/copilot/suggested_queries. Measured latency: 2.12 ms."
           },
           "event": [
             {
@@ -2725,7 +2725,7 @@
                 "history"
               ]
             },
-            "description": "Audited endpoint for /api/copilot/history. Measured latency: 1.67 ms."
+            "description": "Audited endpoint for /api/copilot/history. Measured latency: 1.76 ms."
           },
           "event": [
             {
@@ -2774,7 +2774,7 @@
                 "chat"
               ]
             },
-            "description": "Audited endpoint for /api/copilot/chat. Measured latency: 568.55 ms.",
+            "description": "Audited endpoint for /api/copilot/chat. Measured latency: 15.96 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"station_id\": \"{{station_id}}\",\n  \"message\": \"Explain causal root cause of current microgrid alerts.\"\n}"
@@ -2833,7 +2833,7 @@
                 "state"
               ]
             },
-            "description": "Audited endpoint for /api/sync/state. Measured latency: 3.43 ms."
+            "description": "Audited endpoint for /api/sync/state. Measured latency: 2.67 ms."
           },
           "event": [
             {
@@ -2882,7 +2882,7 @@
                 "state"
               ]
             },
-            "description": "Audited endpoint for /api/sync/state. Measured latency: 10.54 ms.",
+            "description": "Audited endpoint for /api/sync/state. Measured latency: 11.18 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"station_id\": \"bharati\",\n  \"active_tab\": \"topo\",\n  \"autonomous_mode\": true,\n  \"voice_enabled\": false\n}"
@@ -2935,7 +2935,7 @@
                 "login"
               ]
             },
-            "description": "Audited endpoint for /api/sync/login. Measured latency: 20.3 ms.",
+            "description": "Audited endpoint for /api/sync/login. Measured latency: 13.53 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"operator_id\": \"STATION_COMMANDER\",\n  \"pin\": \"BHARATI-CMD-2026\",\n  \"station_id\": \"bharati\"\n}"
@@ -2988,7 +2988,7 @@
                 "full_refresh"
               ]
             },
-            "description": "Audited endpoint for /api/sync/full_refresh. Measured latency: 6.42 ms.",
+            "description": "Audited endpoint for /api/sync/full_refresh. Measured latency: 14.46 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"force_keyframe\": false\n}"
@@ -3041,7 +3041,7 @@
                 "logout"
               ]
             },
-            "description": "Audited endpoint for /api/sync/logout. Measured latency: 10.97 ms.",
+            "description": "Audited endpoint for /api/sync/logout. Measured latency: 13.56 ms.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"force_keyframe\": false\n}"
@@ -3100,7 +3100,7 @@
                 "stats"
               ]
             },
-            "description": "Audited endpoint for /api/ws/stats. Measured latency: 1.4 ms."
+            "description": "Audited endpoint for /api/ws/stats. Measured latency: 2.66 ms."
           },
           "event": [
             {

@@ -116,3 +116,29 @@ Centralized in `backend/core/safety_policy.py`, immutable safety rules supersede
    - [ ] Update default Commander PIN `FRIDAY_COMMANDER_PIN`
    - [ ] Set explicit `FRIDAY_CORS_ORIGINS` to domain(s) serving the frontend
    - [ ] Run automated security tests: `pytest tests/server/test_security_and_auth.py`
+
+---
+
+## 8. Vulnerability Reporting & Responsible Disclosure
+
+We take the security of Antarctic critical infrastructure systems seriously. If you discover a vulnerability, please report it responsibly:
+
+### Supported Versions
+| Version | Supported |
+| :--- | :--- |
+| 1.0.x | :white_check_mark: Active security support |
+| < 1.0 | :x: End of Life |
+
+### Reporting Procedure
+1. **Do NOT open a public GitHub issue** for undisclosed vulnerabilities.
+2. Send details via email to: `ncpor@moes.gov.in` (Subject: `[SECURITY] F.R.I.D.A.Y. Vulnerability Disclosure`).
+3. Include:
+   - A description of the issue and potential impact.
+   - Step-by-step reproduction steps or proof-of-concept.
+   - Any suggested remediations.
+
+### Response Timeline & SLA
+- **Acknowledgment**: Within 48 hours of receipt.
+- **Assessment & Triage**: Within 5 business days.
+- **Patch Release & Advisory**: We coordinate patches and public release following industry best practices.
+

@@ -9,7 +9,7 @@ from __future__ import annotations
 from functools import lru_cache
 import os
 from typing import Any, List
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,7 +24,11 @@ class Settings(BaseSettings):
     )
 
     # Environment & Server
-    ENVIRONMENT: str = Field(default="development", description="Environment mode: development, testing, production")
+    ENVIRONMENT: str = Field(
+        default="development",
+        validation_alias=AliasChoices("ENVIRONMENT", "FRIDAY_ENVIRONMENT"),
+        description="Environment mode: development, testing, production",
+    )
     SERVER_HOST: str = Field(default="0.0.0.0", description="Bind host address")
     SERVER_PORT: int = Field(default=8000, description="Bind port")
     DEBUG: bool = Field(default=False, description="Debug mode")
@@ -32,14 +36,24 @@ class Settings(BaseSettings):
     # Security & Authentication
     JWT_SECRET_KEY: str = Field(
         default="friday-antarctica-secret-key-development-mode-2026",
+        validation_alias=AliasChoices("JWT_SECRET_KEY", "FRIDAY_SECRET_KEY"),
         description="Cryptographic secret key for signing JWT bearer tokens",
     )
-    JWT_ALGORITHM: str = Field(default="HS256", description="JWT signing algorithm")
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=1440, description="Access token expiration in minutes (24h)")
+    JWT_ALGORITHM: str = Field(
+        default="HS256",
+        validation_alias=AliasChoices("JWT_ALGORITHM", "FRIDAY_JWT_ALGORITHM"),
+        description="JWT signing algorithm",
+    )
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=1440,
+        validation_alias=AliasChoices("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "FRIDAY_JWT_EXPIRATION_MINUTES"),
+        description="Access token expiration in minutes (24h)",
+    )
 
     # Station Commander Safety Interlock PIN & Rate-Limiting
     COMMANDER_PIN: str = Field(
         default="BHARATI-CMD-2026",
+        validation_alias=AliasChoices("COMMANDER_PIN", "FRIDAY_COMMANDER_PIN"),
         description="Primary Station Commander authorization PIN",
     )
     COMMANDER_LOCKOUT_ATTEMPTS: int = Field(default=5, description="Failed attempts before exponential lockout")
@@ -55,6 +69,7 @@ class Settings(BaseSettings):
             "http://localhost:8000",
             "http://127.0.0.1:8000",
         ],
+        validation_alias=AliasChoices("CORS_ALLOWED_ORIGINS", "FRIDAY_CORS_ORIGINS"),
         description="Explicit allowed origins for CORS validation",
     )
 
@@ -66,17 +81,26 @@ class Settings(BaseSettings):
     GROQ_CIRCUIT_BREAKER_RESET_SECONDS: float = Field(default=60.0, description="Cool-off time before half-open state")
 
     # Persistence Subsystems
-    MONGODB_URI: str = Field(default="mongodb://localhost:27017", description="MongoDB connection URI")
+    MONGODB_URI: str = Field(
+        default="mongodb://localhost:27017",
+        validation_alias=AliasChoices("MONGODB_URI", "LOCAL_MONGO_URI"),
+        description="MongoDB connection URI",
+    )
     MONGODB_DB_NAME: str = Field(default="friday_antarctic_twin", description="MongoDB database name")
     EDGE_STORAGE_PATH: str = Field(
         default="data/edge_storage/friday_embedded_edge.json",
+        validation_alias=AliasChoices("EDGE_STORAGE_PATH", "FRIDAY_EDGE_STORAGE_PATH"),
         description="Local fallback JSON document store path",
     )
 
     # Satcom & Telemetry
     SATCOM_BANDWIDTH_LIMIT_BPS: int = Field(default=2400, description="Simulated Iridium polar satcom bandwidth limit")
     RATE_LIMIT_PER_MINUTE: int = Field(default=120, description="General API rate limit per client")
-    WS_MAX_CONNECTIONS: int = Field(default=100, description="Maximum concurrent WebSocket client connections")
+    WS_MAX_CONNECTIONS: int = Field(
+        default=100,
+        validation_alias=AliasChoices("WS_MAX_CONNECTIONS", "FRIDAY_WS_MAX_CONNECTIONS"),
+        description="Maximum concurrent WebSocket client connections",
+    )
     WS_MAX_PER_IP: int = Field(default=10, description="Maximum concurrent WebSocket connections per IP")
     WS_CLIENT_QUEUE_SIZE: int = Field(default=100, description="Bounded queue depth per WebSocket subscriber")
 
@@ -84,7 +108,7 @@ class Settings(BaseSettings):
     @classmethod
     def validate_jwt_secret_in_production(cls, v: str, info: Any) -> str:
         # If in production mode, disallow default weak key
-        env = os.environ.get("ENVIRONMENT", "development").lower()
+        env = (os.environ.get("ENVIRONMENT") or os.environ.get("FRIDAY_ENVIRONMENT") or "development").lower()
         if env == "production":
             if v == "friday-antarctica-secret-key-development-mode-2026" or len(v) < 32:
                 raise ValueError("In production mode, JWT_SECRET_KEY must be a unique key with at least 32 characters.")
@@ -93,7 +117,7 @@ class Settings(BaseSettings):
     @field_validator("COMMANDER_PIN")
     @classmethod
     def validate_commander_pin_in_production(cls, v: str, info: Any) -> str:
-        env = os.environ.get("ENVIRONMENT", "development").lower()
+        env = (os.environ.get("ENVIRONMENT") or os.environ.get("FRIDAY_ENVIRONMENT") or "development").lower()
         if env == "production":
             if v == "BHARATI-CMD-2026" or len(v) < 8:
                 raise ValueError("In production mode, COMMANDER_PIN must be customized with at least 8 characters.")

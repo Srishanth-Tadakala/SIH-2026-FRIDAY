@@ -1,3 +1,7 @@
+# ==============================================================================
+# F.R.I.D.A.Y. Root .gitignore
+# ==============================================================================
+
 # Python
 __pycache__/
 *.py[cod]
@@ -21,32 +25,58 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing & Cache
+# Testing, Linting & Cache
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
+*.cover
+.hypothesis/
 
-# Environments
+# Node.js & Frontend Bundles
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.oxlintrc.json.bak
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environments & Virtualenvs
 .venv/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# IDE & OS
+# IDE, OS & Temporary
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Secrets & Environment
+# Secrets & Environment Files
 .env
 *.env
 .env.*
 !.env.example
 
-# Local Persistent Storage
+# Local Persistent Storage & Ephemeral State
 data/edge_storage/*.json
 data/edge_storage/*.tmp
 data/edge_storage/*.bak
 data/edge_storage/*.wal
+!data/edge_storage/.gitkeep
+
+# Scratch Scripts & Local Dumps
+scratch/
+temp/
+tmp/

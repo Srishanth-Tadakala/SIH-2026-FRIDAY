@@ -5,6 +5,16 @@
 **Sponsoring Client:** National Centre for Polar and Ocean Research (NCPOR), Ministry of Earth Sciences (MoES), Govt. of India  
 **Operational Sites:** Bharati Station ($69^\circ 24'\text{ S}$), Maitri Station ($70^\circ 46'\text{ S}$), NCPOR Mainland HQ (Goa)
 
+> 💡 **Notice**: For the modular, deep-dive architectural specifications, please refer to the [`docs/architecture/`](docs/architecture/) suite:
+> - [System Overview](docs/architecture/overview.md)
+> - [System Architecture & Topologies](docs/architecture/system-architecture.md)
+> - [Frontend UI & Real-Time Visualization](docs/architecture/frontend.md)
+> - [Backend API & Service Layer](docs/architecture/backend.md)
+> - [Database & Persistence Subsystem](docs/architecture/database.md)
+> - [505-Sensor Telemetry & Industrial Bridges](docs/architecture/telemetry.md)
+> - [Deterministic Digital Twin & Causal Graph](docs/architecture/digital-twin.md)
+> - [External Integrations & Satcom Protocol](docs/architecture/integrations.md)
+
 ---
 
 ## 1. High-Level System Architecture

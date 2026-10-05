@@ -47,7 +47,7 @@ The Docker build utilizes a 2-stage pipeline:
 
 3. View live logs:
    ```bash
-   docker compose logs -f friday-core
+   docker compose logs -f friday-edge-bharati
    ```
 
 4. Verify health endpoints:
