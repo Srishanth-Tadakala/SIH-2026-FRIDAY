@@ -14,13 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Community Governance & Standards**: Added `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1), `CHANGELOG.md`, and `.github/pull_request_template.md`.
 - **Configuration Alias Support**: Added Pydantic `AliasChoices` in `backend/server/config.py` enabling both standard setting names and `FRIDAY_*` environment variables seamlessly.
 - **Enhanced Security Policy**: Updated `SECURITY.md` with explicit vulnerability disclosure procedures, SLA response timelines, and supported version matrices.
-- **Postman API Suite**: Full Postman v2.1.0 collection (`postman_collection.json`) and environment (`postman_environment.json`) covering all 60 REST endpoints.
+- **Automated Endpoint Testing Tool**: Full endpoint testing suite (`tools/test_all_endpoints.py`) benchmarking all 60 REST endpoints with on-demand Postman artifact generation.
 
 ### Changed
 - **Synchronized Environment Template**: Aligned `.env.example` with current platform configuration defaults and security requirements.
 - **Root Gitignore Hardening**: Expanded `.gitignore` with coverage for temporary scratch directories, `.ruff_cache/`, `node_modules/`, `dist/`, logs, and edge storage artifacts.
 
 ### Removed
+- **Static Postman Files**: Removed static `postman_collection.json` and `postman_environment.json` from git repository in favor of dynamic generation via `tools/test_all_endpoints.py`.
 - **Unused Frontend Legacy Components**: Safely pruned 10 unreferenced legacy prototype components (`BentoCapabilities.tsx`, `HeroCtaBanner.tsx`, `InteractiveCrisisBar.tsx`, `MetricRoiCards.tsx`, `NavigationHeader.tsx`, `PartnerCloud.tsx`, `PolarCommandCanvas.tsx`, `StationCardsSection.tsx`, `TopTitleSection.tsx`, `UnderMaintenanceView.tsx`).
 - **Template Starter Assets**: Removed default starter assets (`react.svg`, `vite.svg`, `hero.png`) that were unreferenced across the codebase.
 - **Temporary Debug Scripts**: Cleaned untracked CI monitoring scripts from `scratch/`.

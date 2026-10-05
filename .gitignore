@@ -76,7 +76,9 @@ data/edge_storage/*.bak
 data/edge_storage/*.wal
 !data/edge_storage/.gitkeep
 
-# Scratch Scripts & Local Dumps
+# Scratch Scripts, Local Dumps & Test Artifacts
 scratch/
 temp/
 tmp/
+postman_*.json
+

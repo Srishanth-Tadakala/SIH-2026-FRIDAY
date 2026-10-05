@@ -84,7 +84,7 @@ The automated benchmarking tool `tools/test_all_endpoints.py` tests all 60 REST 
 ```bash
 python tools/test_all_endpoints.py
 ```
-*Generates:*
+*Generates locally (ignored by git):*
 - `postman_collection.json` (Postman Collection v2.1.0)
 - `postman_environment.json` (Local environment variables)
 
